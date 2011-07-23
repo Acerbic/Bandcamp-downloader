@@ -25,16 +25,22 @@ public abstract class PageParser {
 	 * @author A.Cerbic
 	 */
 	@SuppressWarnings("serial")
-	public static class ProblemsReadingDocumentException extends Exception {
+	public class ProblemsReadingDocumentException extends Exception {
 		
 		public String problemDocumentURL;
 		public String parentDocumentURL; /** may be null */
 
 		public ProblemsReadingDocumentException() {
 			super();
+			problemDocumentURL = PageParser.this.url.toString();
+		}
+		public ProblemsReadingDocumentException(String s) {
+			super(s);
+			problemDocumentURL = PageParser.this.url.toString();
 		}
 		public ProblemsReadingDocumentException(Throwable e) {
 			super(e);
+			problemDocumentURL = PageParser.this.url.toString();
 		}
 	}
 	
@@ -183,7 +189,9 @@ public abstract class PageParser {
 		try {
 			SAXBuilder builder = new SAXBuilder("org.ccil.cowan.tagsoup.Parser");
 			doc = builder.build(url.toString());
-		} catch (Exception e) {throw new ProblemsReadingDocumentException(e);}
+		} catch (Exception e) {
+			throw new ProblemsReadingDocumentException(e);
+		}
 		WebDownloader.totalPageDownloadFinished++;
 
 		parseSelf(doc);  
