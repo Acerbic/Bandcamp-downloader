@@ -94,7 +94,8 @@ public class Main {
 					flush();
 				}
 			};
-			hConsole.setLevel(Level.ALL);
+//			hConsole.setLevel(Level.ALL);
+			hConsole.setLevel(Level.INFO);
 			logger.addHandler(hConsole);
 		}
 		if (logToFile) {

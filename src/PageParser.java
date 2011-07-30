@@ -97,33 +97,45 @@ public abstract class PageParser {
 		url = _url;
 	}
 
+	/** 
+	 * this is called when acquiring item fails and must be dropped or restarted.
+	 */
+	public final void acquisitionFailedHook (PageParser failedItem) {
+		
+	}
+	
 	/**
 	 * Fills this instance with data, reading it from cache or parsing web page.
 	 * Then repeats process for children pages
 	 * @param forceDownload - true if you want ignore cache on this one, all child nodes checks are
 	 * controlled with <b>isUsingCache</b> flag
 	 * @param doc - XML document storing cache on pages data.  
+	 * @throws ProblemsReadingDocumentException if failed. (generally it means that web server did not respond right)
 	 */
 	public final void acquireData(boolean forceDownload, org.jdom.Document doc) throws ProblemsReadingDocumentException {
 		assert (url != null);
-		logger.info( String.format("(%s) Reading: %s ... %n", 
+		logger.info( String.format("(%s) Starting aquisition of %s ... %n", 
 				this.getClass().getName(), url.toString()));
 		
-		if (forceDownload || !loadFromCache(doc)) {  
+		boolean isLoaded = false;
+		if (!forceDownload && isUsingCache)
+			isLoaded = loadFromCache(doc);
+		if (!isLoaded) {  
 			downloadPage();
 			saveToCache(doc);
 		}
 		
 		if (childPages == null) {
-			logger.info(String.format("Reading %s done. %n", url.toString()));
+			logger.info(String.format("Reading of %s is done. %n", url.toString()));
 			return;
 		}
 
-		logger.info( String.format("Reading %s done. Children: %d%n", childPages.length));
+		logger.info( String.format("Reading of %s done. Children: %d%n", childPages.length));
 		for (int i = 0; i < childPages.length; i++) 
 			try {
-				childPages[i].acquireData(!isUsingCache, doc);
+				childPages[i].acquireData(false, doc);
 			} catch (ProblemsReadingDocumentException e) {
+				acquisitionFailedHook(childPages[i]);
 				childPages[i] = null;
 				logger.log(Level.WARNING, "", e);
 			} //skip to the next child page
@@ -136,11 +148,21 @@ public abstract class PageParser {
 	 * @throws IllegalArgumentException - when baseURL is bad or null
 	 */
 	public static final PageParser detectPage(String baseURL) throws IllegalArgumentException {
-			if (baseURL.contains("/track/")) 
-				return new Track(baseURL);
-			if (baseURL.contains("/album/")) 
-				return new Album(baseURL);
+		URL u;
+		try {
+			u = new URL(baseURL);
+		} catch (MalformedURLException e) {
+			throw new IllegalArgumentException(e);
+		}
+		
+		if (baseURL.contains("/track/")) 
+			return new Track(baseURL);
+		if (baseURL.contains("/album/")) 
+			return new Album(baseURL);
+		if (u.getPath().isEmpty())
 			return new Discography(baseURL);
+		
+		throw new IllegalArgumentException();
 	}
 
 	/**
@@ -183,22 +205,24 @@ public abstract class PageParser {
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
 	private void downloadPage() throws ProblemsReadingDocumentException {
-		logger.log(Level.FINE, "[net]");
+		logger.log(Level.FINE, String.format("\t Reading %s from network%n", url.toString()));
 		
-		Document doc = null;
+		org.jdom.Document doc = null;
 		try {
 			SAXBuilder builder = new SAXBuilder("org.ccil.cowan.tagsoup.Parser");
 			doc = builder.build(url.toString());
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
 		WebDownloader.totalPageDownloadFinished++;
 
+		// discover info about this page
 		parseSelf(doc);  
 			
+		// discover info about children pages
 		@SuppressWarnings("unchecked")
 		List<Element> result = (List<Element>) queryXPathList(getChildNodesXPath(), doc);
-		childPages = new PageParser[result.size()];
+		childPages = new PageParser[result.size()]; // is it initialized to NULL?
 		for (int i = 0; i<result.size(); i++) {
 			try {
 				childPages[i] = parseChild(result.get(i));
@@ -228,8 +252,9 @@ public abstract class PageParser {
 	 * @return true if data acquired successfully, false otherwise
 	 */
 	private boolean loadFromCache (org.jdom.Document doc) {
-		assert (doc!= null);
-		logger.log(Level.FINE, "[cache]");
+		if (doc == null) return false;
+		
+		logger.log(Level.FINE, String.format("\t Reading %s from cache%n",url.toString()));
 		try {
 			Element e = scanXMLForThisElement(doc);
 			if (null == e) return false;
@@ -300,15 +325,15 @@ public abstract class PageParser {
 	
 	/**
 	 * Reads child's page title/url data from cache and creates a node.
-	 * @param e - <childref ...> tag describing a child
+	 * @param childRef - <childref ...> tag describing a child
 	 * @return new PageParser child node.
 	 * @throws ProblemsReadingDocumentException if anything went wrong
 	 */
-	private PageParser readCacheChild(Element e) throws ProblemsReadingDocumentException {
+	private PageParser readCacheChild(Element childRef) throws ProblemsReadingDocumentException {
 		PageParser child = null;
 		try {
-			String u = e.getAttributeValue("url");
-			String c = e.getAttributeValue("class");
+			String u = childRef.getAttributeValue("url");
+			String c = childRef.getAttributeValue("class");
 			child = (PageParser)Class.forName(c).newInstance();
 			child.setUrl(u);
 		} catch (ClassNotFoundException e1) {

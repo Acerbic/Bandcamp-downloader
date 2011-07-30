@@ -8,7 +8,7 @@ import java.net.URLConnection;
  */
 public class WebDownloader {
 	
-	public final static int MAX_LENGTH_CHECKS = 5;
+//	public final static int MAX_LENGTH_CHECKS = 5;
 	public static int lastCheckWebLength = 0;
 	public static URL lastCheckWebURL = null;
 
