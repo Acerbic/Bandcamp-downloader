@@ -3,15 +3,35 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import org.jdom.Document;
 import org.jdom.Element;
+import org.jdom.JDOMException;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+
+/**
+ * Class to store data from previously downloaded pages.
+ * @author A.Cerbic
+ */
 public class XMLCache {
-	public XMLOutputter outputter;
-	public File xmlFile;
+	/**
+	 * handles formatting for saving as a file
+	 */
+	private XMLOutputter outputter;
+	
+	private File xmlFile;
+	
 	public Document doc;
 	
-	public XMLCache(String xmlFileName) throws IOException {
+/**
+ * Loads file and parses it into org.jdom.Document
+ * If document cannot be read for any reason, new empty valid one is created.
+ * @param xmlFileName - file name
+ */
+	public XMLCache(String xmlFileName) {
+		Logger l = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 		try {
 			xmlFile = new File(xmlFileName);
 			if (xmlFile.exists()) {
@@ -20,20 +40,23 @@ public class XMLCache {
 				builder.setIgnoringElementContentWhitespace(true);
 				doc = builder.build(xmlFile);
 			}
-		} catch (Exception e) {} 
+		} catch (IOException e) {
+			l.log(Level.WARNING, String.format("Error reading cache file <%s>%n", xmlFileName), e);
+		} catch (JDOMException e) {
+			l.log(Level.WARNING, String.format("Error parsing cache file <%s>%n", xmlFileName), e);
+		} 
 
 		if (doc == null) doc = new Document(new Element("root"));
 		outputter = new XMLOutputter();
 		Format xmlOutputFormat = outputter.getFormat();
 		xmlOutputFormat.setIndent("  ");
-		xmlOutputFormat.setLineSeparator("\n");
+		xmlOutputFormat.setLineSeparator(System.getProperty("line.separator"));
 		outputter.setFormat(xmlOutputFormat);		
 	}
 
-
 	/**
 	 * Saves XML cache back into a file
-	 * @throws IOException
+	 * @throws IOException - if problems occur.
 	 */
 	public void saveCache() throws IOException {
 			outputter.output(doc, new FileOutputStream(xmlFile, false));

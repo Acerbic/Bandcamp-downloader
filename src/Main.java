@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.logging.*;
 
 public class Main {
-	public static final String newline = System.getProperty ( "line.separator" );
+	public static final String nl = System.getProperty ( "line.separator" );
 	
 	/* Default values */
 	public static String baseURL = "http://homestuck.bandcamp.com";
@@ -31,13 +31,13 @@ public class Main {
 							.print("homestuck.bandcamp.com downloader by A.Cerbic, 04.2011.\n"
 									+ "\tuse these command-line parameters:\n"
 									+ "\t\t-?\t to call for this help, duh!\n"
-									+ "\t\t-silent\t to run this app ninja-style (silent). \n"
+									+ "\t\t-silent\t to run this app ninja-style. \n"
 									+ "\t\t\t Beware, 500+ Mb download will leave you against blinking cursor for a while.\n"
 									+ "\t\t-log\t to let the program take some notes into '"+logFile+"' file\n"
-									+ "\t\t-d<URL>\t to start downloading from some URL other than default (homestuck.bandcamp.com)\n"
+									+ "\t\t-d<URL>\t to start downloading from some URL other than default (http://homestuck.bandcamp.com)\n"
 									+ "\t\t\t it _might_ even work, if you have some luck (how much luck? - ALL OF IT). \n"
-									+ "\t\t\t No angle brackets in actual parameter, btw.\n"
-									+ "\t\t-t<Directory>\t to define where to drop shitload if MP3s you gonna obtain,\n"
+									+ "\t\t\t No angle brackets in actual parameter btw.\n"
+									+ "\t\t-t<Directory>\t to define where to drop shitload if MP3's you gonna obtain,\n"
 									+ "\t\t\t default is right where the program is.\n"
 									+ "\n"
 									+ "HINT: if the program discovers that a file for given track already exists, \n"
@@ -60,7 +60,7 @@ public class Main {
 					if (saveTo.isFile()) {
 						saveTo = null;
 						System.out
-								.println("-t must specify a directory. Default value is used.");
+								.println("-t must specify a directory. Default value will be used.");
 					}
 					break;
 				case 'n': allowTagging = false; break;
@@ -124,16 +124,16 @@ public class Main {
 		try {
 			cache = new XMLCache(xmlFileName); 
 			logger.info( String.format(
-					"Starting to download\n from <%s>\n into <%s> with%s retagging existing files.%n",
+					"Starting to download%n from <%s>%n into <%s> with%s retagging existing files.%n",
 					baseURL, saveTo, allowTagging?"":"out"));
 			
 			PageParser topElement = PageParser.detectPage(baseURL);
-			logger.info( " -------  Survey:  -------\n");
+			logger.info( " -------  Survey:  -------%n");
 			PageParser.isUsingCache = allowFromCache;
 			topElement.acquireData(true, cache.doc); // always download root page.
 			cache.saveCache();
 			
-			logger.info( " -------  Acquisition:  -------\n");
+			logger.info( " -------  Acquisition:  -------%n");
 			topElement.saveResult(saveTo);
 			logger.info( String.format("On total: %d files saved from net (%d bytes) + %d pages viewed%n", 
 					WebDownloader.totalFileDownloadFinished, 
