@@ -30,10 +30,14 @@ public class XMLCache {
  * Loads file and parses it into org.jdom.Document
  * If document cannot be read for any reason, new empty valid one is created 
  * (the file will be created when saveCache() is called next time).
- * @param xmlFileName - file name
+ * @param xmlFileName - cache file name
+ * @throws IllegalArgumentException if file name is not valid
  */
 	public XMLCache(String xmlFileName) {
 		Logger l = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+		if (xmlFileName.isEmpty()) 
+			throw new IllegalArgumentException("Cache file name cannot be empty");
+		
 		try {
 			xmlFile = new File(xmlFileName);
 			if (xmlFile.exists()) {
@@ -41,6 +45,12 @@ public class XMLCache {
 				builder.setIgnoringBoundaryWhitespace(true);
 				builder.setIgnoringElementContentWhitespace(true);
 				doc = builder.build(xmlFile);
+			} else {
+				try {
+					xmlFile.createNewFile();
+				} catch (IOException e) {
+					throw new IllegalArgumentException(e);
+				}
 			}
 		} catch (IOException e) {
 			l.log(Level.WARNING, String.format("Error reading cache file <%s>%n", xmlFileName), e);
