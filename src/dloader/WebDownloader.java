@@ -1,3 +1,4 @@
+package dloader;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -48,14 +49,10 @@ public class WebDownloader {
 		BufferedOutputStream bos = null;
 		
 		URLConnection connection = from.openConnection();
-//		int fileLength = 0;
 		// check content type header to catch 404, 403... error responses
 		if (connection.getContentType().contains("text/")) 
 			return 0;
 		 
-//		fileLength = connection.getContentLength();
-//		totalLengthChecks++;
-
 		/* just delete zero-length files. if size is non-zero, skip it */
 		if (to.isFile() && (to.length() > 0))
 			return 0;
@@ -69,8 +66,6 @@ public class WebDownloader {
 			int numRead;
 			while ((numRead = bis.read(buff)) != -1)
 				bos.write(buff, 0, numRead);
-		} catch (FileNotFoundException e) {
-			throw e;
 		} catch (IOException e) {
 			// on actual write loop to the file;
 			to.delete();

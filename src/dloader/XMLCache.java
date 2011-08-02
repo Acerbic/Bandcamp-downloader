@@ -1,3 +1,4 @@
+package dloader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -27,7 +28,8 @@ public class XMLCache {
 	
 /**
  * Loads file and parses it into org.jdom.Document
- * If document cannot be read for any reason, new empty valid one is created.
+ * If document cannot be read for any reason, new empty valid one is created 
+ * (the file will be created when saveCache() is called next time).
  * @param xmlFileName - file name
  */
 	public XMLCache(String xmlFileName) {

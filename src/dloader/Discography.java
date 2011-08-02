@@ -1,3 +1,5 @@
+package dloader;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -5,6 +7,7 @@ import java.util.List;
 
 import org.jdom.Document;
 import org.jdom.Element;
+
 
 public class Discography extends PageParser {
 	

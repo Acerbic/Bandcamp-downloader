@@ -1,7 +1,9 @@
+package dloader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.logging.*;
+
 
 public class Main {
 	public static final String nl = System.getProperty ( "line.separator" );

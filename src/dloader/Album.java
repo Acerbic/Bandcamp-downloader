@@ -1,3 +1,4 @@
+package dloader;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -9,6 +10,7 @@ import java.util.regex.Pattern;
 
 import org.jdom.Document;
 import org.jdom.Element;
+
 
 public class Album extends PageParser {
 
