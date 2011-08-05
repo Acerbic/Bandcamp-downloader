@@ -12,7 +12,7 @@ import org.jdom.Document;
 import org.jdom.Element;
 
 
-public class Album extends PageParser {
+public class Album extends AbstractPage {
 
 	public URL coverUrl;
 	public String moreInfo; 
@@ -65,7 +65,7 @@ public class Album extends PageParser {
 	}
 
 	@Override
-	protected PageParser parseChild(Element element) throws ProblemsReadingDocumentException {
+	protected AbstractPage parseChild(Element element) throws ProblemsReadingDocumentException {
 		try {
 			trackCounter++; // that includes counting for failed parsing
 			String s = element.getAttributeValue("href");

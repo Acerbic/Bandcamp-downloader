@@ -9,7 +9,7 @@ import org.jdom.Document;
 import org.jdom.Element;
 
 
-public class Discography extends PageParser {
+public class Discography extends AbstractPage {
 	
 	private enum DiscographyListVariant { SIDEBAR, CENTRAL_INDEX };
 	/**
@@ -91,7 +91,7 @@ public class Discography extends PageParser {
 	}
 
 	@Override
-	protected PageParser parseChild(Element element) throws ProblemsReadingDocumentException  {
+	protected AbstractPage parseChild(Element element) throws ProblemsReadingDocumentException  {
 		try {
 			String s = element.getAttributeValue("href");
 			Album c = new Album(s);

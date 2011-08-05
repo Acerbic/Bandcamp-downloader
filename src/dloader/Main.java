@@ -129,9 +129,9 @@ public class Main {
 					"Starting to download%n from <%s>%n into <%s> with%s retagging existing files.%n",
 					baseURL, saveTo, allowTagging?"":"out"));
 			
-			PageParser topElement = PageParser.detectPage(baseURL);
+			AbstractPage topElement = PageProcessor.detectPage(baseURL);
 			logger.info( " -------  Survey:  -------%n");
-			PageParser.isUsingCache = allowFromCache;
+			AbstractPage.isUsingCache = allowFromCache;
 			topElement.acquireData(true, cache.doc); // always download root page.
 			cache.saveCache();
 			

@@ -20,7 +20,7 @@ import org.jdom.input.SAXBuilder;
 /**
  * Basic class to download page, parse it and download elements it references.  
  */
-public abstract class PageParser {
+public abstract class AbstractPage {
 
 	/**
 	 * Exception generated if data cannot be read from XML cache 
@@ -35,15 +35,15 @@ public abstract class PageParser {
 
 		public ProblemsReadingDocumentException() {
 			super();
-			problemDocumentURL = PageParser.this.url.toString();
+			problemDocumentURL = AbstractPage.this.url.toString();
 		}
 		public ProblemsReadingDocumentException(String s) {
 			super(s);
-			problemDocumentURL = PageParser.this.url.toString();
+			problemDocumentURL = AbstractPage.this.url.toString();
 		}
 		public ProblemsReadingDocumentException(Throwable e) {
 			super(e);
-			problemDocumentURL = PageParser.this.url.toString();
+			problemDocumentURL = AbstractPage.this.url.toString();
 		}
 	}
 	
@@ -58,11 +58,11 @@ public abstract class PageParser {
 	/**
 	 * array of a children items to this one if any (null otherwise)
 	 */
-	public PageParser[] childPages;
+	public AbstractPage[] childPages;
 	/**
 	 * reference to a parent item (may be null)
 	 */
-	public PageParser parent;
+	public AbstractPage parent;
 	/**
 	 * use caching facility?
 	 */
@@ -77,14 +77,14 @@ public abstract class PageParser {
 	 * Is called ONLY for Class.newInstance reason.
 	 * Make sure setUrl(URL url) is called right after it. 
 	 */
-	public PageParser() {}
+	public AbstractPage() {}
 
 	/**
 	 * Constructs from web address
 	 * @param stringURL - web address
 	 * @throws IllegalArgumentException if stringURL is null or bad 
 	 */
-	public PageParser(String stringURL) throws IllegalArgumentException {
+	public AbstractPage(String stringURL) throws IllegalArgumentException {
 		try {url = resolveLink(stringURL);}
 		catch (MalformedURLException e) {throw new IllegalArgumentException(e);}
 		catch (NullPointerException e) {throw new IllegalArgumentException(e);}
@@ -95,7 +95,7 @@ public abstract class PageParser {
 	 * @param _url - gets assigned by reference, not copied.
 	 * @throws IllegalArgumentException if _url == null 
 	 */
-	public PageParser(URL _url) throws IllegalArgumentException {
+	public AbstractPage(URL _url) throws IllegalArgumentException {
 		if (_url == null) throw new IllegalArgumentException();
 		url = _url;
 	}
@@ -103,7 +103,7 @@ public abstract class PageParser {
 	/** 
 	 * this is called when acquiring item fails and must be dropped or restarted.
 	 */
-	public final void acquisitionFailedHook (PageParser failedItem) {
+	public final void acquisitionFailedHook (AbstractPage failedItem) {
 		
 	}
 	
@@ -144,30 +144,6 @@ public abstract class PageParser {
 			} //skip to the next child page
 	}
 	
-	/**
-	 * Detects page type by its URL address (String)
-	 * @param baseURL - String representation of URL
-	 * @return new PageParser descendant fitting for the page
-	 * @throws IllegalArgumentException - when baseURL is bad or null
-	 */
-	public static final PageParser detectPage(String baseURL) throws IllegalArgumentException {
-		URL u;
-		try {
-			u = new URL(baseURL);
-		} catch (MalformedURLException e) {
-			throw new IllegalArgumentException(e);
-		}
-		
-		if (baseURL.contains("/track/")) 
-			return new Track(baseURL);
-		if (baseURL.contains("/album/")) 
-			return new Album(baseURL);
-		if (u.getPath().isEmpty())
-			return new Discography(baseURL);
-		
-		throw new IllegalArgumentException();
-	}
-
 	/**
 	 * Convert a string to a proper file name.
 	 * (checks for Windows prohibited chars only) 
@@ -225,7 +201,7 @@ public abstract class PageParser {
 		// discover info about children pages
 		@SuppressWarnings("unchecked")
 		List<Element> result = (List<Element>) queryXPathList(getChildNodesXPath(), doc);
-		childPages = new PageParser[result.size()]; // is it initialized to NULL?
+		childPages = new AbstractPage[result.size()]; // is it initialized to NULL?
 		for (int i = 0; i<result.size(); i++) {
 			try {
 				childPages[i] = parseChild(result.get(i));
@@ -268,7 +244,7 @@ public abstract class PageParser {
 			List<Element> l = e.getContent(new ElementFilter("childref"));
 			int size = l.size();
 			if (size>0) {
-				childPages = new PageParser[size];
+				childPages = new AbstractPage[size];
 				Iterator<Element> itr = l.listIterator();
 				for (int i=0; i<size; i++) {
 					childPages[i] = readCacheChild(itr.next());
@@ -290,7 +266,7 @@ public abstract class PageParser {
 	 * @return New child object
 	 * @throws ProblemsReadingDocumentException if child cannot be created from this Element
 	 */
-	protected abstract PageParser parseChild(Element element) throws ProblemsReadingDocumentException;
+	protected abstract AbstractPage parseChild(Element element) throws ProblemsReadingDocumentException;
 	
 	/**
 	 * Extracts more information after a download about this page
@@ -332,12 +308,12 @@ public abstract class PageParser {
 	 * @return new PageParser child node.
 	 * @throws ProblemsReadingDocumentException if anything went wrong
 	 */
-	private PageParser readCacheChild(Element childRef) throws ProblemsReadingDocumentException {
-		PageParser child = null;
+	private AbstractPage readCacheChild(Element childRef) throws ProblemsReadingDocumentException {
+		AbstractPage child = null;
 		try {
 			String u = childRef.getAttributeValue("url");
 			String c = childRef.getAttributeValue("class");
-			child = (PageParser)Class.forName(c).newInstance();
+			child = (AbstractPage)Class.forName(c).newInstance();
 			child.setUrl(u);
 		} catch (ClassNotFoundException e1) {
 			throw new ProblemsReadingDocumentException(e1);
@@ -396,7 +372,7 @@ public abstract class PageParser {
 		e.setAttribute("title", title);
 		e.setAttribute("url", url.toString());
 		if (childPages != null) 
-			for (PageParser child: childPages) 
+			for (AbstractPage child: childPages) 
 				if (child != null) {
 					Element childElement = new Element("childref");
 					childElement.setAttribute("class",child.getClass().getName());

@@ -19,7 +19,7 @@ import entagged.audioformats.exceptions.CannotWriteException;
 import entagged.audioformats.generic.TagField;
 import entagged.audioformats.mp3.util.id3frames.TextId3Frame;
 
-public class Track extends PageParser {
+public class Track extends AbstractPage {
 
 	private Map<String, String> properties = new HashMap<String,String>();
 	public String getProperty(String name) {
@@ -168,7 +168,7 @@ public class Track extends PageParser {
 	}
 	
 	@Override
-	protected PageParser parseChild(Element element)  
+	protected AbstractPage parseChild(Element element)  
 			throws ProblemsReadingDocumentException {
 		return null; // stub since no child nodes XPath and this will never be called
 	}

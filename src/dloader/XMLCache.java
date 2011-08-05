@@ -71,6 +71,8 @@ public class XMLCache {
 	 * @throws IOException - if problems occur.
 	 */
 	public void saveCache() throws IOException {
-			outputter.output(doc, new FileOutputStream(xmlFile, false));
+		FileOutputStream outStream = new FileOutputStream(xmlFile, false); 
+		outputter.output(doc, outStream);
+		outStream.close();
 	}
 }
