@@ -223,4 +223,8 @@ public class Track extends AbstractPage {
 	protected String getChildNodesXPath() {
 		return null;
 	}
+	@Override
+	public File getChildrenSaveTo(File saveTo) {
+		return null;
+	}
 }

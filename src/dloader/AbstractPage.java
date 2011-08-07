@@ -100,49 +100,49 @@ public abstract class AbstractPage {
 		url = _url;
 	}
 
-	/** 
-	 * this is called when acquiring item fails and must be dropped or restarted.
-	 */
-	public final void acquisitionFailedHook (AbstractPage failedItem) {
-		
-	}
+//	/** 
+//	 * this is called when acquiring item fails and must be dropped or restarted.
+//	 */
+//	public final void acquisitionFailedHook (AbstractPage failedItem) {
+//		
+//	}
 	
-	/**
-	 * Fills this instance with data, reading it from cache or parsing web page.
-	 * Then repeats process for children pages
-	 * @param forceDownload - true if you want ignore cache on this one, all child nodes checks are
-	 * controlled with <b>isUsingCache</b> flag
-	 * @param doc - XML document storing cache on pages data.  
-	 * @throws ProblemsReadingDocumentException if failed. (generally it means that web server did not respond right)
-	 */
-	public final void acquireData(boolean forceDownload, org.jdom.Document doc) throws ProblemsReadingDocumentException {
-		assert (url != null);
-		logger.info( String.format("(%s) Starting aquisition of %s ... %n", 
-				this.getClass().getName(), url.toString()));
-		
-		boolean isLoaded = false;
-		if (!forceDownload && isUsingCache)
-			isLoaded = loadFromCache(doc);
-		if (!isLoaded) {  
-			downloadPage();
-			saveToCache(doc);
-		}
-		
-		if (childPages == null) {
-			logger.info(String.format("Reading of %s is done. %n", url.toString()));
-			return;
-		}
-
-		logger.info( String.format("Reading of %s done. Children: %d%n", childPages.length));
-		for (int i = 0; i < childPages.length; i++) 
-			try {
-				childPages[i].acquireData(false, doc);
-			} catch (ProblemsReadingDocumentException e) {
-				acquisitionFailedHook(childPages[i]);
-				childPages[i] = null;
-				logger.log(Level.WARNING, "", e);
-			} //skip to the next child page
-	}
+//	/**
+//	 * Fills this instance with data, reading it from cache or parsing web page.
+//	 * Then repeats process for children pages
+//	 * @param forceDownload - true if you want ignore cache on this one, all child nodes checks are
+//	 * controlled with <b>isUsingCache</b> flag
+//	 * @param doc - XML document storing cache on pages data.  
+//	 * @throws ProblemsReadingDocumentException if failed. (generally it means that web server did not respond right)
+//	 */
+//	public final void acquireData(boolean forceDownload, org.jdom.Document doc) throws ProblemsReadingDocumentException {
+//		assert (url != null);
+//		logger.info( String.format("(%s) Starting aquisition of %s ... %n", 
+//				this.getClass().getName(), url.toString()));
+//		
+//		boolean isLoaded = false;
+//		if (!forceDownload && isUsingCache)
+//			isLoaded = loadFromCache(doc);
+//		if (!isLoaded) {  
+//			downloadPage();
+//			saveToCache(doc);
+//		}
+//		
+//		if (childPages == null) {
+//			logger.info(String.format("Reading of %s is done. %n", url.toString()));
+//			return;
+//		}
+//
+//		logger.info( String.format("Reading of %s done. Children: %d%n", childPages.length));
+//		for (int i = 0; i < childPages.length; i++) 
+//			try {
+//				childPages[i].acquireData(false, doc);
+//			} catch (ProblemsReadingDocumentException e) {
+//				acquisitionFailedHook(childPages[i]);
+//				childPages[i] = null;
+//				logger.log(Level.WARNING, "", e);
+//			} //skip to the next child page
+//	}
 	
 	/**
 	 * Convert a string to a proper file name.
@@ -183,7 +183,7 @@ public abstract class AbstractPage {
 	 * Downloads the page and creates child nodes.
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
-	private void downloadPage() throws ProblemsReadingDocumentException {
+	void downloadPage() throws ProblemsReadingDocumentException {
 		logger.log(Level.FINE, String.format("\t Reading %s from network%n", url.toString()));
 		
 		org.jdom.Document doc = null;
@@ -230,7 +230,7 @@ public abstract class AbstractPage {
 	 * @param doc - JDOM Document to load from 
 	 * @return true if data acquired successfully, false otherwise
 	 */
-	private boolean loadFromCache (org.jdom.Document doc) {
+	boolean loadFromCache (org.jdom.Document doc) {
 		if (doc == null) return false;
 		
 		logger.log(Level.FINE, String.format("\t Reading %s from cache%n",url.toString()));
@@ -360,7 +360,7 @@ public abstract class AbstractPage {
 	 * Only references to child pages are saved, not the pages data.
 	 * @param doc - JDOM Document holding a cache to save to
 	 */
-	private void saveToCache (org.jdom.Document doc) {
+	void saveToCache (org.jdom.Document doc) {
 		assert (doc != null);
 		
 		// absolutely required fields
@@ -421,4 +421,11 @@ public abstract class AbstractPage {
 	private void setUrl(String s) throws MalformedURLException {
 		url = resolveLink(s);
 	}
+
+	/**
+	 * Generate new saving path for the children of this page from its own saveTo and page data
+	 * @return saving path for the children pages or null if no children expected
+	 * @throws IOException if valid filename cannot be created
+	 */
+	abstract public File getChildrenSaveTo(File saveTo) throws IOException;
 }

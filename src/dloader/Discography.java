@@ -55,17 +55,17 @@ public class Discography extends AbstractPage {
 				return;
 			}
 		logger.info( String.format("Discography: %s%n", title));
-		if (childPages != null) {
-			logger.info( String.format("Saving albums (%d):%n",
-					childPages.length));
-			for (int i = 0; i < childPages.length; i++) {
-				logger.info( String.format("\t%d. ", i + 1));
-				if (childPages[i] != null)
-					childPages[i].saveResult(f);
-				else
-					logger.info( "--- don't exist! --- \n");
-			}
-		}
+//		if (childPages != null) {
+//			logger.info( String.format("Saving albums (%d):%n",
+//					childPages.length));
+//			for (int i = 0; i < childPages.length; i++) {
+//				logger.info( String.format("\t%d. ", i + 1));
+//				if (childPages[i] != null)
+//					childPages[i].saveResult(f);
+//				else
+//					logger.info( "--- don't exist! --- \n");
+//			}
+//		}
 
 	}
 
@@ -102,6 +102,11 @@ public class Discography extends AbstractPage {
 		} catch (IllegalArgumentException e) {
 			throw new ProblemsReadingDocumentException (e);
 		}
+	}
+
+	@Override
+	public File getChildrenSaveTo(File saveTo) throws IOException {
+		return new File(saveTo, getFSSafeName(title));
 	}
 
 }

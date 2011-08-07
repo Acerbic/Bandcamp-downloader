@@ -35,15 +35,15 @@ public class Album extends AbstractPage {
 			}
 		logger.info( String.format("(album) \"%s\": %s%n", title, url.toString()));
 		WebDownloader.fetchWebFile(coverUrl, new File(f, "cover.jpg"));
-		if (childPages != null) {
-			logger.info( String.format("\t Downloading tracks (%d):%n",
-					childPages.length));
-			for (int i = 0; i < childPages.length; i++) 
-				if (childPages[i] != null) {
-					logger.info( String.format("\t\t%d. ", i + 1));
-					childPages[i].saveResult(f);
-				}
-		}
+//		if (childPages != null) {
+//			logger.info( String.format("\t Downloading tracks (%d):%n",
+//					childPages.length));
+//			for (int i = 0; i < childPages.length; i++) 
+//				if (childPages[i] != null) {
+//					logger.info( String.format("\t\t%d. ", i + 1));
+//					childPages[i].saveResult(f);
+//				}
+//		}
 	}
 
 	@Override
@@ -107,6 +107,11 @@ public class Album extends AbstractPage {
 	@Override
 	protected String getChildNodesXPath() {
 		return "//pre:table[@id='track_table']//pre:td/pre:div[@class='title']//pre:a";
+	}
+
+	@Override
+	public File getChildrenSaveTo(File saveTo) throws IOException {
+		return new File(saveTo, getFSSafeName(title));
 	}
 
 }

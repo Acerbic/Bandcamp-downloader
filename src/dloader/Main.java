@@ -20,7 +20,7 @@ public class Main {
 	public static File saveTo = new File((new File("")).getAbsolutePath()); 
 
 	public static Logger logger;
-	public static XMLCache cache;
+//	public static XMLCache cache;
 	
 	private static void parseCommandLine(String[] args) {
 		for (String s : args) {
@@ -124,19 +124,19 @@ public class Main {
 		parseCommandLine(args);
 		initLogger(); // --> logger
 		try {
-			cache = new XMLCache(xmlFileName); 
+//			cache = new XMLCache(xmlFileName); 
 			logger.info( String.format(
 					"Starting to download%n from <%s>%n into <%s> with%s retagging existing files.%n",
 					baseURL, saveTo, allowTagging?"":"out"));
 			
-			AbstractPage topElement = PageProcessor.detectPage(baseURL);
+			PageProcessor.initCache(xmlFileName);
+			PageProcessor pp = new PageProcessor(saveTo, baseURL, allowFromCache);
 			logger.info( " -------  Survey:  -------%n");
 			AbstractPage.isUsingCache = allowFromCache;
-			topElement.acquireData(true, cache.doc); // always download root page.
-			cache.saveCache();
+			pp.acquireData();
+			PageProcessor.saveCache();
 			
 			logger.info( " -------  Acquisition:  -------%n");
-			topElement.saveResult(saveTo);
 			logger.info( String.format("On total: %d files saved from net (%d bytes) + %d pages viewed%n", 
 					WebDownloader.totalFileDownloadFinished, 
 					WebDownloader.totalBytesDownloaded,
