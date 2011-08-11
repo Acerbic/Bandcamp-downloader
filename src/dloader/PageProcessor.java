@@ -62,6 +62,9 @@ public class PageProcessor {
 		cache.saveCache();
 	}	
 	
+	static void addJob (PageJob j) {
+		jobQ.add(j);
+	}
 	static void addJob (File saveTo, AbstractPage page, PageJob.JobStatusEnum status) {
 		PageJob j = new PageJob();
 		j.page = page; j.saveTo = saveTo; j.status = status;
@@ -101,38 +104,41 @@ public class PageProcessor {
 	 * @throws ProblemsReadingDocumentException if failed. (generally it means that web server did not respond right)
 	 */
 	void acquireData() throws ProblemsReadingDocumentException, IOException {
-		while (!jobQ.isEmpty()) { //TODO convert this into parallel tasks		
-			PageJob job = jobQ.remove();
-			switch (job.status) {
-				case RECON_PAGE: 
-					boolean isLoaded = false;
-					if (isReadingCache && cache != null) 
-						isLoaded = job.page.loadFromCache(cache.doc);
-					if (isLoaded)
-						addJob (job.saveTo, job.page, PageJob.JobStatusEnum.ADD_CHILDREN_JOBS);
-					else addJob (job.saveTo, job.page, PageJob.JobStatusEnum.DOWNLOAD_PAGE);
-					break;
-				case DOWNLOAD_PAGE:
-					job.page.downloadPage();
-					job.page.saveToCache(cache.doc);
-					addJob (job.saveTo, job.page, PageJob.JobStatusEnum.ADD_CHILDREN_JOBS);
-					break;
-				case ADD_CHILDREN_JOBS: 
-					for (int i = 0; i < job.page.childPages.length; i++) {
-						AbstractPage child = job.page.childPages[i];
-						File childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
-						addJob(childrenSaveTo, child, PageJob.JobStatusEnum.RECON_PAGE);
-					}
-					break;
-				case SAVE_RESULTS:
-					try {
-						job.page.saveResult(job.saveTo);
-					} catch (IOException e) {
-						// LOG
-						e.printStackTrace();
-					}
-			}
+		while (!jobQ.isEmpty()) { //TODO convert this into parallel tasks
+			processOnePage();
 		}
 		
-	}	
+	}
+	
+	void processOnePage() throws ProblemsReadingDocumentException, IOException {
+		
+		PageJob job = jobQ.remove();
+		switch (job.status) {
+			case RECON_PAGE: 
+				boolean isLoaded = false;
+				if (isReadingCache && cache != null) 
+					isLoaded = job.page.loadFromCache(cache.doc);
+				if (isLoaded)
+					job.status = PageJob.JobStatusEnum.ADD_CHILDREN_JOBS;
+				else job.status = PageJob.JobStatusEnum.DOWNLOAD_PAGE;
+				addJob(job); job = null;
+				break;
+			case DOWNLOAD_PAGE:
+				job.page.downloadPage();
+				job.page.saveToCache(cache.doc);
+				job.status = PageJob.JobStatusEnum.ADD_CHILDREN_JOBS;
+				addJob (job);
+				break;
+			case ADD_CHILDREN_JOBS: 
+				for (int i = 0; i < job.page.childPages.length; i++) {
+					AbstractPage child = job.page.childPages[i];
+					File childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
+					addJob(childrenSaveTo, child, PageJob.JobStatusEnum.RECON_PAGE);
+				}
+				break;
+			case SAVE_RESULTS:
+				job.page.saveResult(job.saveTo);
+				break;
+		}
+	}
 }

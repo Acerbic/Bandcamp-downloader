@@ -308,12 +308,12 @@ public abstract class AbstractPage {
 	 * @return new PageParser child node.
 	 * @throws ProblemsReadingDocumentException if anything went wrong
 	 */
-	private AbstractPage readCacheChild(Element childRef) throws ProblemsReadingDocumentException {
+	AbstractPage readCacheChild(Element childRef) throws ProblemsReadingDocumentException {
 		AbstractPage child = null;
 		try {
 			String u = childRef.getAttributeValue("url");
 			String c = childRef.getAttributeValue("class");
-			child = (AbstractPage)Class.forName(c).newInstance();
+			child = (AbstractPage)Class.forName("dloader."+c).newInstance();
 			child.setUrl(u);
 		} catch (ClassNotFoundException e1) {
 			throw new ProblemsReadingDocumentException(e1);
@@ -375,7 +375,7 @@ public abstract class AbstractPage {
 			for (AbstractPage child: childPages) 
 				if (child != null) {
 					Element childElement = new Element("childref");
-					childElement.setAttribute("class",child.getClass().getName());
+					childElement.setAttribute("class",child.getClass().getSimpleName());
 					childElement.setAttribute("url",child.url.toString());
 					e.addContent(childElement);
 				}
@@ -406,9 +406,9 @@ public abstract class AbstractPage {
 	 * Scans XML tree to find the 1st Element eligible to read from
 	 * @return found Element or null
 	 */
-	private Element scanXMLForThisElement(org.jdom.Document doc) {
+	Element scanXMLForThisElement(org.jdom.Document doc) {
 		assert (doc != null); assert (url != null);
-		String searchXPath = String.format("//%s[@url='%s']",getClass().getName(),url.toString());
+		String searchXPath = String.format("//%s[@url='%s']",getClass().getSimpleName(),url.toString());
 		List<?> result = queryXPathList(searchXPath, doc);
 		
 		return result.size()>0?(Element)result.get(0):null;
@@ -418,7 +418,7 @@ public abstract class AbstractPage {
 	 * @param s - URL String to initialize from
 	 * @throws MalformedURLException if s is bad or null
 	 */
-	private void setUrl(String s) throws MalformedURLException {
+	void setUrl(String s) throws MalformedURLException {
 		url = resolveLink(s);
 	}
 
