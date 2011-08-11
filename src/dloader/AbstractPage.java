@@ -56,7 +56,7 @@ public abstract class AbstractPage {
 	 */
 	public URL url;
 	/**
-	 * array of a children items to this one if any (null otherwise)
+	 * array of a children items to this one (can be of size zero)
 	 */
 	public AbstractPage[] childPages;
 	/**
@@ -201,7 +201,7 @@ public abstract class AbstractPage {
 		// discover info about children pages
 		@SuppressWarnings("unchecked")
 		List<Element> result = (List<Element>) queryXPathList(getChildNodesXPath(), doc);
-		childPages = new AbstractPage[result.size()]; // is it initialized to NULL?
+		childPages = new AbstractPage[result.size()]; // might be initialized to zero-sized array
 		for (int i = 0; i<result.size(); i++) {
 			try {
 				childPages[i] = parseChild(result.get(i));
@@ -291,6 +291,7 @@ public abstract class AbstractPage {
 	 * @return List of found matches, may be of zero size if nothing is found
 	 */
 	protected final List<?> queryXPathList(String q, Element doc) {
+		if (q == null) return new ArrayList<Object>(0);
 		try {
 			String nsURI = doc.getNamespaceURI();
 			XPath xpath = new JDOMXPath(q);
@@ -299,7 +300,7 @@ public abstract class AbstractPage {
 		} catch (JaxenException e) {
 			logger.log(Level.SEVERE,"",e);
 			return new ArrayList<Object>(0);
-		}
+		} 
 	}
 	
 	/**
@@ -345,6 +346,8 @@ public abstract class AbstractPage {
 	 * @throws MalformedURLException 
 	 */
 	protected final URL resolveLink(String link) throws MalformedURLException {
+		if (!link.contains("://"))
+			link = "http://"+link; // default protocol 
 		return new URL(url, link);
 	}
 

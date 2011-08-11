@@ -110,6 +110,9 @@ public class PageProcessor {
 		
 	}
 	
+	/**
+	 * Gets one page from the top of a q, reads it from cache or downloads and parses web page.
+	 */
 	void processOnePage() throws ProblemsReadingDocumentException, IOException {
 		
 		PageJob job = jobQ.remove();
@@ -130,11 +133,12 @@ public class PageProcessor {
 				addJob (job);
 				break;
 			case ADD_CHILDREN_JOBS: 
-				for (int i = 0; i < job.page.childPages.length; i++) {
-					AbstractPage child = job.page.childPages[i];
-					File childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
-					addJob(childrenSaveTo, child, PageJob.JobStatusEnum.RECON_PAGE);
-				}
+				if (job.page.childPages != null)
+					for (int i = 0; i < job.page.childPages.length; i++) {
+						AbstractPage child = job.page.childPages[i];
+						File childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
+						addJob(childrenSaveTo, child, PageJob.JobStatusEnum.RECON_PAGE);
+					}
 				break;
 			case SAVE_RESULTS:
 				job.page.saveResult(job.saveTo);
