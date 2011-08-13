@@ -385,21 +385,13 @@ public abstract class AbstractPage {
 		//2. Drop old elements with the same URL
 		Element root = doc.getRootElement();
 		
-		// TODO needs testing
 		@SuppressWarnings("unchecked")
 		List<Element> oldCachedElements = (List<Element>) queryXPathList(
-				String.format("//pre:%s[@url='%s']",e.getName(),url.toString()), 
+//				String.format("//pre:%s[@url='%s']",e.getName(),url.toString()), 
+				String.format("//%s[@url='%s']",e.getName(),url.toString()), 
 				doc);
 		for (Element current: oldCachedElements) 
 			current.detach();
-		
-		
-//		Iterator<?> itr = root.getDescendants(new ElementFilter(e.getName()));
-//		while (itr.hasNext()) {
-//			Element current = (Element) itr.next();
-//			if (current.getAttributeValue("url").equals(url.toString()))
-//				itr.remove();
-//		}
 
 		//3. Add this element to cache
 		root.addContent(e);

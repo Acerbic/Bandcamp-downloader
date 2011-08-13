@@ -48,6 +48,7 @@ public class XMLCache {
 			} else {
 				try {
 					xmlFile.createNewFile();
+					xmlFile.delete();
 				} catch (IOException e) {
 					throw new IllegalArgumentException(e);
 				}

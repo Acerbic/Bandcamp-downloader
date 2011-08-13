@@ -114,13 +114,56 @@ public class AbstractPageTest {
 	}
 	
 	@Test
-	public void testSaveToCache() {
-		fail("Not yet implemented"); // TODO
+	public void testSaveToCacheFailsOnBadPage() {
+		AbstractPage p = PageProcessor.detectPage("http://noctura.bandcamp.com/album/demos");
+		
+		XMLCache cacheNew = new XMLCache("test/new_cache.xml");
+		// p.title should be null by now.
+		assertNull (p.title);
+		Document old_doc = (Document) cacheNew.doc.clone();
+		p.saveToCache(cacheNew.doc);
+		assertEquals(old_doc.getDocType(), cacheNew.doc.getDocType());
+		assertEquals(old_doc.getRootElement().getText(), cacheNew.doc.getRootElement().getText());
+		
+		p.title = "Title";
+		p.url = null;
+		p.saveToCache(cacheNew.doc);
+		assertEquals(old_doc.getDocType(), cacheNew.doc.getDocType());
+		assertEquals(old_doc.getRootElement().getText(), cacheNew.doc.getRootElement().getText());
+	}
+	
+	@Test
+	public void testSaveToCacheFailsIfGetSpecificDataXMLReturnsNull() {
+		AbstractPage p = new AbstractPageDummy("http://noctura.bandcamp.com/album/demos");
+		XMLCache cacheNew = new XMLCache("test/new_cache.xml");
+		Document old_doc = (Document) cacheNew.doc.clone();
+		
+		p.saveToCache(cacheNew.doc);
+		assertEquals(old_doc.getDocType(), cacheNew.doc.getDocType());
+		assertEquals(old_doc.getRootElement().getText(), cacheNew.doc.getRootElement().getText());
 	}
 
 	@Test
-	public void testScanXMLForThisElement() {
-		fail("Not yet implemented"); // TODO
+	public void testSaveToCacheSuccessAtNewFile() {
+		AbstractPage p = PageProcessor.detectPage("http://noctura.bandcamp.com/album/demos");
+		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
+		assertEquals(true, p.loadFromCache(cache.doc));
+		XMLCache cacheNew = new XMLCache("test/new_cache.xml");
+		p.saveToCache(cacheNew.doc);
+		
+		Element r = cacheNew.doc.getRootElement();
+		assertEquals(1, r.getContentSize());
+		Element e = (Element) r.getContent(0);
+		assertEquals("Album",e.getName());
+		assertEquals(7, e.getContentSize());
+		r.addContent((Element)e.clone());
+		r.addContent((Element)e.clone());
+		p.saveToCache(cacheNew.doc);
+		
+		assertEquals(1, r.getContentSize());
+		e = (Element) r.getContent(0);
+		assertEquals("Album",e.getName());
+		assertEquals(7, e.getContentSize());
 	}
-
+	
 }
