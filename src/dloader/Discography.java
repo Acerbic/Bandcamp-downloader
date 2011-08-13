@@ -2,12 +2,12 @@ package dloader;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
 import org.jdom.Document;
 import org.jdom.Element;
-
 
 public class Discography extends AbstractPage {
 	
@@ -93,14 +93,16 @@ public class Discography extends AbstractPage {
 	@Override
 	protected AbstractPage parseChild(Element element) throws ProblemsReadingDocumentException  {
 		try {
-			String s = element.getAttributeValue("href");
-			Album c = new Album(s);
+			URL u = resolveLink(element.getAttributeValue("href"));
+			Album c = new Album(u);
 			c.title = element.getText();
 			return c;
 		} catch (NullPointerException e) {
 			throw new ProblemsReadingDocumentException (e);
 		} catch (IllegalArgumentException e) {
 			throw new ProblemsReadingDocumentException (e);
+		} catch (MalformedURLException e) {
+			throw new ProblemsReadingDocumentException(e);
 		}
 	}
 

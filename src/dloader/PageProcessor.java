@@ -5,7 +5,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedList;
-import java.util.Queue;
+import java.util.List;
+import java.util.logging.Logger;
 
 import dloader.AbstractPage.ProblemsReadingDocumentException;
 
@@ -23,8 +24,9 @@ public class PageProcessor {
 		File saveTo;
 	}
 	
-	static Queue<PageJob> jobQ;
+	static List<PageJob> jobQ;
 	static XMLCache cache;
+	static Logger logger;
 	
 	/**
 	 *  true if this instance reads and writes to cache. 
@@ -36,7 +38,7 @@ public class PageProcessor {
 		jobQ = new LinkedList<PageJob>();
 	}
 	
-	Queue<PageJob> getJobQ() {
+	List<PageJob> getJobQ() {
 		return jobQ;
 	}
 
@@ -58,17 +60,21 @@ public class PageProcessor {
 		cache = new XMLCache(filename);
 	}
 	
+	static void initLogger(Logger l) {
+		logger = l;
+	}
+	
 	static void saveCache () throws IOException {
 		cache.saveCache();
 	}	
 	
 	static void addJob (PageJob j) {
-		jobQ.add(j);
+		jobQ.add(0,j);
 	}
 	static void addJob (File saveTo, AbstractPage page, PageJob.JobStatusEnum status) {
 		PageJob j = new PageJob();
 		j.page = page; j.saveTo = saveTo; j.status = status;
-		jobQ.add(j);
+		jobQ.add(0,j);
 	}
 	
 	/**
@@ -105,31 +111,50 @@ public class PageProcessor {
 	 */
 	void acquireData() throws ProblemsReadingDocumentException, IOException {
 		while (!jobQ.isEmpty()) { //TODO convert this into parallel tasks
-			processOnePage();
+			PageJob job = jobQ.remove(0); 
+			processOnePage(job);
 		}
 		
+	}
+	
+	void logAcquisition(String method, AbstractPage p) {
+		String log_message = String.format("%s (%s): <%s>%s%n",
+				p.getClass().getSimpleName(),
+				method,
+				p.url.toString(),
+				(p.childPages!=null && p.childPages.length>0)?
+					String.format(" [%s] children", p.childPages.length): "");
+		while (p.parent != null) {
+			log_message = "\t"+log_message;
+			p = p.parent;
+		}
+		logger.info(log_message);
 	}
 	
 	/**
 	 * Gets one page from the top of a q, reads it from cache or downloads and parses web page.
 	 */
-	void processOnePage() throws ProblemsReadingDocumentException, IOException {
-		
-		PageJob job = jobQ.remove();
+	void processOnePage(PageJob job) throws ProblemsReadingDocumentException, IOException {
+		AbstractPage p = job.page;
 		switch (job.status) {
 			case RECON_PAGE: 
 				boolean isLoaded = false;
 				if (isReadingCache && cache != null) 
-					isLoaded = job.page.loadFromCache(cache.doc);
-				if (isLoaded)
+					isLoaded = p.loadFromCache(cache.doc);
+				if (isLoaded) {
 					job.status = PageJob.JobStatusEnum.ADD_CHILDREN_JOBS;
+					logAcquisition("cache", p);
+				}
 				else job.status = PageJob.JobStatusEnum.DOWNLOAD_PAGE;
 				addJob(job); job = null;
 				break;
 			case DOWNLOAD_PAGE:
-				job.page.downloadPage();
-				job.page.saveToCache(cache.doc);
+				p.downloadPage();
+				WebDownloader.totalPageDownloadFinished++;
+				
+				p.saveToCache(cache.doc);
 				job.status = PageJob.JobStatusEnum.ADD_CHILDREN_JOBS;
+				logAcquisition("download", p);
 				addJob (job);
 				break;
 			case ADD_CHILDREN_JOBS: 
@@ -139,6 +164,8 @@ public class PageProcessor {
 						File childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
 						addJob(childrenSaveTo, child, PageJob.JobStatusEnum.RECON_PAGE);
 					}
+				job.status = PageJob.JobStatusEnum.SAVE_RESULTS;
+//				addJob(job);
 				break;
 			case SAVE_RESULTS:
 				job.page.saveResult(job.saveTo);

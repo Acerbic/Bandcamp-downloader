@@ -4,8 +4,6 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.NoSuchElementException;
-
 import org.jdom.Document;
 import org.junit.After;
 import org.junit.Before;
@@ -47,9 +45,9 @@ public class PageProcessorTest {
 		PageProcessor.detectPage("http://sadasd132.com/bonk?");
 	}
 
-	@Test (expected = NoSuchElementException.class)
+	@Test (expected = IndexOutOfBoundsException.class)
 	public void testProcessOnePageFailOnEmpty() throws ProblemsReadingDocumentException, IOException {
-		mockPP_useCache.processOnePage();
+		mockPP_useCache.processOnePage(PageProcessor.jobQ.remove(0));
 	}
 	
 	@Test
@@ -59,16 +57,16 @@ public class PageProcessorTest {
 
 		// not using cache
 		PageProcessor.addJob(new File("test/download_zone"), page, JobStatusEnum.RECON_PAGE);
-		mockPP_noCache.processOnePage();
+		mockPP_noCache.processOnePage(PageProcessor.jobQ.remove(0));
 		assertEquals(1, PageProcessor.jobQ.size());
-		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, PageProcessor.jobQ.peek().status);
+		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, PageProcessor.jobQ.remove(0).status);
 		PageProcessor.jobQ.clear();
 		
 		// cache is not initiated
 		PageProcessor.addJob(new File("test/download_zone"), page, JobStatusEnum.RECON_PAGE);
-		mockPP_useCache.processOnePage();
+		mockPP_useCache.processOnePage(PageProcessor.jobQ.remove(0));
 		assertEquals(1, PageProcessor.jobQ.size());
-		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, PageProcessor.jobQ.peek().status);
+		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, PageProcessor.jobQ.remove(0).status);
 		PageProcessor.jobQ.clear();
 		
 	}
@@ -78,9 +76,9 @@ public class PageProcessorTest {
 		AbstractPage page = PageProcessor.detectPage("http://homestuck.bandcamp.com");
 		PageProcessor.addJob(new File("test/download_zone"), page, JobStatusEnum.RECON_PAGE);
 		PageProcessor.initCache("test/pages_scan_cache.xml");
-		mockPP_useCache.processOnePage();
+		mockPP_useCache.processOnePage(PageProcessor.jobQ.remove(0));
 		assertEquals(1, PageProcessor.jobQ.size());
-		PageProcessor.PageJob job = PageProcessor.jobQ.poll();
+		PageProcessor.PageJob job = PageProcessor.jobQ.remove(0);
 		assertEquals(JobStatusEnum.ADD_CHILDREN_JOBS, job.status);
 		assertEquals("Homestuck", job.page.title);
 	}
@@ -102,9 +100,9 @@ public class PageProcessorTest {
 		AbstractPage page = new DummyPage("http://homestuck.bandcamp.com");
 		PageProcessor.addJob(new File("test/download_zone"), page, JobStatusEnum.RECON_PAGE);
 		PageProcessor.initCache("test/pages_scan_cache.xml");
-		mockPP_useCache.processOnePage();
+		mockPP_useCache.processOnePage(PageProcessor.jobQ.remove(0));
 		assertEquals(1, PageProcessor.jobQ.size());
-		PageProcessor.PageJob job = PageProcessor.jobQ.poll();
+		PageProcessor.PageJob job = PageProcessor.jobQ.remove(0);
 		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, job.status);
 		assertEquals("Cache failed", job.page.title);
 	}

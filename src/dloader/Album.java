@@ -68,14 +68,16 @@ public class Album extends AbstractPage {
 	protected AbstractPage parseChild(Element element) throws ProblemsReadingDocumentException {
 		try {
 			trackCounter++; // that includes counting for failed parsing
-			String s = element.getAttributeValue("href");
-			Track t = new Track(s);
+			URL u = resolveLink(element.getAttributeValue("href"));
+			Track t = new Track(u);
 			t.title = element.getText();
 			t.setProperty("track", String.valueOf(trackCounter));
 			return t;
 		} catch (IllegalArgumentException e) {
 			throw new ProblemsReadingDocumentException(e);
 		} catch (NullPointerException e) {
+			throw new ProblemsReadingDocumentException(e);
+		} catch (MalformedURLException e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
 	}

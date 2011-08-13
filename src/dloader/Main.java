@@ -124,19 +124,17 @@ public class Main {
 		parseCommandLine(args);
 		initLogger(); // --> logger
 		try {
-//			cache = new XMLCache(xmlFileName); 
 			logger.info( String.format(
 					"Starting to download%n from <%s>%n into <%s> with%s retagging existing files.%n",
 					baseURL, saveTo, allowTagging?"":"out"));
 			
 			PageProcessor.initCache(xmlFileName);
+			PageProcessor.initLogger(logger);
 			PageProcessor pp = new PageProcessor(saveTo, baseURL, allowFromCache);
-			logger.info( " -------  Survey:  -------%n");
 			AbstractPage.isUsingCache = allowFromCache;
 			pp.acquireData();
 			PageProcessor.saveCache();
 			
-			logger.info( " -------  Acquisition:  -------%n");
 			logger.info( String.format("On total: %d files saved from net (%d bytes) + %d pages viewed%n", 
 					WebDownloader.totalFileDownloadFinished, 
 					WebDownloader.totalBytesDownloaded,

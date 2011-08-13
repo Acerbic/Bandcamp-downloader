@@ -184,7 +184,7 @@ public abstract class AbstractPage {
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
 	void downloadPage() throws ProblemsReadingDocumentException {
-		logger.log(Level.FINE, String.format("\t Reading %s from network%n", url.toString()));
+		logger.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
 		
 		org.jdom.Document doc = null;
 		try {
@@ -193,7 +193,6 @@ public abstract class AbstractPage {
 		} catch (Throwable e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
-		WebDownloader.totalPageDownloadFinished++;
 
 		// discover info about this page
 		parseSelf(doc);  
@@ -210,6 +209,7 @@ public abstract class AbstractPage {
 				logger.log(Level.WARNING, "unable to parse child data", e);
 			} // skip this child to next one
 		}
+		logger.log(Level.FINE, String.format("\t... finished downloading %s.%n", url.toString()));
 	}
 
 	/**
@@ -233,7 +233,7 @@ public abstract class AbstractPage {
 	boolean loadFromCache (org.jdom.Document doc) {
 		if (doc == null) return false;
 		
-		logger.log(Level.FINE, String.format("\t Reading %s from cache%n",url.toString()));
+		logger.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
 		try {
 			Element e = scanXMLForThisElement(doc);
 			if (null == e) return false;
@@ -251,6 +251,7 @@ public abstract class AbstractPage {
 					childPages[i].parent = this; 
 				}
 			}
+			logger.log(Level.FINE, String.format("\t...Finished reading %s.%n",url.toString()));
 			return true;
 		} catch (ProblemsReadingDocumentException e) {
 			// If ANY problem, quit with a fail code
@@ -346,9 +347,13 @@ public abstract class AbstractPage {
 	 * @throws MalformedURLException 
 	 */
 	protected final URL resolveLink(String link) throws MalformedURLException {
-		if (!link.contains("://"))
-			link = "http://"+link; // default protocol 
-		return new URL(url, link);
+		try {
+			return new URL(url, link);
+		} catch (MalformedURLException e) {
+			if (!link.contains("://"))
+				link = "http://"+link; // default protocol 
+			return new URL(url, link);
+		}
 	}
 
 	/**
