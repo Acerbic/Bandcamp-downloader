@@ -9,18 +9,7 @@ import java.net.URLConnection;
  */
 public class WebDownloader {
 	
-//	public final static int MAX_LENGTH_CHECKS = 5;
-	public static int lastCheckWebLength = 0;
-	public static URL lastCheckWebURL = null;
-
-	/* statistics section */
-	public static int totalLengthChecks = 0;
-	public static int totalFileDownloadAttempts = 0;
-	public static int totalFileDownloadFinished = 0;
-	public static int totalPageDownloadFinished = 0;
-	public static long totalBytesDownloaded = 0;
-	
-	/**
+/**
 	 * Downloads and saves a resource by given string address (URL).
 	 * @param from - resource url address
 	 * @param to - File to save to.
@@ -44,7 +33,7 @@ public class WebDownloader {
 	 * @throws IOException on other stream problems
 	 */
 	public static long fetchWebFile(URL from, File to) throws FileNotFoundException, IOException {
-		totalFileDownloadAttempts++;
+		StatisticGatherer.totalFileDownloadAttempts++;
 		BufferedInputStream bis = null;
 		BufferedOutputStream bos = null;
 		
@@ -74,8 +63,8 @@ public class WebDownloader {
 			if (bis != null) bis.close();
 			if (bos != null) bos.close();
 		}
-		totalFileDownloadFinished++;
-		totalBytesDownloaded += to.length();
+		StatisticGatherer.totalFileDownloadFinished++;
+		StatisticGatherer.totalBytesDownloaded += to.length();
 		return to.length();
 	}
 

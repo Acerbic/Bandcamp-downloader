@@ -154,8 +154,8 @@ public class Track extends AbstractPage {
 			
 			
 			if (updateMP3Tag) {
-				statusReport = "updated";
 				theFile.commit();
+				statusReport = "updated";
 			}
 			
 		} catch (CannotReadException e) {

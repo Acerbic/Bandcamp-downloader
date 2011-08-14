@@ -136,9 +136,9 @@ public class Main {
 			PageProcessor.saveCache();
 			
 			logger.info( String.format("On total: %d files saved from net (%d bytes) + %d pages viewed%n", 
-					WebDownloader.totalFileDownloadFinished, 
-					WebDownloader.totalBytesDownloaded,
-					WebDownloader.totalPageDownloadFinished 
+					StatisticGatherer.totalFileDownloadFinished, 
+					StatisticGatherer.totalBytesDownloaded,
+					StatisticGatherer.totalPageDownloadFinished 
 					));
 		} catch (Throwable e) {
 			logger.log(Level.SEVERE, "", e); 

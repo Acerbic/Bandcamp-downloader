@@ -167,7 +167,7 @@ public class PageProcessor {
 				break;
 			case DOWNLOAD_PAGE:
 				p.downloadPage();
-				WebDownloader.totalPageDownloadFinished++;
+				StatisticGatherer.totalPageDownloadFinished++;
 				
 				p.saveToCache(cache.doc);
 				job.status = PageJob.JobStatusEnum.ADD_CHILDREN_JOBS;

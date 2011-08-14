@@ -81,7 +81,7 @@ public class Album extends AbstractPage {
 			try {
 				coverUrl = resolveLink((imgList.get(0)).getAttributeValue("src"));
 			} catch (MalformedURLException e) {
-				logger.log(Level.WARNING, "--no album art--", e);
+				logger.log(Level.WARNING, String.format("can't get album art for <%s>", url.toString()), e);
 			}
 		}
 		
