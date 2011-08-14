@@ -117,13 +117,28 @@ public class PageProcessor {
 		
 	}
 	
-	void logAcquisition(String method, AbstractPage p) {
+	void logInfoSurvey(String method, AbstractPage p) {
+		if (logger == null) return;
 		String log_message = String.format("%s (%s): <%s>%s%n",
 				p.getClass().getSimpleName(),
 				method,
 				p.url.toString(),
 				(p.childPages!=null && p.childPages.length>0)?
 					String.format(" [%s] children", p.childPages.length): "");
+		while (p.parent != null) {
+			log_message = "\t"+log_message;
+			p = p.parent;
+		}
+		logger.info(log_message);
+	}
+	
+	void logDataSave(boolean result, AbstractPage p) {
+		if (logger == null) return;
+		String log_message = String.format("%s \"%s\" %s%n",
+				p.getClass().getSimpleName(),
+				p.title.toString(),
+				(result)? "data downloaded": "skipped"
+				);
 		while (p.parent != null) {
 			log_message = "\t"+log_message;
 			p = p.parent;
@@ -143,7 +158,7 @@ public class PageProcessor {
 					isLoaded = p.loadFromCache(cache.doc);
 				if (isLoaded) {
 					job.status = PageJob.JobStatusEnum.ADD_CHILDREN_JOBS;
-					logAcquisition("cache", p);
+					logInfoSurvey("cache", p);
 				}
 				else job.status = PageJob.JobStatusEnum.DOWNLOAD_PAGE;
 				addJob(job); job = null;
@@ -154,7 +169,7 @@ public class PageProcessor {
 				
 				p.saveToCache(cache.doc);
 				job.status = PageJob.JobStatusEnum.ADD_CHILDREN_JOBS;
-				logAcquisition("download", p);
+				logInfoSurvey("web", p);
 				addJob (job);
 				break;
 			case ADD_CHILDREN_JOBS: 
@@ -165,10 +180,11 @@ public class PageProcessor {
 						addJob(childrenSaveTo, child, PageJob.JobStatusEnum.RECON_PAGE);
 					}
 				job.status = PageJob.JobStatusEnum.SAVE_RESULTS;
-//				addJob(job);
+				addJob(job);
 				break;
 			case SAVE_RESULTS:
-				job.page.saveResult(job.saveTo);
+				boolean saveNotSkipped = p.saveResult(job.saveTo);
+				logDataSave(saveNotSkipped, p); 
 				break;
 		}
 	}

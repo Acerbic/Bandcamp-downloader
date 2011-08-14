@@ -39,7 +39,7 @@ public class WebDownloader {
 	 * @param from - page address (HTTP assumed)
 	 * @param to - file to save the downloaded resource
 	 * @return size of the downloaded file in bytes, 
-	 * 0 if download was skipped (file exists and not zero-length or server has responded bad)
+	 * 0 if download was skipped (file exists and not zero-length or server has responded badly)
 	 * @throws FileNotFoundException if can not open file for writing  
 	 * @throws IOException on other stream problems
 	 */
@@ -48,16 +48,16 @@ public class WebDownloader {
 		BufferedInputStream bis = null;
 		BufferedOutputStream bos = null;
 		
-		URLConnection connection = from.openConnection();
-		// check content type header to catch 404, 403... error responses
-		if (connection.getContentType().contains("text/")) 
-			return 0;
-		 
 		/* just delete zero-length files. if size is non-zero, skip it */
 		if (to.isFile() && (to.length() > 0))
 			return 0;
 		to.delete();
 
+		URLConnection connection = from.openConnection();
+		// check content type header to catch 404, 403... error responses
+		if (connection.getContentType().contains("text/")) 
+			return 0;
+		 
 		try {
 			bis = new BufferedInputStream(connection.getInputStream());
 			bos = new BufferedOutputStream(new FileOutputStream(to));

@@ -359,9 +359,10 @@ public abstract class AbstractPage {
 	/**
 	 * Saves extracted data to disk, then saves children too. 
 	 * @param saveTo - directory to save info to.
+	 * @return true if new download was performed, false if download was skipped
 	 * @throws IOException
 	 */
-	public abstract void saveResult(File saveTo) throws IOException;
+	public abstract boolean saveResult(File saveTo) throws IOException;
 
 	/**
 	 * Saves this page data into XML tree. 

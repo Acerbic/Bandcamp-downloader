@@ -34,7 +34,7 @@ public class AbstractPageTest {
 				throws ProblemsReadingDocumentException {}
 
 		@Override
-		public void saveResult(File saveTo) throws IOException {}
+		public boolean saveResult(File saveTo) throws IOException {return false;}
 
 		@Override
 		public File getChildrenSaveTo(File saveTo) throws IOException {return null;}
@@ -69,9 +69,7 @@ public class AbstractPageTest {
 	@Test
 	public void testDownloadPageDummyFromLocal() throws ProblemsReadingDocumentException {
 		AbstractPageDummy p = new AbstractPageDummy("file:///D:/Gleb/JavaWorkspace_Eclipse/Dloader/test/Homestuck.htm");
-		int b4 = WebDownloader.totalPageDownloadFinished;
 		p.downloadPage();
-		assertEquals(b4+1, WebDownloader.totalPageDownloadFinished);
 		assertNotNull(p.childPages);
 		assertEquals(0, p.childPages.length);
 	}

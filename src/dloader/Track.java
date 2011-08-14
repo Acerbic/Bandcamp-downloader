@@ -64,19 +64,16 @@ public class Track extends AbstractPage {
 	public Track() {super();}
 
 	@Override
-	public void saveResult(File saveTo) throws IOException {
+	public boolean saveResult(File saveTo) throws IOException {
+		boolean wasDownloaded;
 		File f = new File(saveTo, getFSSafeName(title) + ".mp3");
 		if (f.isDirectory()) {
-			logger.info( "<"+title+"> is a directory!!!\n");
-			return; 
+			throw new IOException( "<"+title+"> is a directory!!!\n");
 		}
-		logger.info( title+" ... ");
-		if (WebDownloader.fetchWebFile(getProperty("mediaLink"), f) == 0)
-			logger.info( "skipped.\n");
-		else 
-			logger.info( "done.\n");
+		wasDownloaded = WebDownloader.fetchWebFile(getProperty("mediaLink"), f) != 0;
 		
 		tagMp3File(f);
+		return wasDownloaded;
 	}
 	
 	/**
@@ -99,12 +96,8 @@ public class Track extends AbstractPage {
 			}
 			
 			if (mp3Tag.getFirstTrack().equals("0")) {
-				@SuppressWarnings("rawtypes")
-				Iterator it = mp3Tag.getTrack().iterator();
-				while (it.hasNext()) {
-					it.next(); 
-					it.remove(); // the only way to remove field is by iterator
-				}
+				TagField x = new TextId3Frame("TRCK", "");
+				mp3Tag.set(x);
 			}
 
 			boolean updateMP3Tag = false;
@@ -124,7 +117,7 @@ public class Track extends AbstractPage {
 							// rewrite only absent or empty tags.
 							@SuppressWarnings("unchecked")
 							List<TagField> idFieldSet = mp3Tag.get(entry.getValue());
-							if (idFieldSet == null || idFieldSet.size()==0 || 
+							if (idFieldSet.size()==0 || 
 								idFieldSet.get(0) == null || idFieldSet.get(0).isEmpty()) {
 								
 								mp3Tag.set(x);

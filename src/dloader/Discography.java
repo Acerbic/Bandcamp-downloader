@@ -46,27 +46,15 @@ public class Discography extends AbstractPage {
 	}
 
 	@Override
-	public void saveResult(File saveTo) throws IOException {
+	public boolean saveResult(File saveTo) throws IOException {
 		File f = new File(saveTo, getFSSafeName(title));
 		if (!f.exists())
 			if (!f.mkdirs()) {
-				logger.severe(String.format("Directory creation failed (%s)%n",
+				throw new IOException(String.format("Directory creation failed (%s)%n",
 						f.getAbsolutePath()));
-				return;
 			}
 		logger.info( String.format("Discography: %s%n", title));
-//		if (childPages != null) {
-//			logger.info( String.format("Saving albums (%d):%n",
-//					childPages.length));
-//			for (int i = 0; i < childPages.length; i++) {
-//				logger.info( String.format("\t%d. ", i + 1));
-//				if (childPages[i] != null)
-//					childPages[i].saveResult(f);
-//				else
-//					logger.info( "--- don't exist! --- \n");
-//			}
-//		}
-
+		return true;
 	}
 
 	@Override
