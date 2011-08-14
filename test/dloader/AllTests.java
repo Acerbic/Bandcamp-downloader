@@ -6,7 +6,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
 @SuiteClasses({ AbstractPageTest.class, PageProcessorTest.class,
-		XMLCacheTest.class })
+		TrackTest.class, XMLCacheTest.class })
 public class AllTests {
 
 }

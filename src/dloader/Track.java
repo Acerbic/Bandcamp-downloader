@@ -14,31 +14,31 @@ import org.jdom.Element;
 
 import entagged.audioformats.AudioFile;
 import entagged.audioformats.AudioFileIO;
+import entagged.audioformats.Tag;
 import entagged.audioformats.exceptions.CannotReadException;
 import entagged.audioformats.exceptions.CannotWriteException;
-import entagged.audioformats.generic.TagField;
+import entagged.audioformats.generic.TagTextField;
 import entagged.audioformats.mp3.util.id3frames.TextId3Frame;
 
 public class Track extends AbstractPage {
 
 	private Map<String, String> properties = new HashMap<String,String>();
 	public String getProperty(String name) {
-		// convention to PageParser
+		// convention to AbstractPage
 		return name.equals("title")? title : properties.get(name) ;
 	}
 	public String setProperty(String name, String value) {
 		if (name.equals("title")) {
-			// convention to PageParser
+			// convention to AbstractPage
 			String lastValue = title;
 			title = value;
 			return lastValue;
 		} else return properties.put(name, value);
 	}
 	
-	// dataPatterns are to read Track info from downloaded page
+	// dataPatterns are to read Track info from downloaded page (XMLCacheDataKeys -> Pattern)
 	private static final Map<String, Pattern> dataPatterns = new HashMap<String,Pattern>();
-	// tagToID3V2Frame are to save Track info to mp3 Tag
-	private static final Map<String,String> tagToID3V2Frame = new HashMap<String,String>();
+	
 	/** XMLCacheDataKeys are keys to Track properties that are used by readXMLSelf() and getSpecificDataXML().<br/>
 	 *  "title" is not included because if you don't get it with loadFromCache() call, 
 	 *  you will download and parse the full page anyway
@@ -53,10 +53,6 @@ public class Track extends AbstractPage {
 //		dataPatterns.put("track", Pattern.compile(".*numtracks\\s*:\\s*([\\d]*).*", Pattern.DOTALL));
 		dataPatterns.put("comment", Pattern.compile(".*trackinfo:.*\"has_info\":\"([^\"]*)\".*", Pattern.DOTALL));				
 
-		tagToID3V2Frame.put("title", "TIT2");
-		tagToID3V2Frame.put("track", "TRCK");
-		tagToID3V2Frame.put("album", "TALB");
-		tagToID3V2Frame.put("artist", "TPE1");	
 	}
 	
 	public Track(String s) throws IllegalArgumentException {super(s);}
@@ -72,64 +68,87 @@ public class Track extends AbstractPage {
 		}
 		wasDownloaded = WebDownloader.fetchWebFile(getProperty("mediaLink"), f) != 0;
 		
-		tagMp3File(f);
+		tagAudioFile(f);
 		return wasDownloaded;
+	}
+	
+	Map<String,String> getTextFieldIds(Tag fileTag) {
+		Map<String,String> tagToCustomFrame = new HashMap<String,String>();
+		
+		// this weird casting is to get to Id strings of particular descendant of AbstractTag 
+		Tag class_clone = null;
+		try {
+			class_clone = fileTag.getClass().newInstance();
+		} catch (InstantiationException e1) {
+			e1.printStackTrace();
+			return null;
+		} catch (IllegalAccessException e1) {
+			e1.printStackTrace();
+			return null;
+		}
+		class_clone.addAlbum("album");
+		class_clone.addTitle("title");
+		class_clone.addArtist("artist");
+		class_clone.addTrack("track");
+		@SuppressWarnings("unchecked")
+		Iterator<TagTextField> itr = class_clone.getFields();
+		while (itr.hasNext()) {
+			TagTextField ttf = itr.next();
+			tagToCustomFrame.put(ttf.getContent(), ttf.getId());
+		}
+		
+		return tagToCustomFrame;
+		
 	}
 	
 	/**
 	 * Checks the file and tags it if appropriate 
 	 * @param f - file to tag
 	 */
-	private void tagMp3File(File f) {
+	void tagAudioFile(File f) {
 		try {
-			AudioFile mp3File = AudioFileIO.read(f);
-			entagged.audioformats.Tag mp3Tag = mp3File.getTag();
+			AudioFile theFile = AudioFileIO.read(f);
+			entagged.audioformats.Tag fileTag = theFile.getTag();
 			
-			// this works around the bug in a lib, that causes drop all fields when
-			//   generic (newly created by getTag()) Tag is converted to ID3v2 on commit()
-			if (!mp3Tag.getFields().hasNext()) {
-				mp3Tag.setAlbum("1");
-				mp3File.commit();
-				mp3File = AudioFileIO.read(f);
-				mp3Tag = mp3File.getTag();
-				mp3Tag.setAlbum("");
-			}
+			// when ID3 tag is saved empty value for track is saved as "0" - ID3 bug 
+			if (fileTag.getFirstTrack().equals("0")) 
+				fileTag.setTrack("");
 			
-			if (mp3Tag.getFirstTrack().equals("0")) {
-				TagField x = new TextId3Frame("TRCK", "");
-				mp3Tag.set(x);
-			}
-
+			// actual file operation flag
 			boolean updateMP3Tag = false;
+			// "track" -> "TRCK", etc...
+			Map<String, String> propertyToFrame = getTextFieldIds(fileTag); 
 			
-			// copy this Track's data into mp3Tag
-			for (Map.Entry<String, String> entry: tagToID3V2Frame.entrySet()) 
+			// copy this Track's data into fileTag
+			for (Map.Entry<String, String> entry: propertyToFrame.entrySet()) 
 				try {
 					String fieldValue = getProperty(entry.getKey());
 					if (!fieldValue.isEmpty()) {
-						TagField x = new TextId3Frame(entry.getValue(), fieldValue);
-						if (Main.allowTagging) {
-							// always rewrite with new value
-							mp3Tag.set(x); 
-							updateMP3Tag = true;
-						}
-						else {
-							// rewrite only absent or empty tags.
-							@SuppressWarnings("unchecked")
-							List<TagField> idFieldSet = mp3Tag.get(entry.getValue());
-							if (idFieldSet.size()==0 || 
-								idFieldSet.get(0) == null || idFieldSet.get(0).isEmpty()) {
-								
-								mp3Tag.set(x);
-								updateMP3Tag = true;
+						TagTextField idNewField = new TextId3Frame(entry.getValue(), fieldValue);
+						@SuppressWarnings("unchecked")
+						List<TagTextField> idFieldSet = fileTag.get(entry.getValue());
+						
+						// rewrite only absent fields or 
+						// existing if Main.allowTagging is set and no such value in this field
+						boolean fieldValueAlreadyExists = false;
+						for (TagTextField existingField: idFieldSet) {
+							if ((existingField != null) && 
+								(existingField.getContent() == idNewField.getContent())) {
+								fieldValueAlreadyExists = true;
+								break; // one is enough
 							}
+						}
+						if ((Main.allowTagging && !fieldValueAlreadyExists) || idFieldSet.size()==0) {
+							// rewrite with new value
+							fileTag.set(idNewField); 
+							updateMP3Tag = true;
 						}
 					}
 				} catch (NullPointerException e) {} // skip Track missing field
 			
 			
 			if (updateMP3Tag)
-				mp3File.commit();
+				theFile.commit();
 			
 		} catch (CannotReadException e) {
 			logger.log(Level.SEVERE, "", e);

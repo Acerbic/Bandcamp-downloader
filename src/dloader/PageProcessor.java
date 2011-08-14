@@ -137,7 +137,7 @@ public class PageProcessor {
 		String log_message = String.format("%s \"%s\" %s%n",
 				p.getClass().getSimpleName(),
 				p.title.toString(),
-				(result)? "data downloaded": "skipped"
+				(result)? "data downloaded": "exists"
 				);
 		while (p.parent != null) {
 			log_message = "\t"+log_message;
