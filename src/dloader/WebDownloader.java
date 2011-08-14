@@ -67,32 +67,4 @@ public class WebDownloader {
 		StatisticGatherer.totalBytesDownloaded += to.length();
 		return to.length();
 	}
-
-	/**
-	 * Downloads a web page by given URL.
-	 * @param url - page address (HTTP assumed)
-	 * @return the whole page as a String (no headers)
-	 * @throws IOException
-	 */
-//	public static String fetchWebPage(URL url) throws IOException {
-//		StringBuilder webPage = new StringBuilder(1024 * 1024);
-//		BufferedReader streamBuffer = null;
-//
-//		try {
-//			streamBuffer = new BufferedReader(new InputStreamReader(
-//					url.openStream()));
-//
-//			char[] buf = new char[1024 * 1024]; // 1Mb buffer for a page
-//			int numRead;
-//			while ((numRead = streamBuffer.read(buf)) != -1)
-//				webPage.append(buf, 0, numRead);
-//
-//		} finally {
-//			if (streamBuffer!=null) streamBuffer.close();
-//		}
-//		totalBytesDownloaded += webPage.length()*(Character.SIZE>>3);
-//		totalPageDownloadFinished++;
-//		return webPage.toString();
-//	}
-
 }

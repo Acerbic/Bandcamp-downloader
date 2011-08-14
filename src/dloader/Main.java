@@ -20,7 +20,6 @@ public class Main {
 	public static File saveTo = new File((new File("")).getAbsolutePath()); 
 
 	public static Logger logger;
-//	public static XMLCache cache;
 	
 	private static void parseCommandLine(String[] args) {
 		for (String s : args) {
@@ -110,12 +109,9 @@ public class Main {
 				};
 				hFile.setLevel(Level.ALL);
 				logger.addHandler(hFile);
-			} catch (SecurityException e) {
-				logger.log(Level.SEVERE, "", e);
-			} catch (IOException e) {
+			} catch (SecurityException|IOException e) {
 				logger.log(Level.SEVERE, "", e);
 			}
-			
 		}
 		
 	}

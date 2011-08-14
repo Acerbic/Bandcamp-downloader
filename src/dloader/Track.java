@@ -84,10 +84,7 @@ public class Track extends AbstractPage {
 		Tag class_clone = null;
 		try {
 			class_clone = fileTag.getClass().newInstance();
-		} catch (InstantiationException e1) {
-			e1.printStackTrace();
-			return null;
-		} catch (IllegalAccessException e1) {
+		} catch (InstantiationException|IllegalAccessException e1) {
 			e1.printStackTrace();
 			return null;
 		}
@@ -158,9 +155,7 @@ public class Track extends AbstractPage {
 				statusReport = "updated";
 			}
 			
-		} catch (CannotReadException e) {
-			logger.log(Level.SEVERE, "", e);
-		} catch (CannotWriteException e) {
+		} catch (CannotReadException|CannotWriteException e) {
 			logger.log(Level.SEVERE, "", e);
 		}
 	}

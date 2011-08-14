@@ -322,19 +322,12 @@ public abstract class AbstractPage {
 			String c = childRef.getAttributeValue("class");
 			child = (AbstractPage)Class.forName("dloader."+c).newInstance();
 			child.setUrl(u);
-		} catch (ClassNotFoundException e1) {
-			throw new ProblemsReadingDocumentException(e1);
-		} catch (InstantiationException e1) {
-			throw new ProblemsReadingDocumentException(e1);
-		} catch (IllegalAccessException e1) {
-			throw new ProblemsReadingDocumentException(e1);
-		} catch (MalformedURLException e1) {
-			throw new ProblemsReadingDocumentException(e1);
-		} catch (NullPointerException e1) {
+		} catch (IllegalAccessException|ClassNotFoundException|
+				InstantiationException|MalformedURLException|
+				NullPointerException e1) {
 			throw new ProblemsReadingDocumentException(e1);
 		}  
 		return child;
-			
 	}
 	
 	/**

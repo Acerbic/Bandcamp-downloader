@@ -85,11 +85,8 @@ public class Discography extends AbstractPage {
 			Album c = new Album(u);
 			c.title = element.getText();
 			return c;
-		} catch (NullPointerException e) {
-			throw new ProblemsReadingDocumentException (e);
-		} catch (IllegalArgumentException e) {
-			throw new ProblemsReadingDocumentException (e);
-		} catch (MalformedURLException e) {
+		} catch (NullPointerException|IllegalArgumentException|
+				MalformedURLException e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
 	}

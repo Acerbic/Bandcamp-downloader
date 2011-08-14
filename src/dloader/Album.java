@@ -64,11 +64,8 @@ public class Album extends AbstractPage {
 			t.title = element.getText();
 			t.setProperty("track", String.valueOf(trackCounter));
 			return t;
-		} catch (IllegalArgumentException e) {
-			throw new ProblemsReadingDocumentException(e);
-		} catch (NullPointerException e) {
-			throw new ProblemsReadingDocumentException(e);
-		} catch (MalformedURLException e) {
+		} catch (IllegalArgumentException|NullPointerException|
+				MalformedURLException e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
 	}
