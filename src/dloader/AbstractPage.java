@@ -63,6 +63,11 @@ public abstract class AbstractPage {
 	 * reference to a parent item (may be null)
 	 */
 	public AbstractPage parent;
+	
+	/**
+	 * Used for reporting operations after they are saved to disk 
+	 */
+	public String statusReport;
 	/**
 	 * use caching facility?
 	 */

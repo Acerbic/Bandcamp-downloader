@@ -134,10 +134,12 @@ public class PageProcessor {
 	
 	void logDataSave(boolean result, AbstractPage p) {
 		if (logger == null) return;
+		if (p.statusReport == null || p.statusReport.isEmpty())
+			return;
 		String log_message = String.format("%s \"%s\" %s%n",
 				p.getClass().getSimpleName(),
 				p.title.toString(),
-				(result)? "data downloaded": "exists"
+				p.statusReport
 				);
 		while (p.parent != null) {
 			log_message = "\t"+log_message;

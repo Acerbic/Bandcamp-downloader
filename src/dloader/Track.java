@@ -68,8 +68,13 @@ public class Track extends AbstractPage {
 		}
 		wasDownloaded = WebDownloader.fetchWebFile(getProperty("mediaLink"), f) != 0;
 		
+		statusReport = "";
 		tagAudioFile(f);
-		return wasDownloaded;
+		if (wasDownloaded)
+			statusReport = "downloaded";
+		else if (statusReport.isEmpty()) 
+			statusReport = "skipped";
+		return true;
 	}
 	
 	Map<String,String> getTextFieldIds(Tag fileTag) {
@@ -106,6 +111,7 @@ public class Track extends AbstractPage {
 	 * @param f - file to tag
 	 */
 	void tagAudioFile(File f) {
+		statusReport = "";
 		try {
 			AudioFile theFile = AudioFileIO.read(f);
 			entagged.audioformats.Tag fileTag = theFile.getTag();
@@ -147,8 +153,10 @@ public class Track extends AbstractPage {
 				} catch (NullPointerException e) {} // skip Track missing field
 			
 			
-			if (updateMP3Tag)
+			if (updateMP3Tag) {
+				statusReport = "updated";
 				theFile.commit();
+			}
 			
 		} catch (CannotReadException e) {
 			logger.log(Level.SEVERE, "", e);

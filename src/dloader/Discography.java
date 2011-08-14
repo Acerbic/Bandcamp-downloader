@@ -53,7 +53,7 @@ public class Discography extends AbstractPage {
 				throw new IOException(String.format("Directory creation failed (%s)%n",
 						f.getAbsolutePath()));
 			}
-		logger.info( String.format("Discography: %s%n", title));
+		statusReport = "";
 		return true;
 	}
 

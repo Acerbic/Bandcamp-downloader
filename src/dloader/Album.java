@@ -32,9 +32,9 @@ public class Album extends AbstractPage {
 				throw new IOException(String.format("Directory creation failed (%s)%n",
 						f.getAbsolutePath()));
 			
-//		logger.info( String.format("(album) \"%s\": %s%n", title, url.toString()));
-		
-		return WebDownloader.fetchWebFile(coverUrl, new File(f, "cover.jpg")) != 0; 
+		if (WebDownloader.fetchWebFile(coverUrl, new File(f, "cover.jpg")) != 0)
+			statusReport = "cover image downloaded";
+		return true;
 	}
 
 	@Override
