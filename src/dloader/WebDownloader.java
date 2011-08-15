@@ -31,7 +31,7 @@ public class WebDownloader {
 	}
 	
 	/**
-	 * Downloads and saves a binary resource (not "text/*" MIME) by given URL.
+	 * Downloads and saves a web resource by given URL.
 	 * @param from - resource address (HTTP assumed)
 	 * @param to - file to save the downloaded resource
 	 * @return size of the downloaded file in bytes, 
@@ -45,13 +45,16 @@ public class WebDownloader {
 		
 		Path p = Paths.get(to);
 		/* just delete zero-length files. if size is non-zero, skip it */
-		if (Files.exists(p) && Files.size(p) > 0)
-			return 0;
-		Files.deleteIfExists(p);
+		if (Files.exists(p))
+			if (Files.isRegularFile(p)) 
+				if (Files.size(p) > 0)
+					return 0;
+				else Files.deleteIfExists(p);
+			else throw new IOException ("Destination is not a regular file");
 
 		URLConnection connection = from.openConnection();
-		// check content type header to catch 404, 403... error responses
-		if (connection.getContentType().contains("text/")) 
+		
+		if (!connection.getHeaderField(null).contains("200 OK")) 
 			return 0;
 		 
 		try {

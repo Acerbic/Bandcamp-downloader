@@ -33,10 +33,12 @@ public class TrackTest {
 		t.setProperty("artist", "Tyler Dever");		
 		workingCopy = "test/tagged.mp3";
 		workingCopyPath = Paths.get(workingCopy);
+		copyUntagged();
 	}
 
 	@After
 	public void tearDown() throws Exception {
+		Files.deleteIfExists(workingCopyPath);
 	}
 
 	void copyUntagged() throws IOException {
@@ -46,7 +48,6 @@ public class TrackTest {
 	
 	@Test
 	public void testTagMp3FileCreateNewTag() throws CannotReadException, IOException {
-		copyUntagged();
 		AudioFile mp3File = AudioFileIO.read(workingCopyPath.toFile());
 		entagged.audioformats.Tag mp3Tag = mp3File.getTag();
 		
@@ -67,8 +68,6 @@ public class TrackTest {
 	
 	@Test
 	public void testTagMp3FileCreateNewID3Tag() throws CannotReadException, IOException {
-		copyUntagged();
-
 		Main.allowTagging = false;
 		t.tagAudioFile(workingCopy);
 		AudioFile mp3File = AudioFileIO.read(workingCopyPath.toFile());
@@ -89,8 +88,6 @@ public class TrackTest {
 
 	@Test
 	public void testTagMp3FileNoDoublingTags() throws CannotReadException, IOException {
-		copyUntagged();
-
 		Main.allowTagging = false;
 		t.tagAudioFile(workingCopy);
 		t.tagAudioFile(workingCopy);
@@ -113,8 +110,6 @@ public class TrackTest {
 
 	@Test
 	public void testTagMp3FileUpdatePartialTag() throws CannotReadException, IOException {
-		copyUntagged();
-
 		Main.allowTagging = false;
 		t.title = "";
 		t.setProperty("album", "");
@@ -142,8 +137,6 @@ public class TrackTest {
 	
 	@Test
 	public void testTagMp3FileUpdatePartialTagWithRewrite() throws CannotReadException, IOException {
-		copyUntagged();
-
 		Main.allowTagging = true;
 		t.title = "";
 		t.setProperty("album", "");
