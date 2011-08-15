@@ -1,9 +1,10 @@
 package dloader;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -60,16 +61,13 @@ public class Track extends AbstractPage {
 	public Track() {super();}
 
 	@Override
-	public boolean saveResult(File saveTo) throws IOException {
+	public boolean saveResult(String saveTo) throws IOException {
 		boolean wasDownloaded;
-		File f = new File(saveTo, getFSSafeName(title) + ".mp3");
-		if (f.isDirectory()) {
-			throw new IOException( "<"+title+"> is a directory!!!\n");
-		}
-		wasDownloaded = WebDownloader.fetchWebFile(getProperty("mediaLink"), f) != 0;
+		Path p = Paths.get(saveTo, getFSSafeName(title) + ".mp3");
+		wasDownloaded = WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
 		
 		statusReport = "";
-		tagAudioFile(f);
+		tagAudioFile(p.toString());
 		if (wasDownloaded)
 			statusReport = "downloaded";
 		else if (statusReport.isEmpty()) 
@@ -85,7 +83,7 @@ public class Track extends AbstractPage {
 		try {
 			class_clone = fileTag.getClass().newInstance();
 		} catch (InstantiationException|IllegalAccessException e1) {
-			e1.printStackTrace();
+			logger.log(Level.SEVERE, "Can't clone file metadata tag class", e1);
 			return null;
 		}
 		class_clone.addAlbum("album");
@@ -107,10 +105,10 @@ public class Track extends AbstractPage {
 	 * Checks the file and tags it if appropriate 
 	 * @param f - file to tag
 	 */
-	void tagAudioFile(File f) {
+	void tagAudioFile(String file) {
 		statusReport = "";
 		try {
-			AudioFile theFile = AudioFileIO.read(f);
+			AudioFile theFile = AudioFileIO.read(Paths.get(file).toFile());
 			entagged.audioformats.Tag fileTag = theFile.getTag();
 			
 			// when ID3 tag is saved empty value for track is saved as "0" - ID3 bug 
@@ -239,7 +237,7 @@ public class Track extends AbstractPage {
 		return null;
 	}
 	@Override
-	public File getChildrenSaveTo(File saveTo) {
+	public String getChildrenSaveTo(String saveTo) {
 		return null;
 	}
 }

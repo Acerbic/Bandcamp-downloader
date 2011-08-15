@@ -1,8 +1,10 @@
 package dloader;
 
-import java.io.*;
+//import java.io.*;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -158,30 +160,27 @@ public abstract class AbstractPage {
 	 */
 	public static String getFSSafeName(String from) throws IOException   {
 		assert (from!=null);
-		String s = new String(from);
+		String s = new String(from); // work on copy
 		for (char c : ":/\\*?\"<>|\t\n\r".toCharArray())
 			s = s.replace(c, ' ');
 	
-		File f = new File (s);
-		
 		try {
-			// very awkward test for file name validness
-			if (f.createNewFile())
-				f.delete();
-			return s;
-		} catch (IOException e) {
+			Paths.get(s);
+		} catch (InvalidPathException e) {
 			// OK lets go try-hard on this
 			int hash = 0;
 			for (char c: s.toCharArray())
 				hash = (hash + (int)c)*2;
 			s = String.valueOf(hash);
-	
-			f = new File(s);
-			// very awkward test for file name validness again
-			if (f.createNewFile())
-				f.delete();
-			return s;
+
+			try {
+				Paths.get(s); 
+			} catch (InvalidPathException e1) {
+				throw new IOException(e1);
+			}
 		}
+		
+		return s;
 	}
 
 	/** 
@@ -360,7 +359,7 @@ public abstract class AbstractPage {
 	 * @return true if new download was performed, false if download was skipped
 	 * @throws IOException
 	 */
-	public abstract boolean saveResult(File saveTo) throws IOException;
+	public abstract boolean saveResult(String saveTo) throws IOException;
 
 	/**
 	 * Saves this page data into XML tree. 
@@ -426,5 +425,5 @@ public abstract class AbstractPage {
 	 * @return saving path for the children pages or null if no children expected
 	 * @throws IOException if valid filename cannot be created
 	 */
-	abstract public File getChildrenSaveTo(File saveTo) throws IOException;
+	abstract public String getChildrenSaveTo(String saveTo) throws IOException;
 }

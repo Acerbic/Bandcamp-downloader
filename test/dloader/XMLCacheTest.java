@@ -45,7 +45,7 @@ public class XMLCacheTest {
 	/**
 	 * Test method for {@link dloader.XMLCache#XMLCache(java.lang.String)}.
 	 */
-	@Test(expected = NullPointerException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void testXMLCacheDontAcceptNull() {
 		new XMLCache(null);
 	}

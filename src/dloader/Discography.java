@@ -1,9 +1,11 @@
 package dloader;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.jdom.Document;
@@ -46,13 +48,14 @@ public class Discography extends AbstractPage {
 	}
 
 	@Override
-	public boolean saveResult(File saveTo) throws IOException {
-		File f = new File(saveTo, getFSSafeName(title));
-		if (!f.exists())
-			if (!f.mkdirs()) {
-				throw new IOException(String.format("Directory creation failed (%s)%n",
-						f.getAbsolutePath()));
-			}
+	public boolean saveResult(String saveTo) throws IOException {
+		Path p = Paths.get(saveTo, getFSSafeName(title));
+		if (Files.notExists(p))
+			Files.createDirectories(p);
+		if (!Files.isDirectory(p))
+			throw new IOException(String.format("(%s) is not a directory!%n",
+						p.toAbsolutePath()));
+
 		statusReport = "";
 		return true;
 	}
@@ -92,8 +95,8 @@ public class Discography extends AbstractPage {
 	}
 
 	@Override
-	public File getChildrenSaveTo(File saveTo) throws IOException {
-		return new File(saveTo, getFSSafeName(title));
+	public String getChildrenSaveTo(String saveTo) throws IOException {
+		return Paths.get(saveTo, getFSSafeName(title)).toString();
 	}
 
 }

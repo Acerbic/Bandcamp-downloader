@@ -1,6 +1,5 @@
 package dloader;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -21,7 +20,7 @@ public class PageProcessor {
 			ADD_CHILDREN_JOBS, SAVE_RESULTS };
 		AbstractPage page;
 		JobStatusEnum status;
-		File saveTo;
+		String saveTo;
 	}
 	
 	static List<PageJob> jobQ;
@@ -47,7 +46,7 @@ public class PageProcessor {
 	 * @param saveTo
 	 * @param baseURL
 	 */
-	PageProcessor(File saveTo, String baseURL, boolean _isReadingCache) {
+	PageProcessor(String saveTo, String baseURL, boolean _isReadingCache) {
 		addJob (saveTo, detectPage(baseURL), PageJob.JobStatusEnum.DOWNLOAD_PAGE);
 		isReadingCache = _isReadingCache;
 	}
@@ -71,7 +70,7 @@ public class PageProcessor {
 	static void addJob (PageJob j) {
 		jobQ.add(0,j);
 	}
-	static void addJob (File saveTo, AbstractPage page, PageJob.JobStatusEnum status) {
+	static void addJob (String saveTo, AbstractPage page, PageJob.JobStatusEnum status) {
 		PageJob j = new PageJob();
 		j.page = page; j.saveTo = saveTo; j.status = status;
 		jobQ.add(0,j);
@@ -178,7 +177,7 @@ public class PageProcessor {
 				if (job.page.childPages != null)
 					for (int i = 0; i < job.page.childPages.length; i++) {
 						AbstractPage child = job.page.childPages[i];
-						File childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
+						String childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
 						addJob(childrenSaveTo, child, PageJob.JobStatusEnum.RECON_PAGE);
 					}
 				job.status = PageJob.JobStatusEnum.SAVE_RESULTS;

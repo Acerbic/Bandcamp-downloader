@@ -2,8 +2,8 @@ package dloader;
 
 import static org.junit.Assert.*;
 
-import java.io.File;
 import java.io.IOException;
+
 import org.jdom.Document;
 import org.jdom.Element;
 import org.junit.After;
@@ -34,10 +34,10 @@ public class AbstractPageTest {
 				throws ProblemsReadingDocumentException {}
 
 		@Override
-		public boolean saveResult(File saveTo) throws IOException {return false;}
+		public boolean saveResult(String saveTo) throws IOException {return false;}
 
 		@Override
-		public File getChildrenSaveTo(File saveTo) throws IOException {return null;}
+		public String getChildrenSaveTo(String saveTo) throws IOException {return null;}
 		
 		AbstractPageDummy(String s) {super(s);}
 	}

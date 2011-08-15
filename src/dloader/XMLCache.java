@@ -1,7 +1,11 @@
 package dloader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -22,7 +26,7 @@ public class XMLCache {
 	 */
 	private XMLOutputter outputter;
 	
-	private File xmlFile;
+	private Path xmlFile;
 	
 	public Document doc;
 	
@@ -35,24 +39,19 @@ public class XMLCache {
  */
 	public XMLCache(String xmlFileName) {
 		Logger l = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-		if (xmlFileName.isEmpty()) 
-			throw new IllegalArgumentException("Cache file name cannot be empty");
+		if (xmlFileName==null || xmlFileName.isEmpty()) 
+			throw new IllegalArgumentException("Cache file name cannot be empty or null");
 		
 		try {
-			xmlFile = new File(xmlFileName);
-			if (xmlFile.exists()) {
+			xmlFile = Paths.get(xmlFileName);
+			if (Files.exists(xmlFile)) {
 				org.jdom.input.SAXBuilder builder = new org.jdom.input.SAXBuilder();
 				builder.setIgnoringBoundaryWhitespace(true);
 				builder.setIgnoringElementContentWhitespace(true);
-				doc = builder.build(xmlFile);
-			} else {
-				try {
-					xmlFile.createNewFile();
-					xmlFile.delete();
-				} catch (IOException e) {
-					throw new IllegalArgumentException(e);
-				}
+				doc = builder.build(Files.newInputStream(xmlFile));
 			}
+		} catch (InvalidPathException e) {
+			throw new IllegalArgumentException(e);
 		} catch (IOException e) {
 			l.log(Level.WARNING, String.format("Error reading cache file <%s>%n", xmlFileName), e);
 		} catch (JDOMException e) {
@@ -72,8 +71,9 @@ public class XMLCache {
 	 * @throws IOException - if problems occur.
 	 */
 	public void saveCache() throws IOException {
-		FileOutputStream outStream = new FileOutputStream(xmlFile, false); 
-		outputter.output(doc, outStream);
-		outStream.close();
+		try (OutputStream outStream = Files.newOutputStream(xmlFile)) { 
+			outputter.output(doc, outStream);
+//			outStream.close();
+		}
 	}
 }

@@ -1,7 +1,8 @@
 package dloader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.logging.*;
 
 
@@ -17,7 +18,7 @@ public class Main {
 	public static boolean logToCon = true;
 	public static boolean logToFile = false;
 	// user current directory
-	public static File saveTo = new File((new File("")).getAbsolutePath()); 
+	public static String saveTo = Paths.get(".").toAbsolutePath().toString(); 
 
 	public static Logger logger;
 	
@@ -57,8 +58,9 @@ public class Main {
 				case 'l': logToFile = true; break;
 				case 'd': baseURL = s.substring(2); break;
 				case 't':
-					saveTo = new File(s.substring(2));
-					if (saveTo.isFile()) {
+					Path p = Paths.get(s.substring(2)).toAbsolutePath();
+					saveTo = p.toString();
+					if (!Files.isDirectory(p)) {
 						saveTo = null;
 						System.out
 								.println("-t must specify a directory. Default value will be used.");
@@ -101,7 +103,9 @@ public class Main {
 		}
 		if (logToFile) {
 			try {
-				Handler hFile = new StreamHandler(new FileOutputStream(logFile),fNotVerySimple) {
+				Handler hFile = new StreamHandler(
+						Files.newOutputStream(Paths.get(logFile)),
+						fNotVerySimple) {
 					public void publish(LogRecord record) {
 						super.publish(record);
 						flush();
@@ -126,7 +130,7 @@ public class Main {
 			
 			PageProcessor.initCache(xmlFileName);
 			PageProcessor.initLogger(logger);
-			PageProcessor pp = new PageProcessor(saveTo, baseURL, allowFromCache);
+			PageProcessor pp = new PageProcessor(saveTo.toString(), baseURL, allowFromCache);
 			AbstractPage.isUsingCache = allowFromCache;
 			pp.acquireData();
 			PageProcessor.saveCache();
