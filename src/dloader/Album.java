@@ -13,11 +13,24 @@ import java.util.regex.Pattern;
 import org.jdom.Document;
 import org.jdom.Element;
 
-
+/**
+ * Class for album page, references track child pages
+ * @author A.Cerbic
+ */
 public class Album extends AbstractPage {
 
+	/**
+	 * link to the album cover
+	 */
 	public URL coverUrl;
-	public String moreInfo; 
+	/**
+	 * arbitrary additional info
+	 */
+	public String moreInfo;
+	/**
+	 * counts parsed child track pages (include fails) 
+	 * to override their "track" number
+	 */
 	private int trackCounter;
 
 	public Album(URL url) throws IllegalArgumentException {super(url);}
@@ -29,11 +42,7 @@ public class Album extends AbstractPage {
 	@Override
 	public boolean saveResult(String saveTo) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(title));
-		if (Files.notExists(p))
-			Files.createDirectories(p);
-		if (!Files.isDirectory(p))
-			throw new IOException(String.format("(%s) is not a directory!%n",
-						p.toAbsolutePath()));
+		Files.createDirectories(p);
 			
 		if (WebDownloader.fetchWebFile(coverUrl, p.resolve("cover.jpg").toString()) != 0)
 			statusReport = "cover image downloaded";

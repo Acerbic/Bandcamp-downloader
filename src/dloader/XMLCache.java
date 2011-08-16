@@ -73,7 +73,6 @@ public class XMLCache {
 	public void saveCache() throws IOException {
 		try (OutputStream outStream = Files.newOutputStream(xmlFile)) { 
 			outputter.output(doc, outStream);
-//			outStream.close();
 		}
 	}
 }

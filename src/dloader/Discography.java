@@ -11,6 +11,10 @@ import java.util.List;
 import org.jdom.Document;
 import org.jdom.Element;
 
+/**
+ * Class for discography page, as a number of albums
+ * @author A.Cerbic
+ */
 public class Discography extends AbstractPage {
 	
 	private enum DiscographyListVariant { SIDEBAR, CENTRAL_INDEX };
@@ -50,12 +54,8 @@ public class Discography extends AbstractPage {
 	@Override
 	public boolean saveResult(String saveTo) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(title));
-		if (Files.notExists(p))
-			Files.createDirectories(p);
-		if (!Files.isDirectory(p))
-			throw new IOException(String.format("(%s) is not a directory!%n",
-						p.toAbsolutePath()));
-
+		Files.createDirectories(p);
+		
 		statusReport = "";
 		return true;
 	}

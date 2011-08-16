@@ -81,7 +81,7 @@ public abstract class AbstractPage {
 	protected static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);;
 	
 	/**
-	 * Is called ONLY for Class.newInstance reason.
+	 * Is called ONLY for Class.newInstance() reason.
 	 * Make sure setUrl(URL url) is called right after it. 
 	 */
 	public AbstractPage() {}
@@ -107,53 +107,9 @@ public abstract class AbstractPage {
 		url = _url;
 	}
 
-//	/** 
-//	 * this is called when acquiring item fails and must be dropped or restarted.
-//	 */
-//	public final void acquisitionFailedHook (AbstractPage failedItem) {
-//		
-//	}
-	
-//	/**
-//	 * Fills this instance with data, reading it from cache or parsing web page.
-//	 * Then repeats process for children pages
-//	 * @param forceDownload - true if you want ignore cache on this one, all child nodes checks are
-//	 * controlled with <b>isUsingCache</b> flag
-//	 * @param doc - XML document storing cache on pages data.  
-//	 * @throws ProblemsReadingDocumentException if failed. (generally it means that web server did not respond right)
-//	 */
-//	public final void acquireData(boolean forceDownload, org.jdom.Document doc) throws ProblemsReadingDocumentException {
-//		assert (url != null);
-//		logger.info( String.format("(%s) Starting aquisition of %s ... %n", 
-//				this.getClass().getName(), url.toString()));
-//		
-//		boolean isLoaded = false;
-//		if (!forceDownload && isUsingCache)
-//			isLoaded = loadFromCache(doc);
-//		if (!isLoaded) {  
-//			downloadPage();
-//			saveToCache(doc);
-//		}
-//		
-//		if (childPages == null) {
-//			logger.info(String.format("Reading of %s is done. %n", url.toString()));
-//			return;
-//		}
-//
-//		logger.info( String.format("Reading of %s done. Children: %d%n", childPages.length));
-//		for (int i = 0; i < childPages.length; i++) 
-//			try {
-//				childPages[i].acquireData(false, doc);
-//			} catch (ProblemsReadingDocumentException e) {
-//				acquisitionFailedHook(childPages[i]);
-//				childPages[i] = null;
-//				logger.log(Level.WARNING, "", e);
-//			} //skip to the next child page
-//	}
-	
 	/**
 	 * Convert a string to a proper file name.
-	 * (checks for Windows prohibited chars only) 
+	 * (don't check for existing file collisions, only validness of a name) 
 	 * @param from - string to convert
 	 * @return proper file name
 	 * @throws IOException if file name is not valid  
@@ -162,7 +118,8 @@ public abstract class AbstractPage {
 		assert (from!=null);
 		String s = new String(from); // work on copy
 		for (char c : ":/\\*?\"<>|\t\n\r".toCharArray())
-			s = s.replace(c, ' ');
+			s = s.replace(String.valueOf(c), "");
+		s = s.trim();
 	
 		try {
 			Paths.get(s);
@@ -184,7 +141,7 @@ public abstract class AbstractPage {
 	}
 
 	/** 
-	 * Downloads the page and creates child nodes.
+	 * Downloads the page, parses it and creates child nodes.
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
 	void downloadPage() throws ProblemsReadingDocumentException {
@@ -390,7 +347,6 @@ public abstract class AbstractPage {
 		
 		@SuppressWarnings("unchecked")
 		List<Element> oldCachedElements = (List<Element>) queryXPathList(
-//				String.format("//pre:%s[@url='%s']",e.getName(),url.toString()), 
 				String.format("//%s[@url='%s']",e.getName(),url.toString()), 
 				doc);
 		for (Element current: oldCachedElements) 

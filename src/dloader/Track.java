@@ -3,6 +3,7 @@ package dloader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -21,8 +22,16 @@ import entagged.audioformats.exceptions.CannotWriteException;
 import entagged.audioformats.generic.TagTextField;
 import entagged.audioformats.mp3.util.id3frames.TextId3Frame;
 
+/**
+ * Class represents track web page, has no children pages 
+ * @author A.Cerbic
+ */
 public class Track extends AbstractPage {
 
+	/**
+	 * Set of custom properties read from page, saved to cache and 
+	 * resulting audio file metadata tags
+	 */
 	private Map<String, String> properties = new HashMap<String,String>();
 	public String getProperty(String name) {
 		// convention to AbstractPage
@@ -37,12 +46,13 @@ public class Track extends AbstractPage {
 		} else return properties.put(name, value);
 	}
 	
-	// dataPatterns are to read Track info from downloaded page (XMLCacheDataKeys -> Pattern)
+	/**
+	 * Maps property name to compiled Pattern to Track info from downloaded page
+	 */ 
 	private static final Map<String, Pattern> dataPatterns = new HashMap<String,Pattern>();
 	
-	/** XMLCacheDataKeys are keys to Track properties that are used by readXMLSelf() and getSpecificDataXML().<br/>
-	 *  "title" is not included because if you don't get it with loadFromCache() call, 
-	 *  you will download and parse the full page anyway
+	/** XMLCacheDataKeys are names of Track properties that are used by readXMLSelf() and getSpecificDataXML().<br/>
+	 *  "title" is not included because it is processed in AbstactPage separately  
 	 */
 	private static final String[] XMLCacheDataKeys = {"mediaLink", "artist", "track", "album"};
 
@@ -51,6 +61,7 @@ public class Track extends AbstractPage {
 		dataPatterns.put("artist", Pattern.compile(".*artist\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
 		dataPatterns.put("album", Pattern.compile(".*album_title\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
 		dataPatterns.put("title", Pattern.compile(".*title\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
+// track number is set by parent album or not set at all - may be this behavior should be changed  		
 //		dataPatterns.put("track", Pattern.compile(".*numtracks\\s*:\\s*([\\d]*).*", Pattern.DOTALL));
 		dataPatterns.put("comment", Pattern.compile(".*trackinfo:.*\"has_info\":\"([^\"]*)\".*", Pattern.DOTALL));				
 
@@ -63,6 +74,7 @@ public class Track extends AbstractPage {
 	@Override
 	public boolean saveResult(String saveTo) throws IOException {
 		boolean wasDownloaded;
+		Files.createDirectories(Paths.get(saveTo));
 		Path p = Paths.get(saveTo, getFSSafeName(title) + ".mp3");
 		wasDownloaded = WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
 		
@@ -75,10 +87,16 @@ public class Track extends AbstractPage {
 		return true;
 	}
 	
+	/**
+	 * Collects <b>4 'common'</b> audio tag field id codes from given tag <br>
+	 * This method is needed because different audio formats declare different id codes
+	 * and sometimes the same audio format can have different versions of audio tags.
+	 * @param fileTag - the tag to be examined and mimicked
+	 * @return mapping {Track property name -> audio tag field id}
+	 */
 	Map<String,String> getTextFieldIds(Tag fileTag) {
 		Map<String,String> tagToCustomFrame = new HashMap<String,String>();
 		
-		// this weird casting is to get to Id strings of particular descendant of AbstractTag 
 		Tag class_clone = null;
 		try {
 			class_clone = fileTag.getClass().newInstance();
@@ -98,7 +116,6 @@ public class Track extends AbstractPage {
 		}
 		
 		return tagToCustomFrame;
-		
 	}
 	
 	/**
@@ -139,7 +156,7 @@ public class Track extends AbstractPage {
 								break; // one is enough
 							}
 						}
-						if ((Main.allowTagging && !fieldValueAlreadyExists) || idFieldSet.size()==0) {
+						if ((Main.forceTagging && !fieldValueAlreadyExists) || idFieldSet.size()==0) {
 							// rewrite with new value
 							fileTag.set(idNewField); 
 							updateMP3Tag = true;
@@ -196,7 +213,7 @@ public class Track extends AbstractPage {
 			// clear JavaScript escaping: "\/" --> "/", etc.
 			rawData = rawData.replaceAll("\\\\(.)", "$1");
 			
-			// try to recover each tag by its pattern
+			// try to recover each property by its pattern
 			for (Map.Entry<String, Pattern> entry: dataPatterns.entrySet()) {
 				Matcher m = entry.getValue().matcher(rawData);
 				if (m.matches()) 
@@ -218,18 +235,14 @@ public class Track extends AbstractPage {
 			//    from parenting pages
 			String album = getProperty("album");
 			String artist = getProperty("artist");
+			// fix track number
 			if (album==null || album.isEmpty())
 				setProperty("album",parent.title);
 			if (artist==null || artist.isEmpty())
 				setProperty("artist",parent.parent.title);
-			// fix track number
-			if (Integer.parseInt(getProperty("track"))<=0)
-				properties.remove("track");
 		} catch (NullPointerException e) {
-		} catch (NumberFormatException e) {
-			properties.remove("track");
+			// skip if not enough parents in a line;
 		}
-		
 	}
 	
 	@Override

@@ -13,7 +13,7 @@ public class Main {
 	public static String baseURL = "http://homestuck.bandcamp.com";
 	public static String xmlFileName = "pages_scan_cache.xml";
 	public static String logFile = "download.log";
-	public static boolean allowTagging = true;
+	public static boolean forceTagging = false; // if true - always tag, otherwise only new/missing tag fields
 	public static boolean allowFromCache = true;
 	public static boolean logToCon = true;
 	public static boolean logToFile = false;
@@ -45,13 +45,13 @@ public class Main {
 									+ "HINT: if the program discovers that a file for given track already exists, \n"
 									+ "\tthat track download will be skipped, so if previous download session was interrupted you can\n"
 									+ "\tjust run the program over and it will download only new files. \n"
-									+ "\t\t-noretag\t will suppress this program's tagging efforts, keeping the original ID3 tags if any \n"
+									+ "\t\t-forcetag\t will suppress this program's tagging efforts, keeping the original ID3 tags if any \n"
 									+ "\t\t\t (without it all files will be retagged, both new and 'skipped')\n"
 									+ "\n"
 									+ "HINT: the program tries to cache relevant data from all the pages it goes through,\n"
 									+ "\tso if it finds a web page that was parsed before and cached, the page won't be downloaded.\n"
 									+ "\tIf you want all pages to be re-downloaded anew - delete '"+xmlFileName+"' or use next key:\n"
-									+ "\t\t-fullscan\t forces all pages to be downloaded, cache gets updated.\n"
+									+ "\t\t-rescan\t forces all pages to be downloaded, cache gets updated.\n"
 									);
 					System.exit(0);
 				case 's': logToCon = false; break;
@@ -66,8 +66,8 @@ public class Main {
 								.println("-t must specify a directory. Default value will be used.");
 					}
 					break;
-				case 'n': allowTagging = false; break;
-				case 'f': allowFromCache = false; break;
+				case 'f': forceTagging = true; break;
+				case 'r': allowFromCache = false; break;
 			} //switch
 		} //for
 	}
@@ -98,7 +98,7 @@ public class Main {
 				}
 			};
 //			hConsole.setLevel(Level.ALL);
-			hConsole.setLevel(Level.INFO);
+			hConsole.setLevel(Level.INFO); // only essentials
 			logger.addHandler(hConsole);
 		}
 		if (logToFile) {
@@ -108,7 +108,7 @@ public class Main {
 						fNotVerySimple) {
 					public void publish(LogRecord record) {
 						super.publish(record);
-						flush();
+						flush(); // forced DSYNK.
 					}
 				};
 				hFile.setLevel(Level.ALL);
@@ -125,8 +125,8 @@ public class Main {
 		initLogger(); // --> logger
 		try {
 			logger.info( String.format(
-					"Starting to download%n from <%s>%n into <%s> with%s retagging existing files.%n",
-					baseURL, saveTo, allowTagging?"":"out"));
+					"Starting to download%n from <%s>%n into <%s> %s%n",
+					baseURL, saveTo, forceTagging?"with retagging existing files.":""));
 			
 			PageProcessor.initCache(xmlFileName);
 			PageProcessor.initLogger(logger);
@@ -141,6 +141,12 @@ public class Main {
 					StatisticGatherer.totalPageDownloadFinished 
 					));
 		} catch (Throwable e) {
+			try {
+				// an attempt to salvage metadata at least
+				PageProcessor.saveCache();
+			} catch (IOException e1) {
+				logger.log(Level.SEVERE, "", e);
+			}
 			logger.log(Level.SEVERE, "", e); 
 		}
 	}

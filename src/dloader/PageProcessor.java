@@ -15,6 +15,10 @@ import dloader.AbstractPage.ProblemsReadingDocumentException;
  */
 public class PageProcessor {
 	
+	/**
+	 * Class for progress tracking of page being processed 
+	 * @author A.Cerbic
+	 */
 	static class PageJob {
 		enum JobStatusEnum { RECON_PAGE, DOWNLOAD_PAGE, 
 			ADD_CHILDREN_JOBS, SAVE_RESULTS };
@@ -23,6 +27,8 @@ public class PageProcessor {
 		String saveTo;
 	}
 	
+	
+	// shared among parallel PageProcessor instances
 	static List<PageJob> jobQ;
 	static XMLCache cache;
 	static Logger logger;
@@ -43,14 +49,19 @@ public class PageProcessor {
 
 	/**
 	 * Called for root page; this page will be added to Q and always downloaded;
-	 * @param saveTo
-	 * @param baseURL
+	 * @param saveTo - master directory in which this page results will be saved
+	 * @param baseURL - the initial page
 	 */
 	PageProcessor(String saveTo, String baseURL, boolean _isReadingCache) {
+//		addJob (saveTo, detectPage(baseURL), PageJob.JobStatusEnum.RECON_PAGE);
 		addJob (saveTo, detectPage(baseURL), PageJob.JobStatusEnum.DOWNLOAD_PAGE);
 		isReadingCache = _isReadingCache;
 	}
 	
+	/**
+	 * This constructor is to create additional PageProcessors on existing jobQ
+	 * @param _isReadingCache
+	 */
 	PageProcessor(boolean _isReadingCache) {
 		isReadingCache = _isReadingCache;		
 	}
@@ -66,10 +77,20 @@ public class PageProcessor {
 	static void saveCache () throws IOException {
 		cache.saveCache();
 	}	
-	
+
+	/**
+	 * adds job to the shared queue
+	 * @param j - the job
+	 */
 	static void addJob (PageJob j) {
 		jobQ.add(0,j);
 	}
+	/**
+	 * creates new job and adds it to the shared queue
+	 * @param saveTo - directory in which this page results will be saved
+	 * @param page
+	 * @param status
+	 */
 	static void addJob (String saveTo, AbstractPage page, PageJob.JobStatusEnum status) {
 		PageJob j = new PageJob();
 		j.page = page; j.saveTo = saveTo; j.status = status;
@@ -94,7 +115,7 @@ public class PageProcessor {
 			return new Track(baseURL);
 		if (baseURL.contains("/album/")) 
 			return new Album(baseURL);
-		if (u.getPath().isEmpty())
+		if (u.getPath().isEmpty() || u.getPath().equals("/"))
 			return new Discography(baseURL);
 		
 		throw new IllegalArgumentException();
@@ -104,7 +125,7 @@ public class PageProcessor {
 	 * Gets one page from the top of a q, reads it from cache or downloads and parses web page.
 	 * Then repeats process for remaining
 	 * @param forceDownload - true if you want ignore cache on this one, all child nodes checks are
-	 * controlled with <b>isUsingCache</b> flag
+	 * controlled with <b>isReadingCache</b> flag
 	 * @param doc - XML document storing cache on pages data.  
 	 * @throws ProblemsReadingDocumentException if failed. (generally it means that web server did not respond right)
 	 */
@@ -113,36 +134,45 @@ public class PageProcessor {
 			PageJob job = jobQ.remove(0); 
 			processOnePage(job);
 		}
-		
 	}
-	
-	void logInfoSurvey(String method, AbstractPage p) {
+
+	/**
+	 * logs results of acquiring metadata (from cache or web)
+	 * @param method - which way the data is acquired
+	 * @param page - the page the data was read to
+	 */
+	void logInfoSurvey(String method, AbstractPage page) {
 		if (logger == null) return;
 		String log_message = String.format("%s (%s): <%s>%s%n",
-				p.getClass().getSimpleName(),
+				page.getClass().getSimpleName(),
 				method,
-				p.url.toString(),
-				(p.childPages!=null && p.childPages.length>0)?
-					String.format(" [%s] children", p.childPages.length): "");
-		while (p.parent != null) {
+				page.url.toString(),
+				(page.childPages!=null && page.childPages.length>0)?
+					String.format(" [%s] children", page.childPages.length): "");
+		while (page.parent != null) {
 			log_message = "\t"+log_message;
-			p = p.parent;
+			page = page.parent;
 		}
 		logger.info(log_message);
 	}
 	
-	void logDataSave(boolean result, AbstractPage p) {
+	/**
+	 * logs results of saving page's data to disk 
+	 * @param result - reported by AbstractPage.saveResult(...);
+	 * @param page - the page that was saved, contains statusReport field
+	 */
+	void logDataSave(boolean result, AbstractPage page) {
 		if (logger == null) return;
-		if (p.statusReport == null || p.statusReport.isEmpty())
+		if (page.statusReport == null || page.statusReport.isEmpty())
 			return;
 		String log_message = String.format("%s \"%s\" %s%n",
-				p.getClass().getSimpleName(),
-				p.title.toString(),
-				p.statusReport
+				page.getClass().getSimpleName(),
+				page.title.toString(),
+				page.statusReport
 				);
-		while (p.parent != null) {
+		while (page.parent != null) {
 			log_message = "\t"+log_message;
-			p = p.parent;
+			page = page.parent;
 		}
 		logger.info(log_message);
 	}

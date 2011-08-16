@@ -68,7 +68,7 @@ public class TrackTest {
 	
 	@Test
 	public void testTagMp3FileCreateNewID3Tag() throws CannotReadException, IOException {
-		Main.allowTagging = false;
+		Main.forceTagging = false;
 		t.tagAudioFile(workingCopy);
 		AudioFile mp3File = AudioFileIO.read(workingCopyPath.toFile());
 		entagged.audioformats.Tag mp3Tag = mp3File.getTag();
@@ -88,7 +88,7 @@ public class TrackTest {
 
 	@Test
 	public void testTagMp3FileNoDoublingTags() throws CannotReadException, IOException {
-		Main.allowTagging = false;
+		Main.forceTagging = false;
 		t.tagAudioFile(workingCopy);
 		t.tagAudioFile(workingCopy);
 		AudioFile mp3File = AudioFileIO.read(workingCopyPath.toFile());
@@ -110,7 +110,7 @@ public class TrackTest {
 
 	@Test
 	public void testTagMp3FileUpdatePartialTag() throws CannotReadException, IOException {
-		Main.allowTagging = false;
+		Main.forceTagging = false;
 		t.title = "";
 		t.setProperty("album", "");
 		t.tagAudioFile(workingCopy);
@@ -137,7 +137,7 @@ public class TrackTest {
 	
 	@Test
 	public void testTagMp3FileUpdatePartialTagWithRewrite() throws CannotReadException, IOException {
-		Main.allowTagging = true;
+		Main.forceTagging = true;
 		t.title = "";
 		t.setProperty("album", "");
 		t.tagAudioFile(workingCopy);
@@ -160,5 +160,28 @@ public class TrackTest {
 		assertEquals(1, mp3Tag.getArtist().size());
 		assertEquals("Cool Album",mp3Tag.getFirstAlbum());
 		assertEquals("DJ Sniff Mc'Snow", mp3Tag.getFirstArtist());
+	}
+	@Test
+	public void testTagMp3WhileOpenForWrite() throws IOException {
+		Main.forceTagging = true;
+//		SeekableByteChannel boch = 
+//				Files.newByteChannel(workingCopyPath, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+//		boch.position(boch.size());
+//		byte[] buff = new byte[1024 * 1024 * 10];
+//		Arrays.fill(buff, (byte)6);
+//		ByteBuffer buff2 = ByteBuffer.wrap(buff);
+//		boch.write(buff2);
+//		Path p2 = Paths.get("D:\\Music\\What's Left For Us.mp3");
+//		FileChannel fc = FileChannel.open(p2, StandardOpenOption.WRITE, 
+//				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+//		fc.
+//		fc.force(false);
+//		fc.close();
+//		t.tagAudioFile("D:\\Music\\What's Left For Us.mp3");
+//		SeekableByteChannel boch = 
+//		Files.newByteChannel(Paths.get("D:\\Music\\What's Left For Us.mp3"), 
+//				StandardOpenOption.WRITE, 
+//				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+//		boch.close();
 	}
 }
