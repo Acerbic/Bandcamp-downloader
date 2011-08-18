@@ -4,6 +4,7 @@ package dloader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -150,8 +151,11 @@ public abstract class AbstractPage {
 		org.jdom.Document doc = null;
 		try {
 			SAXBuilder builder = new SAXBuilder("org.ccil.cowan.tagsoup.Parser");
-			doc = builder.build(url.toString());
-		} catch (Throwable e) {
+			URLConnection connection = url.openConnection();
+			if (!WebDownloader.checkHttpResponseOK(connection))		
+				throw new ProblemsReadingDocumentException("Error response from server");
+			doc = builder.build(connection.getInputStream());
+		} catch (IOException|JDOMException e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
 
@@ -248,7 +252,8 @@ public abstract class AbstractPage {
 	
 	/**
 	 * Queries given JDOM document with XPath string
-	 * @param q - XPath string with all nodes in "pre" namespace
+	 * @param q - XPath string with all nodes in "pre" namespace for parsed HTML files 
+	 * (no prefix for XML cache files with no namespace definition)
 	 * @param doc - JDOM Document or Element
 	 * @return List of found matches, may be of zero size if nothing is found
 	 */

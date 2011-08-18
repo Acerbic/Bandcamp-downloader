@@ -36,7 +36,7 @@ public class Discography extends AbstractPage {
 		if ((result != null) && (result.size()>0))
 			title = ((Element) result.get(0)).getText();
 		else
-			title = "Unknownband";
+			throw new ProblemsReadingDocumentException("Can't read discography title");
 
 		// now detect type of Discography
 		result = queryXPathList("//pre:ul[@title='Discography']", doc);
@@ -48,7 +48,9 @@ public class Discography extends AbstractPage {
 		result = queryXPathList("//pre:div[@id='indexpage']", doc);
 		if (result.size()>0) {
 			variant = DiscographyListVariant.CENTRAL_INDEX;
+			return;
 		}
+		throw new ProblemsReadingDocumentException("Can't detect discography type");
 	}
 
 	@Override

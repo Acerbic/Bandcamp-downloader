@@ -16,7 +16,7 @@
 	</natures>
 	<filteredResources>
 		<filter>
-			<id>1311424183233</id>
+			<id>1313688982137</id>
 			<name></name>
 			<type>6</type>
 			<matcher>
@@ -25,35 +25,12 @@
 			</matcher>
 		</filter>
 		<filter>
-			<id>1311424183264</id>
+			<id>1313688982153</id>
 			<name></name>
 			<type>6</type>
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-*cache.xml</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1311424183264</id>
-			<name></name>
-			<type>22</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.andFilterMatcher</id>
-				<arguments>
-					<matcher>
-						<id>org.eclipse.ui.ide.multiFilter</id>
-						<arguments>1.0-projectRelativePath-matches-false-false-lib*</arguments>
-					</matcher>
-					<matcher>
-						<id>org.eclipse.ui.ide.notFilterMatcher</id>
-						<arguments>
-							<matcher>
-								<id>org.eclipse.ui.ide.multiFilter</id>
-								<arguments>1.0-name-matches-false-false-*.jar</arguments>
-							</matcher>
-						</arguments>
-					</matcher>
-				</arguments>
 			</matcher>
 		</filter>
 	</filteredResources>

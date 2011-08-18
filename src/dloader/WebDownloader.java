@@ -2,6 +2,7 @@ package dloader;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
@@ -22,8 +23,8 @@ public class WebDownloader {
 	 * @param from - resource URL string
 	 * @param to - file to save to.
 	 * @return size of the downloaded file in bytes, 
-	 * 0 if download was skipped (file exists and not zero-length or server has responded bad)
-	 * @throws IOException on other stream problems
+	 * 0 if download was skipped (file exists and not zero length)
+	 * @throws IOException on stream problems or server has responded bad
 	 */
 	public static long fetchWebFile(String from, String to) throws IOException {
 		URL u = new URL(from);
@@ -41,32 +42,24 @@ public class WebDownloader {
 	public static long fetchWebFile(URL from, String to) throws IOException {
 		StatisticGatherer.totalFileDownloadAttempts++;
 		
-		Path p = Paths.get(to);
+		Path dstPath = Paths.get(to);
 		/* if file not exist, continue
 		 * If file exists, is regular and not zero-sized, return 0 (skip)
 		 * if file exists, regular and size zero, delete it and continue
 		 * if file exists, not regular - error
 		 */
-		if (Files.exists(p))
-			if (Files.isRegularFile(p)) 
-				if (Files.size(p) > 0)
+		if (Files.exists(dstPath))
+			if (Files.isRegularFile(dstPath)) 
+				if (Files.size(dstPath) > 0)
 					return 0;
-				else Files.deleteIfExists(p);
+				else Files.deleteIfExists(dstPath);
 			else throw new IOException ("Destination is not a regular file");
 
 		URLConnection connection = from.openConnection();
-		
-		StringBuilder httpResponseCode = new StringBuilder();
-		for (String v: connection.getHeaderFields().get(null))
-			httpResponseCode.append(v);
-		
-		if (httpResponseCode.toString().isEmpty())
-			throw new IOException("server response timed out"); // retry?
-		if (!httpResponseCode.toString().contains("200 OK"))  
-			throw new IOException(String.format("server responded error<%s>",httpResponseCode)); // retry?
-	 
+		if (!checkHttpResponseOK(connection))
+			throw new IOException("failed to get OK response from server"); 
 		try (InputStream is = connection.getInputStream();
-				SeekableByteChannel boch = Files.newByteChannel(p, 
+				SeekableByteChannel boch = Files.newByteChannel(dstPath, 
 						StandardOpenOption.WRITE,
 						StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING))
@@ -75,27 +68,42 @@ public class WebDownloader {
 			ByteBuffer buff2 = ByteBuffer.wrap(buff);
 			int numRead;
 			while ((numRead = is.read(buff)) != -1) {
-				buff2.limit(numRead);
+				buff2.limit(numRead); // sync wrapper with the input buffer
 				while (buff2.remaining() > 0) 
-					boch.write(buff2); // insufficient disk space -> IOException
-				buff2.rewind();
+					boch.write(buff2); // IOException on insufficient disk space 
+				buff2.rewind(); 
 			}
 			
 			boch.close();
 		} catch (IOException e) {
-			// on actual write loop to the file;
-			Files.delete(p);
+			// on actual write loop to the file: delete half-baked file;
+			Files.deleteIfExists(dstPath);
 			throw e;
 		}
 		
-		if (Files.exists(p)) { 
-			// BOoooo. how to know System is done with file?
+		if (Files.exists(dstPath)) { 
+			// BOoooo. how to know that OS is done with the file?
 			// waiting for file to be released. possible infinite loop / clinch here.
 			// while (!Files.isWritable(p)) ;
 			StatisticGatherer.totalFileDownloadFinished++;
-			StatisticGatherer.totalBytesDownloaded += Files.size(p);
-			return Files.size(p);
+			StatisticGatherer.totalBytesDownloaded += Files.size(dstPath);
+			return Files.size(dstPath);
 		}
 		throw new IOException("Java fucked up and lost your file!");
+	}
+	
+	public static boolean checkHttpResponseOK (URLConnection connection) {
+		if (connection instanceof HttpURLConnection)
+			try {
+				return ((HttpURLConnection)connection).getResponseCode() == HttpURLConnection.HTTP_OK;
+			} catch (IOException e) {
+				return false;
+			}
+		
+		// exceptional treatment of local files, for testing convenience
+		URL u = connection.getURL();
+		if (u.getProtocol().equals("file"))
+			return Files.isReadable(Paths.get(u.getFile().substring(1)));
+		return false; // unknown connection type
 	}
 }

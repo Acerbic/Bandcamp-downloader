@@ -29,7 +29,7 @@ public class Album extends AbstractPage {
 	public String moreInfo;
 	/**
 	 * counts parsed child track pages (include fails) 
-	 * to override their "track" number
+	 * to override their "track" number property
 	 */
 	private int trackCounter;
 

@@ -3,6 +3,7 @@ package dloader;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import org.jdom.Document;
@@ -16,7 +17,7 @@ import dloader.PageProcessor.PageJob.JobStatusEnum;
 public class PageProcessorTest {
 
 	PageProcessor mockPP_useCache;
-	//	Queue<AbstractPage> mockJobQ;
+	
 	@Before
 	public void setUp() throws Exception {
 		mockPP_useCache = new PageProcessor(true);
@@ -24,6 +25,10 @@ public class PageProcessorTest {
 
 	@After
 	public void tearDown() throws Exception {
+		Files.deleteIfExists(Paths.get("test/download_zone"));
+		PageProcessor.getJobQ().clear();
+		PageProcessor.cache = null;
+		PageProcessor.logger = null;
 	}
 
 	@Test
@@ -108,4 +113,31 @@ public class PageProcessorTest {
 		assertEquals("Cache failed", job.page.title);
 	}
 	
+	@Test
+	public void testProcessOnePageRetryDownloadPage() throws ProblemsReadingDocumentException, IOException {
+		PageProcessor pp = new PageProcessor(
+				Paths.get("test/download_zone").toString(), 
+				"http://rberebrbere.bandcamp.com", 
+				false);
+		assertEquals(1, PageProcessor.getJobQ().size());
+		PageProcessor.PageJob pj = PageProcessor.getJobQ().remove(0);
+		assertEquals(PageProcessor.PageJob.MAX_RETRIES, pj.retryCount);
+		pp.processOnePage(pj);
+		assertEquals(PageProcessor.PageJob.MAX_RETRIES-1, pj.retryCount);
+	}
+	
+	@Test
+	public void testProcessOnePageRetrySavePageResults() throws ProblemsReadingDocumentException, IOException {
+		PageProcessor pp = new PageProcessor(
+				Paths.get("test/download_zone").toString(), 
+				"http://rberebrbere.bandcamp.com/track/failtrack.mp3", 
+				false);
+		assertEquals(1, PageProcessor.getJobQ().size());
+		PageProcessor.PageJob pj = PageProcessor.getJobQ().remove(0);
+		assertEquals(PageProcessor.PageJob.MAX_RETRIES, pj.retryCount);
+		pj.status = JobStatusEnum.SAVE_RESULTS;
+		pj.page.title = "SomeName";
+		pp.processOnePage(pj);
+		assertEquals(PageProcessor.PageJob.MAX_RETRIES-1, pj.retryCount);
+	}
 }

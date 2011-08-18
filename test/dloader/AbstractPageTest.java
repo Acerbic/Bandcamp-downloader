@@ -61,11 +61,6 @@ public class AbstractPageTest {
 		assertEquals("http://www.google.com", page.url.toString());
 	}
 
-//	@Test
-//	public void testGetFSSafeName() {
-//		fail("Not yet implemented"); 
-//	}
-
 	@Test
 	public void testDownloadPageDummyFromLocal() throws ProblemsReadingDocumentException {
 		AbstractPageDummy p = new AbstractPageDummy("file:///D:/Gleb/JavaWorkspace_Eclipse/Dloader/test/Homestuck.htm");

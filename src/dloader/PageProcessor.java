@@ -25,8 +25,16 @@ public class PageProcessor {
 		AbstractPage page;
 		JobStatusEnum status;
 		String saveTo;
+		final static int MAX_RETRIES = 3;
+		int retryCount;
+		
+		PageJob (String _saveTo, AbstractPage _page, PageJob.JobStatusEnum _status) {
+			assert (_saveTo != null);
+			assert (_page != null);
+			page = _page; saveTo = _saveTo; status = _status;
+			retryCount = MAX_RETRIES;
+		}
 	}
-	
 	
 	// shared among parallel PageProcessor instances
 	static List<PageJob> jobQ;
@@ -43,7 +51,7 @@ public class PageProcessor {
 		jobQ = new LinkedList<PageJob>();
 	}
 	
-	List<PageJob> getJobQ() {
+	static List<PageJob> getJobQ() {
 		return jobQ;
 	}
 
@@ -53,7 +61,6 @@ public class PageProcessor {
 	 * @param baseURL - the initial page
 	 */
 	PageProcessor(String saveTo, String baseURL, boolean _isReadingCache) {
-//		addJob (saveTo, detectPage(baseURL), PageJob.JobStatusEnum.RECON_PAGE);
 		addJob (saveTo, detectPage(baseURL), PageJob.JobStatusEnum.DOWNLOAD_PAGE);
 		isReadingCache = _isReadingCache;
 	}
@@ -92,8 +99,7 @@ public class PageProcessor {
 	 * @param status
 	 */
 	static void addJob (String saveTo, AbstractPage page, PageJob.JobStatusEnum status) {
-		PageJob j = new PageJob();
-		j.page = page; j.saveTo = saveTo; j.status = status;
+		PageJob j = new PageJob(saveTo,page,status);
 		jobQ.add(0,j);
 	}
 	
@@ -133,8 +139,9 @@ public class PageProcessor {
 		while (!jobQ.isEmpty()) { //TODO convert this into parallel tasks
 			PageJob job = jobQ.remove(0); 
 			processOnePage(job);
+			// TODO ???move retry facility over here by throwing exception from processOnePage
 		}
-	}
+	}  
 
 	/**
 	 * logs results of acquiring metadata (from cache or web)
@@ -182,6 +189,7 @@ public class PageProcessor {
 	 */
 	void processOnePage(PageJob job) throws ProblemsReadingDocumentException, IOException {
 		AbstractPage p = job.page;
+		assert (p != null);
 		switch (job.status) {
 			case RECON_PAGE: 
 				boolean isLoaded = false;
@@ -195,10 +203,19 @@ public class PageProcessor {
 				addJob(job); job = null;
 				break;
 			case DOWNLOAD_PAGE:
-				p.downloadPage();
+				try {
+					p.downloadPage();
+				} catch (ProblemsReadingDocumentException e) {
+					if (--job.retryCount > 0)
+						addJob (job); // retry
+					else 
+						// log fail
+						; // TODO: add to failed list
+					break; //consume this fail and go on to next item in jobQ
+				}
 				StatisticGatherer.totalPageDownloadFinished++;
-				
-				p.saveToCache(cache.doc);
+				if (cache != null)
+					p.saveToCache(cache.doc);
 				job.status = PageJob.JobStatusEnum.ADD_CHILDREN_JOBS;
 				logInfoSurvey("web", p);
 				addJob (job);
@@ -214,9 +231,18 @@ public class PageProcessor {
 				addJob(job);
 				break;
 			case SAVE_RESULTS:
-				boolean saveNotSkipped = p.saveResult(job.saveTo);
-				logDataSave(saveNotSkipped, p); 
-				break;
+				try {
+					boolean saveNotSkipped = p.saveResult(job.saveTo);
+					logDataSave(saveNotSkipped, p); 
+					break;
+				} catch (IOException e) {
+					if (--job.retryCount > 0)
+						addJob (job); // retry
+					else 
+						// log fail
+						; // TODO: add to failed list
+					break; //consume this fail and go on to next item in jobQ
+				}
 		}
 	}
 }
