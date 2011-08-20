@@ -68,10 +68,6 @@ public abstract class AbstractPage {
 	public AbstractPage parent;
 	
 	/**
-	 * Used for reporting operations after they are saved to disk 
-	 */
-	public String statusReport;
-	/**
 	 * use caching facility?
 	 */
 	public static boolean isUsingCache;
@@ -326,10 +322,10 @@ public abstract class AbstractPage {
 	/**
 	 * Saves extracted data to disk, then saves children too. 
 	 * @param saveTo - directory to save info to.
-	 * @return true if new download was performed, false if download was skipped
-	 * @throws IOException
+	 * @return operation status report string, "" or null if nothing to report (operation skipped)
+	 * @throws IOException if saving was terminated by error - retry might be possible.
 	 */
-	public abstract boolean saveResult(String saveTo) throws IOException;
+	public abstract String saveResult(String saveTo) throws IOException;
 
 	/**
 	 * Saves this page data into XML tree. 

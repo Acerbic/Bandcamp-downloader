@@ -76,7 +76,6 @@ public class Track extends AbstractPage {
 // track number is set by parent album or not set at all - may be this behavior should be changed  		
 //		dataPatterns.put("track", Pattern.compile(".*numtracks\\s*:\\s*([\\d]*).*", Pattern.DOTALL));
 		dataPatterns.put("comment", Pattern.compile(".*trackinfo:.*\"has_info\":\"([^\"]*)\".*", Pattern.DOTALL));				
-
 	}
 	
 	public Track(String s) throws IllegalArgumentException {super(s);}
@@ -89,19 +88,19 @@ public class Track extends AbstractPage {
 	}
 	
 	@Override
-	public boolean saveResult(String saveTo) throws IOException {
-		boolean wasDownloaded;
+	public String saveResult(String saveTo) throws IOException {
 		Files.createDirectories(Paths.get(saveTo));
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()) + ".mp3");
-		wasDownloaded = WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
+		boolean wasDownloaded = 
+				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
 		
-		statusReport = "";
-		tagAudioFile(p.toString());
+		String statusReport = "skipped";
+		if (tagAudioFile(p.toString()))
+			statusReport = "updated";
 		if (wasDownloaded)
 			statusReport = "downloaded";
-		else if (statusReport.isEmpty()) 
-			statusReport = "skipped";
-		return true;
+		
+		return statusReport;
 	}
 	
 	/**
@@ -137,10 +136,11 @@ public class Track extends AbstractPage {
 	
 	/**
 	 * Checks the file and tags it if appropriate 
-	 * @param f - file to tag
+	 * @param file - name of an audio file to tag
+	 * @return true if actual write operation happened
+	 * @throws IOException
 	 */
-	void tagAudioFile(String file) {
-		statusReport = "";
+	boolean tagAudioFile(String file) throws IOException {
 		try {
 			AudioFile theFile = AudioFileIO.read(Paths.get(file).toFile());
 			entagged.audioformats.Tag fileTag = theFile.getTag();
@@ -184,11 +184,12 @@ public class Track extends AbstractPage {
 			
 			if (updateMP3Tag) {
 				theFile.commit();
-				statusReport = "updated";
+				return true;
 			}
+			return false;
 			
 		} catch (CannotReadException|CannotWriteException e) {
-			logger.log(Level.SEVERE, "", e);
+			throw new IOException(e);
 		}
 	}
 

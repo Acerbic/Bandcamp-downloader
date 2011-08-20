@@ -40,13 +40,13 @@ public class Album extends AbstractPage {
 	public Album() {super();}
 	
 	@Override
-	public boolean saveResult(String saveTo) throws IOException {
+	public String saveResult(String saveTo) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 			
-		if (WebDownloader.fetchWebFile(coverUrl, p.resolve("cover.jpg").toString()) != 0)
-			statusReport = "cover image downloaded";
-		return true;
+		if (WebDownloader.fetchWebFile(coverUrl, p.resolve("cover.jpg").toString()) != 0) 
+			return "cover image downloaded";
+		else return null;
 	}
 
 	@Override

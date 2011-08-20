@@ -168,14 +168,13 @@ public class PageProcessor {
 	 * @param result - reported by AbstractPage.saveResult(...);
 	 * @param page - the page that was saved, contains statusReport field
 	 */
-	void logDataSave(boolean result, AbstractPage page) {
+	void logDataSave(String result, AbstractPage page) {
 		if (logger == null) return;
-		if (page.statusReport == null || page.statusReport.isEmpty())
-			return;
+		if (result == null || result.isEmpty())	return;
 		String log_message = String.format("%s \"%s\" %s%n",
 				page.getClass().getSimpleName(),
 				page.getTitle().toString(),
-				page.statusReport
+				result
 				);
 		while (page.parent != null) {
 			log_message = "\t"+log_message;
@@ -232,8 +231,8 @@ public class PageProcessor {
 				break;
 			case SAVE_RESULTS:
 				try {
-					boolean saveNotSkipped = p.saveResult(job.saveTo);
-					logDataSave(saveNotSkipped, p); 
+//					boolean saveNotSkipped = p.saveResult(job.saveTo);
+					logDataSave(p.saveResult(job.saveTo), p); 
 					break;
 				} catch (IOException e) {
 					if (--job.retryCount > 0)

@@ -34,7 +34,7 @@ public class AbstractPageTest {
 				throws ProblemsReadingDocumentException {}
 
 		@Override
-		public boolean saveResult(String saveTo) throws IOException {return false;}
+		public String saveResult(String saveTo) throws IOException {return null;}
 
 		@Override
 		public String getChildrenSaveTo(String saveTo) throws IOException {return null;}

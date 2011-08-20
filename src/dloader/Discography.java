@@ -54,12 +54,10 @@ public class Discography extends AbstractPage {
 	}
 
 	@Override
-	public boolean saveResult(String saveTo) throws IOException {
+	public String saveResult(String saveTo) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
-		
-		statusReport = "";
-		return true;
+		return null;
 	}
 
 	@Override
