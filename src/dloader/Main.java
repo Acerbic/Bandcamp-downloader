@@ -18,7 +18,7 @@ public class Main {
 	public static boolean logToCon = true;
 	public static boolean logToFile = false;
 	// user current directory
-	public static String saveTo = Paths.get(".").toAbsolutePath().toString(); 
+	public static String saveTo = Paths.get("").toAbsolutePath().toString(); 
 
 	public static Logger logger;
 	
@@ -145,9 +145,10 @@ public class Main {
 				// an attempt to salvage metadata at least
 				PageProcessor.saveCache();
 			} catch (IOException e1) {
+				logger.log(Level.SEVERE, "", e1);
+			} finally {
 				logger.log(Level.SEVERE, "", e);
 			}
-			logger.log(Level.SEVERE, "", e); 
 		}
 	}
 	

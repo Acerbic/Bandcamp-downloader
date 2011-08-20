@@ -86,7 +86,7 @@ public class PageProcessorTest {
 		assertEquals(1, PageProcessor.jobQ.size());
 		PageProcessor.PageJob job = PageProcessor.jobQ.remove(0);
 		assertEquals(JobStatusEnum.ADD_CHILDREN_JOBS, job.status);
-		assertEquals("Homestuck", job.page.title);
+		assertEquals("Homestuck", job.page.getTitle());
 	}
 	
 	@Test
@@ -98,7 +98,7 @@ public class PageProcessorTest {
 
 			@Override
 			protected boolean loadFromCache(Document doc) {
-				title = "Cache failed";
+				setTitle("Cache failed");
 				return false;
 			}
 		}
@@ -110,7 +110,7 @@ public class PageProcessorTest {
 		assertEquals(1, PageProcessor.jobQ.size());
 		PageProcessor.PageJob job = PageProcessor.jobQ.remove(0);
 		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, job.status);
-		assertEquals("Cache failed", job.page.title);
+		assertEquals("Cache failed", job.page.getTitle());
 	}
 	
 	@Test
@@ -136,7 +136,7 @@ public class PageProcessorTest {
 		PageProcessor.PageJob pj = PageProcessor.getJobQ().remove(0);
 		assertEquals(PageProcessor.PageJob.MAX_RETRIES, pj.retryCount);
 		pj.status = JobStatusEnum.SAVE_RESULTS;
-		pj.page.title = "SomeName";
+		pj.page.setTitle("SomeName");
 		pp.processOnePage(pj);
 		assertEquals(PageProcessor.PageJob.MAX_RETRIES-1, pj.retryCount);
 	}

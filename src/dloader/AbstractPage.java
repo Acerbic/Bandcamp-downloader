@@ -53,7 +53,7 @@ public abstract class AbstractPage {
 	/** 
 	 * title of this item (as stored into cache) - SHOULD NOT be null
 	 */
-	public String title;
+	private String title;
 	/**
 	 * url of a page referencing this item - SHOULD NOT be null 
 	 */
@@ -106,6 +106,14 @@ public abstract class AbstractPage {
 	public AbstractPage(URL _url) throws IllegalArgumentException {
 		if (_url == null) throw new IllegalArgumentException();
 		url = _url;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
 	}
 
 	/**
@@ -202,7 +210,7 @@ public abstract class AbstractPage {
 		try {
 			Element e = scanXMLForThisElement(doc);
 			if (null == e) return false;
-			title = e.getAttributeValue("title");  
+			setTitle(e.getAttributeValue("title"));  
 			readCacheSelf(e);
 			
 			@SuppressWarnings("unchecked")
@@ -332,12 +340,12 @@ public abstract class AbstractPage {
 		assert (doc != null);
 		
 		// absolutely required fields
-		if (title==null || url==null)
+		if (getTitle()==null || url==null)
 			return;
 		//1. Compose this one and childrefs
 		Element e = getSpecificDataXML();
 		if (e==null) return; // element is corrupt and should not be cached 
-		e.setAttribute("title", title);
+		e.setAttribute("title", getTitle());
 		e.setAttribute("url", url.toString());
 		if (childPages != null) 
 			for (AbstractPage child: childPages) 

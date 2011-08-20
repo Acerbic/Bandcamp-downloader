@@ -174,7 +174,7 @@ public class PageProcessor {
 			return;
 		String log_message = String.format("%s \"%s\" %s%n",
 				page.getClass().getSimpleName(),
-				page.title.toString(),
+				page.getTitle().toString(),
 				page.statusReport
 				);
 		while (page.parent != null) {

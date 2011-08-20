@@ -31,19 +31,31 @@ public class Track extends AbstractPage {
 	/**
 	 * Set of custom properties read from page, saved to cache and 
 	 * resulting audio file metadata tags
+	 */	
+	Properties defaultProperties;
+	Properties properties;
+	
+	@Override
+	public String getTitle() {
+		return properties.getProperty("title");
+	};
+
+	@Override
+	public void setTitle(String title) {
+		properties.setProperty("title", title);
+	};
+
+	/**
+	 * Ease of use	
 	 */
-	private Map<String, String> properties = new HashMap<String,String>();
 	public String getProperty(String name) {
-		// convention to AbstractPage
-		return name.equals("title")? title : properties.get(name) ;
+		return properties.getProperty(name);
 	}
+	/**
+	 * Ease of use	
+	 */
 	public String setProperty(String name, String value) {
-		if (name.equals("title")) {
-			// convention to AbstractPage
-			String lastValue = title;
-			title = value;
-			return lastValue;
-		} else return properties.put(name, value);
+		return (String) properties.setProperty(name, value);
 	}
 	
 	/**
@@ -71,11 +83,16 @@ public class Track extends AbstractPage {
 	public Track(URL url) throws IllegalArgumentException {super(url);}
 	public Track() {super();}
 
+	{
+		defaultProperties = new Properties();
+		properties = new Properties(defaultProperties);
+	}
+	
 	@Override
 	public boolean saveResult(String saveTo) throws IOException {
 		boolean wasDownloaded;
 		Files.createDirectories(Paths.get(saveTo));
-		Path p = Paths.get(saveTo, getFSSafeName(title) + ".mp3");
+		Path p = Paths.get(saveTo, getFSSafeName(getTitle()) + ".mp3");
 		wasDownloaded = WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
 		
 		statusReport = "";
@@ -237,9 +254,9 @@ public class Track extends AbstractPage {
 			String artist = getProperty("artist");
 			// fix track number
 			if (album==null || album.isEmpty())
-				setProperty("album",parent.title);
+				setProperty("album",parent.getTitle());
 			if (artist==null || artist.isEmpty())
-				setProperty("artist",parent.parent.title);
+				setProperty("artist",parent.parent.getTitle());
 		} catch (NullPointerException e) {
 			// skip if not enough parents in a line;
 		}

@@ -34,7 +34,7 @@ public class Discography extends AbstractPage {
 	protected void parseSelf(Document doc) throws ProblemsReadingDocumentException  {
 		List<?> result = queryXPathList("//pre:title", doc);
 		if ((result != null) && (result.size()>0))
-			title = ((Element) result.get(0)).getText();
+			setTitle(((Element) result.get(0)).getText());
 		else
 			throw new ProblemsReadingDocumentException("Can't read discography title");
 
@@ -55,7 +55,7 @@ public class Discography extends AbstractPage {
 
 	@Override
 	public boolean saveResult(String saveTo) throws IOException {
-		Path p = Paths.get(saveTo, getFSSafeName(title));
+		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 		
 		statusReport = "";
@@ -88,7 +88,7 @@ public class Discography extends AbstractPage {
 		try {
 			URL u = resolveLink(element.getAttributeValue("href"));
 			Album c = new Album(u);
-			c.title = element.getText();
+			c.setTitle(element.getText());
 			return c;
 		} catch (NullPointerException|IllegalArgumentException|
 				MalformedURLException e) {
@@ -98,7 +98,7 @@ public class Discography extends AbstractPage {
 
 	@Override
 	public String getChildrenSaveTo(String saveTo) throws IOException {
-		return Paths.get(saveTo, getFSSafeName(title)).toString();
+		return Paths.get(saveTo, getFSSafeName(getTitle())).toString();
 	}
 
 }

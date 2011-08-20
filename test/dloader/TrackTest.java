@@ -27,7 +27,7 @@ public class TrackTest {
 	@Before
 	public void setUp() throws Exception {
 		t = new Track();
-		t.title = "Revelations III";
+		t.setTitle("Revelations III");
 		t.setProperty("album", "Sburb");
 		t.setProperty("track", "12");
 		t.setProperty("artist", "Tyler Dever");		
@@ -54,7 +54,7 @@ public class TrackTest {
 		assertTrue(mp3Tag instanceof GenericTag);
 		assertTrue(mp3Tag.isEmpty());
 
-		t.title = "";
+		t.setTitle("");
 		t.setProperty("album", "");
 		t.setProperty("track", "");
 		t.setProperty("artist", "");				
@@ -111,7 +111,7 @@ public class TrackTest {
 	@Test
 	public void testTagMp3FileUpdatePartialTag() throws CannotReadException, IOException {
 		Main.forceTagging = false;
-		t.title = "";
+		t.setTitle("");
 		t.setProperty("album", "");
 		t.tagAudioFile(workingCopy);
 		AudioFile mp3File = AudioFileIO.read(workingCopyPath.toFile());
@@ -122,7 +122,7 @@ public class TrackTest {
 		assertEquals(1, mp3Tag.getArtist().size());
 		assertEquals("",mp3Tag.getFirstAlbum());
 		assertEquals("Tyler Dever", mp3Tag.getFirstArtist());
-		t.title = "SomeTitle";
+		t.setTitle("SomeTitle");
 		t.setProperty("album", "Cool Album");
 		t.setProperty("artist", "DJ Sniff Mc'Snow");		
 		t.tagAudioFile(workingCopy);
@@ -138,7 +138,7 @@ public class TrackTest {
 	@Test
 	public void testTagMp3FileUpdatePartialTagWithRewrite() throws CannotReadException, IOException {
 		Main.forceTagging = true;
-		t.title = "";
+		t.setTitle("");
 		t.setProperty("album", "");
 		t.tagAudioFile(workingCopy);
 		AudioFile mp3File = AudioFileIO.read(workingCopyPath.toFile());
@@ -149,7 +149,7 @@ public class TrackTest {
 		assertEquals(1, mp3Tag.getArtist().size());
 		assertEquals("",mp3Tag.getFirstAlbum());
 		assertEquals("Tyler Dever", mp3Tag.getFirstArtist());
-		t.title = "SomeTitle";
+		t.setTitle("SomeTitle");
 		t.setProperty("album", "Cool Album");
 		t.setProperty("artist", "DJ Sniff Mc'Snow");		
 		t.tagAudioFile(workingCopy);

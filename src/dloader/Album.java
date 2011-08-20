@@ -41,7 +41,7 @@ public class Album extends AbstractPage {
 	
 	@Override
 	public boolean saveResult(String saveTo) throws IOException {
-		Path p = Paths.get(saveTo, getFSSafeName(title));
+		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 			
 		if (WebDownloader.fetchWebFile(coverUrl, p.resolve("cover.jpg").toString()) != 0)
@@ -73,7 +73,8 @@ public class Album extends AbstractPage {
 			trackCounter++; // that includes counting for failed parsing
 			URL u = resolveLink(element.getAttributeValue("href"));
 			Track t = new Track(u);
-			t.title = element.getText();
+			t.setTitle(element.getText());
+			// may be set default property instead?
 			t.setProperty("track", String.valueOf(trackCounter));
 			return t;
 		} catch (IllegalArgumentException|NullPointerException|
@@ -100,7 +101,7 @@ public class Album extends AbstractPage {
 			Pattern x = Pattern.compile(".*album_title : \"([^\"]*)\".*", Pattern.DOTALL);
 			Matcher m = x.matcher(scriptList.get(i).getText());
 			if (m.matches()) {
-				title = m.group(1);
+				setTitle(m.group(1));
 				break;
 			}
 		}		
@@ -113,7 +114,7 @@ public class Album extends AbstractPage {
 
 	@Override
 	public String getChildrenSaveTo(String saveTo) throws IOException {
-		return Paths.get(saveTo, getFSSafeName(title)).toString();
+		return Paths.get(saveTo, getFSSafeName(getTitle())).toString();
 	}
 
 }

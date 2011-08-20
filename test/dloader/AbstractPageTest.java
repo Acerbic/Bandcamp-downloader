@@ -90,7 +90,7 @@ public class AbstractPageTest {
 		AbstractPage pNoChildren = PageProcessor.detectPage("http://homestuck.bandcamp.com/track/black-rose-green-sun");
 		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
 		assertEquals(true, pNoChildren.loadFromCache(cache.doc));
-		assertEquals("Black Rose / Green Sun", pNoChildren.title);
+		assertEquals("Black Rose / Green Sun", pNoChildren.getTitle());
 		assertNull(pNoChildren.parent);
 		assertNull(pNoChildren.childPages);
 	}
@@ -100,7 +100,7 @@ public class AbstractPageTest {
 		AbstractPage p = PageProcessor.detectPage("http://noctura.bandcamp.com/album/demos");
 		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
 		assertEquals(true, p.loadFromCache(cache.doc));
-		assertEquals("Demos", p.title);
+		assertEquals("Demos", p.getTitle());
 		assertNotNull(p.childPages);
 		assertEquals(7, p.childPages.length);
 		assertEquals("http://noctura.bandcamp.com/track/dont-save-me-acoustic-for-x103", p.childPages[5].url.toString());
@@ -112,13 +112,13 @@ public class AbstractPageTest {
 		
 		XMLCache cacheNew = new XMLCache("test/new_cache.xml");
 		// p.title should be null by now.
-		assertNull (p.title);
+		assertNull (p.getTitle());
 		Document old_doc = (Document) cacheNew.doc.clone();
 		p.saveToCache(cacheNew.doc);
 		assertEquals(old_doc.getDocType(), cacheNew.doc.getDocType());
 		assertEquals(old_doc.getRootElement().getText(), cacheNew.doc.getRootElement().getText());
 		
-		p.title = "Title";
+		p.setTitle("Title");
 		p.url = null;
 		p.saveToCache(cacheNew.doc);
 		assertEquals(old_doc.getDocType(), cacheNew.doc.getDocType());
