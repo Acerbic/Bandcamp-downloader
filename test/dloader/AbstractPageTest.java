@@ -3,6 +3,8 @@ package dloader;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.jdom.Document;
 import org.jdom.Element;
@@ -39,7 +41,9 @@ public class AbstractPageTest {
 		@Override
 		public String getChildrenSaveTo(String saveTo) throws IOException {return null;}
 		
-		AbstractPageDummy(String s) {super(s);}
+		public AbstractPageDummy(String s) {super(s);}
+
+		public AbstractPageDummy(URL test) {super(test);}
 	}
 
 	@Before
@@ -59,6 +63,29 @@ public class AbstractPageTest {
 	public void testAbstractPageString() {
 		AbstractPageDummy page = new AbstractPageDummy("www.google.com");
 		assertEquals("http://www.google.com", page.url.toString());
+	}
+
+	@Test (expected = IllegalArgumentException.class)
+	public void testAbstractPageURLWrongArg() {
+		URL test = null;
+		new AbstractPageDummy(test);
+	}
+	
+	@Test 
+	public void testAbstractPageURL() throws MalformedURLException {
+		URL test = new URL("file:///some.file");
+		new AbstractPageDummy(test);
+	}
+
+	@Test (expected = NullPointerException.class)
+	public void testgetFSSafeNameNullArg() throws IOException {
+		AbstractPage.getFSSafeName(null);
+	}
+
+	@Test 
+	public void testgetFSSafeName() throws IOException {
+		String res = AbstractPage.getFSSafeName("a<>b<");
+		assertEquals("ab", res);
 	}
 
 	@Test

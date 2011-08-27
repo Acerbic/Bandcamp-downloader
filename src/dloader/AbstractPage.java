@@ -53,7 +53,7 @@ public abstract class AbstractPage {
 	/** 
 	 * title of this item (as stored into cache) - SHOULD NOT be null
 	 */
-	private String title;
+	String title;
 	/**
 	 * url of a page referencing this item - SHOULD NOT be null 
 	 */
@@ -113,36 +113,34 @@ public abstract class AbstractPage {
 	}
 
 	/**
-	 * Convert a string to a proper file name.
+	 * Convert a string to a proper file name (NOT path, only filename).
 	 * (don't check for existing file collisions, only validness of a name) 
-	 * @param from - string to convert
+	 * @param name - string to convert
 	 * @return proper file name
 	 * @throws IOException if file name is not valid  
 	 */
-	public static String getFSSafeName(String from) throws IOException   {
-		assert (from!=null);
-		String s = new String(from); // work on copy
+	public static String getFSSafeName(String name) throws IOException   {
 		for (char c : ":/\\*?\"<>|\t\n\r".toCharArray())
-			s = s.replace(String.valueOf(c), "");
-		s = s.trim();
+			name = name.replace(String.valueOf(c), "");
+		name = name.trim(); // only trailing spaces are forbidden
 	
 		try {
-			Paths.get(s);
+			Paths.get(name);
 		} catch (InvalidPathException e) {
 			// OK lets go try-hard on this
 			int hash = 0;
-			for (char c: s.toCharArray())
+			for (char c: name.toCharArray())
 				hash = (hash + (int)c)*2;
-			s = String.valueOf(hash);
+			name = String.valueOf(hash);
 
 			try {
-				Paths.get(s); 
+				Paths.get(name); 
 			} catch (InvalidPathException e1) {
 				throw new IOException(e1);
 			}
 		}
 		
-		return s;
+		return name;
 	}
 
 	/** 
