@@ -53,7 +53,7 @@ public abstract class AbstractPage {
 	/** 
 	 * title of this item (as stored into cache) - SHOULD NOT be null
 	 */
-	String title;
+	private String title;
 	/**
 	 * url of a page referencing this item - SHOULD NOT be null 
 	 */
@@ -204,7 +204,9 @@ public abstract class AbstractPage {
 		try {
 			Element e = scanXMLForThisElement(doc);
 			if (null == e) return false;
-			setTitle(e.getAttributeValue("title"));  
+			String t = e.getAttributeValue("title");
+			if (t == null) return false;
+			setTitle(t);  
 			readCacheSelf(e);
 			
 			@SuppressWarnings("unchecked")

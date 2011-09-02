@@ -45,7 +45,7 @@ public class Main {
 									+ "HINT: if the program discovers that a file for given track already exists, \n"
 									+ "\tthat track download will be skipped, so if previous download session was interrupted you can\n"
 									+ "\tjust run the program over and it will download only new files. \n"
-									+ "\t\t-forcetag\t will suppress this program's tagging efforts, keeping the original ID3 tags if any \n"
+									+ "\t\t-forcetag\t will force tagging, otherwise this program will be keeping original ID3 tags if any \n"
 									+ "\t\t\t (without it all files will be retagged, both new and 'skipped')\n"
 									+ "\n"
 									+ "HINT: the program tries to cache relevant data from all the pages it goes through,\n"
