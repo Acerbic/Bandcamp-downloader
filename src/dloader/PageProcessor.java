@@ -153,11 +153,12 @@ public class PageProcessor {
 	
 	/**
 	 * logs results of saving page's data to disk 
-	 * @param result - reported by AbstractPage.saveResult(...);
-	 * @param page - the page that was saved, contains statusReport field
+	 * @param job - the job that was saved, contains saveResultsReport field
 	 */
-	void logDataSave(String result, AbstractPage page) {
+	void logDataSave(PageJob job) {
 		if (logger == null) return;
+		String result = job.saveResultsReport;
+		AbstractPage page = job.page;
 		if (result == null || result.isEmpty())	return;
 		String log_message = String.format("%s \"%s\" %s%n",
 				page.getClass().getSimpleName(),
@@ -172,7 +173,7 @@ public class PageProcessor {
 	}
 	
 	/**
-	 * Gets one page from the top of a q, reads it from cache or downloads and parses web page.
+	 * Gets one page from the top of a queue, reads it from cache or downloads and parses web page.
 	 */
 	void processOnePage(PageJob job) throws ProblemsReadingDocumentException, IOException {
 		AbstractPage p = job.page;
@@ -191,6 +192,7 @@ public class PageProcessor {
 			case DOWNLOAD_PAGE:
 				try {
 					p.downloadPage();
+					job.isReadFromWeb = true;
 				} catch (ProblemsReadingDocumentException e) {
 					if (--job.retryCount > 0)
 						addJob (job); // retry
@@ -200,7 +202,7 @@ public class PageProcessor {
 						getJobDoneList().add(job);
 					break; //consume this fail and go on to next item in jobQ
 				}
-				job.isReadFromWeb = true;
+				
 				StatisticGatherer.totalPageDownloadFinished++;
 				if (cache != null)
 					p.saveToCache(cache.doc);
@@ -220,9 +222,10 @@ public class PageProcessor {
 				break;
 			case SAVE_RESULTS:
 				try {
+					job.saveResultsReport = p.saveResult(job.saveTo); 
+					logDataSave(job); 
 					job.status = JobStatusEnum.PAGE_DONE;
 					getJobDoneList().add(job);					
-					logDataSave(p.saveResult(job.saveTo), p); 
 					break;
 				} catch (IOException e) {
 					if (--job.retryCount > 0)

@@ -131,7 +131,6 @@ public class Main {
 			PageProcessor.initCache(xmlFileName);
 			PageProcessor.initLogger(logger);
 			PageProcessor pp = new PageProcessor(saveTo.toString(), baseURL, allowFromCache);
-			AbstractPage.isUsingCache = allowFromCache;
 			pp.acquireData();
 			PageProcessor.saveCache();
 			

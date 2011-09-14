@@ -62,15 +62,11 @@ public abstract class AbstractPage {
 	 * array of a children items to this one (can be of size zero)
 	 */
 	public AbstractPage[] childPages;
+	
 	/**
 	 * reference to a parent item (may be null)
 	 */
 	public AbstractPage parent;
-	
-	/**
-	 * use caching facility?
-	 */
-	public static boolean isUsingCache;
 	
 	/**
 	 * Inherited by all descendants and instances, providing unified logging.
