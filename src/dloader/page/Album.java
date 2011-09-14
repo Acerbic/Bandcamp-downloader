@@ -1,4 +1,4 @@
-package dloader;
+package dloader.page;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
 
 import org.jdom.Document;
 import org.jdom.Element;
+
+import dloader.WebDownloader;
 
 /**
  * Class for album page, references track child pages

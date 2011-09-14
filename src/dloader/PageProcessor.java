@@ -7,8 +7,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import dloader.AbstractPage.ProblemsReadingDocumentException;
 import dloader.PageJob.JobStatusEnum;
+import dloader.page.AbstractPage;
+import dloader.page.Album;
+import dloader.page.Discography;
+import dloader.page.Track;
+import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 
 /**
  * This class handles multiple pages downloads and general algorithm of the job

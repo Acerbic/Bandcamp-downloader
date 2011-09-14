@@ -1,4 +1,4 @@
-package dloader;
+package dloader.page;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.jdom.Document;
 import org.jdom.Element;
+
 
 /**
  * Class for discography page, as a number of albums

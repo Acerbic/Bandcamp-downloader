@@ -1,5 +1,7 @@
 package dloader;
 
+import dloader.page.AbstractPage;
+
 /**
  * Class for progress tracking of page being processed 
  * @author A.Cerbic

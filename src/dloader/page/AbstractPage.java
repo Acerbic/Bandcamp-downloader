@@ -1,4 +1,4 @@
-package dloader;
+package dloader.page;
 
 //import java.io.*;
 import java.io.IOException;
@@ -18,6 +18,8 @@ import org.jaxen.jdom.JDOMXPath;
 import org.jdom.*;
 import org.jdom.filter.ElementFilter;
 import org.jdom.input.SAXBuilder;
+
+import dloader.WebDownloader;
 
 
 /**
@@ -143,7 +145,7 @@ public abstract class AbstractPage {
 	 * Downloads the page, parses it and creates child nodes.
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
-	void downloadPage() throws ProblemsReadingDocumentException {
+	public void downloadPage() throws ProblemsReadingDocumentException {
 		logger.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
 		
 		org.jdom.Document doc = null;
@@ -193,7 +195,7 @@ public abstract class AbstractPage {
 	 * @param doc - JDOM Document to load from 
 	 * @return true if data acquired successfully, false otherwise
 	 */
-	boolean loadFromCache (org.jdom.Document doc) {
+	public boolean loadFromCache (org.jdom.Document doc) {
 		if (doc == null) return false;
 		
 		logger.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
@@ -281,7 +283,8 @@ public abstract class AbstractPage {
 		try {
 			String u = childRef.getAttributeValue("url");
 			String c = childRef.getAttributeValue("class");
-			child = (AbstractPage)Class.forName("dloader."+c).newInstance();
+			String packageName = AbstractPage.class.getPackage().getName();
+			child = (AbstractPage)Class.forName(packageName+ "." +c).newInstance();
 			child.setUrl(u);
 		} catch (IllegalAccessException|ClassNotFoundException|
 				InstantiationException|MalformedURLException|
@@ -328,7 +331,7 @@ public abstract class AbstractPage {
 	 * Only references to child pages are saved, not the pages data.
 	 * @param doc - JDOM Document holding a cache to save to
 	 */
-	void saveToCache (org.jdom.Document doc) {
+	public void saveToCache (org.jdom.Document doc) {
 		assert (doc != null);
 		
 		// absolutely required fields

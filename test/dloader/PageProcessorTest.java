@@ -11,8 +11,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import dloader.AbstractPage.ProblemsReadingDocumentException;
 import dloader.PageJob.JobStatusEnum;
+import dloader.page.AbstractPage;
+import dloader.page.Discography;
+import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 
 public class PageProcessorTest {
 
@@ -97,7 +99,8 @@ public class PageProcessorTest {
 			}
 
 			@Override
-			protected boolean loadFromCache(Document doc) {
+			public
+			boolean loadFromCache(Document doc) {
 				setTitle("Cache failed");
 				return false;
 			}

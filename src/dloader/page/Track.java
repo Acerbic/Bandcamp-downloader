@@ -1,4 +1,4 @@
-package dloader;
+package dloader.page;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -13,6 +13,9 @@ import java.util.regex.Pattern;
 
 import org.jdom.Document;
 import org.jdom.Element;
+
+import dloader.Main;
+import dloader.WebDownloader;
 
 import entagged.audioformats.AudioFile;
 import entagged.audioformats.AudioFileIO;
@@ -140,7 +143,7 @@ public class Track extends AbstractPage {
 	 * @return true if actual write operation happened
 	 * @throws IOException - file read/write problems
 	 */
-	boolean tagAudioFile(String file) throws IOException {
+	public boolean tagAudioFile(String file) throws IOException {
 		try {
 			AudioFile theFile = AudioFileIO.read(Paths.get(file).toFile());
 			entagged.audioformats.Tag fileTag = theFile.getTag();

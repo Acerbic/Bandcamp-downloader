@@ -12,7 +12,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import dloader.AbstractPage.ProblemsReadingDocumentException;
+import dloader.page.AbstractPage;
+import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 
 public class AbstractPageTest {
 	
