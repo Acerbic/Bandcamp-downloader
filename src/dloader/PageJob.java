@@ -8,7 +8,7 @@ import dloader.page.AbstractPage;
  */
 class PageJob {
 	enum JobStatusEnum { RECON_PAGE, DOWNLOAD_PAGE, 
-		ADD_CHILDREN_JOBS, SAVE_RESULTS, PAGE_DONE };
+		ADD_CHILDREN_JOBS, SAVE_RESULTS, PAGE_DONE, PAGE_FAILED };
 		
 	// the page is BOUND to this job object (1-to-1) and 
 	//	this should not change during execution;

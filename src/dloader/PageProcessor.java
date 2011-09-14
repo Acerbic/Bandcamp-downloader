@@ -126,9 +126,25 @@ public class PageProcessor {
 	 */
 	void acquireData() throws ProblemsReadingDocumentException, IOException {
 		while (!getJobQ().isEmpty()) { //TODO convert this into parallel tasks
-			PageJob job = getJobQ().remove(0); 
-			processOnePage(job);
-			// TODO ???move retry facility over here by throwing exception from processOnePage
+			PageJob job = getJobQ().remove(0);
+			try {
+				processOnePage(job);
+			} catch (ProblemsReadingDocumentException|IOException e) {
+				if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
+					job.status == JobStatusEnum.SAVE_RESULTS) {
+					if (--job.retryCount > 0)
+						addJob (job); // retry
+					else 
+						// ??log fail
+						job.status = JobStatusEnum.PAGE_FAILED;
+						getJobDoneList().add(job);					
+				}
+//			} catch (InterruptedException e) {
+//				return;
+			}
+			if (Thread.interrupted()) {
+				return;
+			}
 		}
 	}  
 
@@ -194,18 +210,8 @@ public class PageProcessor {
 				addJob(job); 
 				break;
 			case DOWNLOAD_PAGE:
-				try {
-					p.downloadPage();
-					job.isReadFromWeb = true;
-				} catch (ProblemsReadingDocumentException e) {
-					if (--job.retryCount > 0)
-						addJob (job); // retry
-					else 
-						// log fail
-						job.status = JobStatusEnum.PAGE_DONE;
-						getJobDoneList().add(job);
-					break; //consume this fail and go on to next item in jobQ
-				}
+				p.downloadPage();
+				job.isReadFromWeb = true;
 				
 				StatisticGatherer.totalPageDownloadFinished++;
 				if (cache != null)
@@ -225,21 +231,11 @@ public class PageProcessor {
 				addJob(job);
 				break;
 			case SAVE_RESULTS:
-				try {
-					job.saveResultsReport = p.saveResult(job.saveTo); 
-					logDataSave(job); 
-					job.status = JobStatusEnum.PAGE_DONE;
-					getJobDoneList().add(job);					
-					break;
-				} catch (IOException e) {
-					if (--job.retryCount > 0)
-						addJob (job); // retry
-					else 
-						// log fail
-						job.status = JobStatusEnum.PAGE_DONE;
-						getJobDoneList().add(job);
-					break; //consume this fail and go on to next item in jobQ
-				}
+				job.saveResultsReport = p.saveResult(job.saveTo); 
+				logDataSave(job); 
+				job.status = JobStatusEnum.PAGE_DONE;
+				getJobDoneList().add(job);					
+				break; 
 		}
 	}
 }

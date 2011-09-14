@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.*;
 
-
 public class Main {
 	public static final String nl = System.getProperty ( "line.separator" );
 	
@@ -103,14 +102,8 @@ public class Main {
 		}
 		if (logToFile) {
 			try {
-				Handler hFile = new StreamHandler(
-						Files.newOutputStream(Paths.get(logFile)),
-						fNotVerySimple) {
-					public void publish(LogRecord record) {
-						super.publish(record);
-						flush(); // forced DSYNK.
-					}
-				};
+				Handler hFile = new FileHandler(logFile);
+				hFile.setFormatter(fNotVerySimple);
 				hFile.setLevel(Level.ALL);
 				logger.addHandler(hFile);
 			} catch (SecurityException|IOException e) {
@@ -124,6 +117,16 @@ public class Main {
 		parseCommandLine(args);
 		initLogger(); // --> logger
 		try {
+			GUI.showGUIWindow();
+			Runnable t = new Runnable() {
+				Thread parent = Thread.currentThread();
+
+				@Override
+				public void run() {
+					parent.interrupt();
+					
+				}
+			};
 			logger.info( String.format(
 					"Starting to download%n from <%s>%n into <%s> %s%n",
 					baseURL, saveTo, forceTagging?"with retagging existing files.":""));
@@ -131,6 +134,7 @@ public class Main {
 			PageProcessor.initCache(xmlFileName);
 			PageProcessor.initLogger(logger);
 			PageProcessor pp = new PageProcessor(saveTo.toString(), baseURL, allowFromCache);
+			t.run();
 			pp.acquireData();
 			PageProcessor.saveCache();
 			

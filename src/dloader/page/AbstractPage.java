@@ -174,7 +174,7 @@ public abstract class AbstractPage {
 				logger.log(Level.WARNING, "unable to parse child data", e);
 			} // skip this child to next one
 		}
-		logger.log(Level.FINE, String.format("\t... finished downloading %s.%n", url.toString()));
+		logger.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
 	}
 
 	/**
