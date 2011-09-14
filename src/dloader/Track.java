@@ -138,7 +138,7 @@ public class Track extends AbstractPage {
 	 * Checks the file and tags it if appropriate 
 	 * @param file - name of an audio file to tag
 	 * @return true if actual write operation happened
-	 * @throws IOException
+	 * @throws IOException - file read/write problems
 	 */
 	boolean tagAudioFile(String file) throws IOException {
 		try {
@@ -155,31 +155,34 @@ public class Track extends AbstractPage {
 			Map<String, String> propertyToFrame = getTextFieldIds(fileTag); 
 			
 			// copy this Track's data into fileTag
-			for (Map.Entry<String, String> entry: propertyToFrame.entrySet()) 
-				try {
-					String fieldValue = getProperty(entry.getKey());
-					if (!fieldValue.isEmpty()) {
-						TagTextField idNewField = new TextId3Frame(entry.getValue(), fieldValue);
-						@SuppressWarnings("unchecked")
-						List<TagTextField> idFieldSet = fileTag.get(entry.getValue());
-						
-						// rewrite only absent fields or 
-						// existing if Main.allowTagging is set and no such value in this field
-						boolean fieldValueAlreadyExists = false;
-						for (TagTextField existingField: idFieldSet) {
-							if ((existingField != null) && 
-								(existingField.getContent() == idNewField.getContent())) {
-								fieldValueAlreadyExists = true;
-								break; // one is enough
-							}
-						}
-						if ((Main.forceTagging && !fieldValueAlreadyExists) || idFieldSet.size()==0) {
-							// rewrite with new value
-							fileTag.set(idNewField); 
-							updateMP3Tag = true;
+			for (Map.Entry<String, String> entry: propertyToFrame.entrySet()) {
+				
+				String newFieldValue = getProperty(entry.getKey());
+				
+				if (newFieldValue != null && !newFieldValue.isEmpty()) { 
+					TagTextField idNewField = new TextId3Frame(entry.getValue(), newFieldValue);
+					@SuppressWarnings("unchecked")
+					List<TagTextField> idFieldSet = fileTag.get(entry.getValue());
+					
+					
+					// check if EXACTLY this one value exists for this field
+					boolean fieldValueAlreadyExists = false;
+					for (TagTextField existingField: idFieldSet) {
+						if ((existingField != null) && 
+							(existingField.getContent().equals(newFieldValue))) {
+							fieldValueAlreadyExists = true;
+							break; // one is enough
 						}
 					}
-				} catch (NullPointerException e) {} // skip Track missing field
+					// rewrite only absent fields or 
+					// existing if Main.forceTagging is set and no such value in this field
+					if ((Main.forceTagging && !fieldValueAlreadyExists) || idFieldSet.size()==0) {
+						// rewrite with new value
+						fileTag.set(idNewField); 
+						updateMP3Tag = true;
+					}
+				}
+			} 
 			
 			
 			if (updateMP3Tag) {

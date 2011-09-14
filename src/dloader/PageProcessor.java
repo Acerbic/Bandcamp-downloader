@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import dloader.AbstractPage.ProblemsReadingDocumentException;
+import dloader.PageProcessor.PageJob.JobStatusEnum;
 
 /**
  * This class handles multiple pages downloads and general algorithm of the job
@@ -21,14 +22,19 @@ public class PageProcessor {
 	 */
 	static class PageJob {
 		enum JobStatusEnum { RECON_PAGE, DOWNLOAD_PAGE, 
-			ADD_CHILDREN_JOBS, SAVE_RESULTS };
+			ADD_CHILDREN_JOBS, SAVE_RESULTS, PAGE_DONE };
 		AbstractPage page;
 		JobStatusEnum status;
 		String saveTo;
+		
+		// flags on how page was processed 
+		boolean isReadFromCache = false;
+		boolean isReadFromWeb = false;
+
 		final static int MAX_RETRIES = 3;
 		int retryCount;
 		
-		PageJob (String _saveTo, AbstractPage _page, PageJob.JobStatusEnum _status) {
+		PageJob (String _saveTo, AbstractPage _page, JobStatusEnum _status) {
 			assert (_saveTo != null);
 			assert (_page != null);
 			page = _page; saveTo = _saveTo; status = _status;
@@ -38,6 +44,7 @@ public class PageProcessor {
 	
 	// shared among parallel PageProcessor instances
 	static List<PageJob> jobQ;
+	static List<PageJob> jobDoneList;
 	static XMLCache cache;
 	static Logger logger;
 	
@@ -49,19 +56,23 @@ public class PageProcessor {
 
 	static {
 		jobQ = new LinkedList<PageJob>();
+		jobDoneList = new LinkedList<PageJob>(); 
 	}
 	
 	static List<PageJob> getJobQ() {
 		return jobQ;
 	}
 
+	static List<PageJob> getJobDoneList() {
+		return jobDoneList;
+	}	
 	/**
 	 * Called for root page; this page will be added to Q and always downloaded;
 	 * @param saveTo - master directory in which this page results will be saved
 	 * @param baseURL - the initial page
 	 */
 	PageProcessor(String saveTo, String baseURL, boolean _isReadingCache) {
-		addJob (saveTo, detectPage(baseURL), PageJob.JobStatusEnum.DOWNLOAD_PAGE);
+		addJob (saveTo, detectPage(baseURL), JobStatusEnum.DOWNLOAD_PAGE);
 		isReadingCache = _isReadingCache;
 	}
 	
@@ -90,7 +101,7 @@ public class PageProcessor {
 	 * @param j - the job
 	 */
 	static void addJob (PageJob j) {
-		jobQ.add(0,j);
+		getJobQ().add(0,j);
 	}
 	/**
 	 * creates new job and adds it to the shared queue
@@ -98,9 +109,9 @@ public class PageProcessor {
 	 * @param page
 	 * @param status
 	 */
-	static void addJob (String saveTo, AbstractPage page, PageJob.JobStatusEnum status) {
+	static void addJob (String saveTo, AbstractPage page, JobStatusEnum status) {
 		PageJob j = new PageJob(saveTo,page,status);
-		jobQ.add(0,j);
+		getJobQ().add(0,j);
 	}
 	
 	/**
@@ -136,8 +147,8 @@ public class PageProcessor {
 	 * @throws ProblemsReadingDocumentException if failed. (generally it means that web server did not respond right)
 	 */
 	void acquireData() throws ProblemsReadingDocumentException, IOException {
-		while (!jobQ.isEmpty()) { //TODO convert this into parallel tasks
-			PageJob job = jobQ.remove(0); 
+		while (!getJobQ().isEmpty()) { //TODO convert this into parallel tasks
+			PageJob job = getJobQ().remove(0); 
 			processOnePage(job);
 			// TODO ???move retry facility over here by throwing exception from processOnePage
 		}
@@ -145,11 +156,14 @@ public class PageProcessor {
 
 	/**
 	 * logs results of acquiring metadata (from cache or web)
-	 * @param method - which way the data is acquired
-	 * @param page - the page the data was read to
+	 * @param job - the job to report about
 	 */
-	void logInfoSurvey(String method, AbstractPage page) {
+	void logInfoSurvey(PageJob job) {
+		AbstractPage page = job.page;
 		if (logger == null) return;
+		String method = "failed";
+		if (job.isReadFromWeb) method = "web";
+		else if (job.isReadFromCache) method = "cache";
 		String log_message = String.format("%s (%s): <%s>%s%n",
 				page.getClass().getSimpleName(),
 				method,
@@ -191,15 +205,14 @@ public class PageProcessor {
 		assert (p != null);
 		switch (job.status) {
 			case RECON_PAGE: 
-				boolean isLoaded = false;
 				if (isReadingCache && cache != null) 
-					isLoaded = p.loadFromCache(cache.doc);
-				if (isLoaded) {
-					job.status = PageJob.JobStatusEnum.ADD_CHILDREN_JOBS;
-					logInfoSurvey("cache", p);
+					job.isReadFromCache = p.loadFromCache(cache.doc);
+				if (job.isReadFromCache) {
+					job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
+					logInfoSurvey(job);
 				}
-				else job.status = PageJob.JobStatusEnum.DOWNLOAD_PAGE;
-				addJob(job); job = null;
+				else job.status = JobStatusEnum.DOWNLOAD_PAGE;
+				addJob(job); 
 				break;
 			case DOWNLOAD_PAGE:
 				try {
@@ -209,14 +222,16 @@ public class PageProcessor {
 						addJob (job); // retry
 					else 
 						// log fail
-						; // TODO: add to failed list
+						job.status = JobStatusEnum.PAGE_DONE;
+						getJobDoneList().add(job);
 					break; //consume this fail and go on to next item in jobQ
 				}
+				job.isReadFromWeb = true;
 				StatisticGatherer.totalPageDownloadFinished++;
 				if (cache != null)
 					p.saveToCache(cache.doc);
-				job.status = PageJob.JobStatusEnum.ADD_CHILDREN_JOBS;
-				logInfoSurvey("web", p);
+				job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
+				logInfoSurvey(job);
 				addJob (job);
 				break;
 			case ADD_CHILDREN_JOBS: 
@@ -224,14 +239,15 @@ public class PageProcessor {
 					for (int i = 0; i < job.page.childPages.length; i++) {
 						AbstractPage child = job.page.childPages[i];
 						String childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
-						addJob(childrenSaveTo, child, PageJob.JobStatusEnum.RECON_PAGE);
+						addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
 					}
-				job.status = PageJob.JobStatusEnum.SAVE_RESULTS;
+				job.status = JobStatusEnum.SAVE_RESULTS;
 				addJob(job);
 				break;
 			case SAVE_RESULTS:
 				try {
-//					boolean saveNotSkipped = p.saveResult(job.saveTo);
+					job.status = JobStatusEnum.PAGE_DONE;
+					getJobDoneList().add(job);					
 					logDataSave(p.saveResult(job.saveTo), p); 
 					break;
 				} catch (IOException e) {
@@ -239,7 +255,8 @@ public class PageProcessor {
 						addJob (job); // retry
 					else 
 						// log fail
-						; // TODO: add to failed list
+						job.status = JobStatusEnum.PAGE_DONE;
+						getJobDoneList().add(job);
 					break; //consume this fail and go on to next item in jobQ
 				}
 		}

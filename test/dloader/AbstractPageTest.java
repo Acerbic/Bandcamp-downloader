@@ -90,7 +90,7 @@ public class AbstractPageTest {
 
 	@Test
 	public void testDownloadPageDummyFromLocal() throws ProblemsReadingDocumentException {
-		AbstractPageDummy p = new AbstractPageDummy("file:///D:/Gleb/JavaWorkspace_Eclipse/Dloader/test/Homestuck.htm");
+		AbstractPageDummy p = new AbstractPageDummy("file:///D:/Gleb/Eclipse Workspaces/Dloader/Dloader/test/Homestuck.htm");
 		p.downloadPage();
 		assertNotNull(p.childPages);
 		assertEquals(0, p.childPages.length);
