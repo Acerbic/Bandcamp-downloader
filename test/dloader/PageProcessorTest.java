@@ -12,7 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import dloader.AbstractPage.ProblemsReadingDocumentException;
-import dloader.PageProcessor.PageJob.JobStatusEnum;
+import dloader.PageJob.JobStatusEnum;
 
 public class PageProcessorTest {
 
@@ -84,7 +84,7 @@ public class PageProcessorTest {
 		PageProcessor.initCache("test/pages_scan_cache.xml");
 		mockPP_useCache.processOnePage(PageProcessor.jobQ.remove(0));
 		assertEquals(1, PageProcessor.jobQ.size());
-		PageProcessor.PageJob job = PageProcessor.jobQ.remove(0);
+		PageJob job = PageProcessor.jobQ.remove(0);
 		assertEquals(JobStatusEnum.ADD_CHILDREN_JOBS, job.status);
 		assertEquals("Homestuck", job.page.getTitle());
 	}
@@ -108,7 +108,7 @@ public class PageProcessorTest {
 		PageProcessor.initCache("test/pages_scan_cache.xml");
 		mockPP_useCache.processOnePage(PageProcessor.jobQ.remove(0));
 		assertEquals(1, PageProcessor.jobQ.size());
-		PageProcessor.PageJob job = PageProcessor.jobQ.remove(0);
+		PageJob job = PageProcessor.jobQ.remove(0);
 		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, job.status);
 		assertEquals("Cache failed", job.page.getTitle());
 	}
@@ -120,10 +120,10 @@ public class PageProcessorTest {
 				"http://rberebrbere.bandcamp.com", 
 				false);
 		assertEquals(1, PageProcessor.getJobQ().size());
-		PageProcessor.PageJob pj = PageProcessor.getJobQ().remove(0);
-		assertEquals(PageProcessor.PageJob.MAX_RETRIES, pj.retryCount);
+		PageJob pj = PageProcessor.getJobQ().remove(0);
+		assertEquals(PageJob.MAX_RETRIES, pj.retryCount);
 		pp.processOnePage(pj);
-		assertEquals(PageProcessor.PageJob.MAX_RETRIES-1, pj.retryCount);
+		assertEquals(PageJob.MAX_RETRIES-1, pj.retryCount);
 	}
 	
 	@Test
@@ -133,11 +133,11 @@ public class PageProcessorTest {
 				"http://rberebrbere.bandcamp.com/track/failtrack.mp3", 
 				false);
 		assertEquals(1, PageProcessor.getJobQ().size());
-		PageProcessor.PageJob pj = PageProcessor.getJobQ().remove(0);
-		assertEquals(PageProcessor.PageJob.MAX_RETRIES, pj.retryCount);
+		PageJob pj = PageProcessor.getJobQ().remove(0);
+		assertEquals(PageJob.MAX_RETRIES, pj.retryCount);
 		pj.status = JobStatusEnum.SAVE_RESULTS;
 		pj.page.setTitle("SomeName");
 		pp.processOnePage(pj);
-		assertEquals(PageProcessor.PageJob.MAX_RETRIES-1, pj.retryCount);
+		assertEquals(PageJob.MAX_RETRIES-1, pj.retryCount);
 	}
 }

@@ -8,39 +8,13 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import dloader.AbstractPage.ProblemsReadingDocumentException;
-import dloader.PageProcessor.PageJob.JobStatusEnum;
+import dloader.PageJob.JobStatusEnum;
 
 /**
  * This class handles multiple pages downloads and general algorithm of the job
  * @author A.Cerbic
  */
 public class PageProcessor {
-	
-	/**
-	 * Class for progress tracking of page being processed 
-	 * @author A.Cerbic
-	 */
-	static class PageJob {
-		enum JobStatusEnum { RECON_PAGE, DOWNLOAD_PAGE, 
-			ADD_CHILDREN_JOBS, SAVE_RESULTS, PAGE_DONE };
-		AbstractPage page;
-		JobStatusEnum status;
-		String saveTo;
-		
-		// flags on how page was processed 
-		boolean isReadFromCache = false;
-		boolean isReadFromWeb = false;
-
-		final static int MAX_RETRIES = 3;
-		int retryCount;
-		
-		PageJob (String _saveTo, AbstractPage _page, JobStatusEnum _status) {
-			assert (_saveTo != null);
-			assert (_page != null);
-			page = _page; saveTo = _saveTo; status = _status;
-			retryCount = MAX_RETRIES;
-		}
-	}
 	
 	// shared among parallel PageProcessor instances
 	static List<PageJob> jobQ;
