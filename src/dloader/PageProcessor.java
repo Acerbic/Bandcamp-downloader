@@ -8,10 +8,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import dloader.PageJob.JobStatusEnum;
-import dloader.page.AbstractPage;
-import dloader.page.Album;
-import dloader.page.Discography;
-import dloader.page.Track;
+import dloader.page.*;
 import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 
 /**
@@ -30,7 +27,9 @@ public class PageProcessor {
 	 *  true if this instance reads and writes to cache. 
 	 *  false if only writes (when cache is not null)
 	 */
-	boolean isReadingCache; 
+	boolean isReadingCache;
+	
+	public GUI.PageProcessorWorker hostWorker = null;
 
 	static {
 		jobQ = new LinkedList<PageJob>();
@@ -125,10 +124,13 @@ public class PageProcessor {
 	 * @throws ProblemsReadingDocumentException if failed. (generally it means that web server did not respond right)
 	 */
 	void acquireData() throws ProblemsReadingDocumentException, IOException {
-		while (!getJobQ().isEmpty()) { //TODO convert this into parallel tasks
+		while (!getJobQ().isEmpty()) { 
+			//TODO convert this into parallel tasks
 			PageJob job = getJobQ().remove(0);
 			try {
 				processOnePage(job);
+				if (hostWorker != null) 
+					hostWorker.subPublish (job); // gui communication
 			} catch (ProblemsReadingDocumentException|IOException e) {
 				if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
 					job.status == JobStatusEnum.SAVE_RESULTS) {
@@ -142,9 +144,9 @@ public class PageProcessor {
 //			} catch (InterruptedException e) {
 //				return;
 			}
-			if (Thread.interrupted()) {
-				return;
-			}
+//			if (hostWorker.isCancelled()) {
+//				return;
+//			}
 		}
 	}  
 

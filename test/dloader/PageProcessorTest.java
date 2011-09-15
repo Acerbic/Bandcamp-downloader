@@ -123,10 +123,10 @@ public class PageProcessorTest {
 				"http://rberebrbere.bandcamp.com", 
 				false);
 		assertEquals(1, PageProcessor.getJobQ().size());
-		PageJob pj = PageProcessor.getJobQ().remove(0);
+		PageJob pj = PageProcessor.getJobQ().get(0);
 		assertEquals(PageJob.MAX_RETRIES, pj.retryCount);
-		pp.processOnePage(pj);
-		assertEquals(PageJob.MAX_RETRIES-1, pj.retryCount);
+		pp.acquireData();
+		assertEquals(0, pj.retryCount);
 	}
 	
 	@Test
@@ -136,11 +136,11 @@ public class PageProcessorTest {
 				"http://rberebrbere.bandcamp.com/track/failtrack.mp3", 
 				false);
 		assertEquals(1, PageProcessor.getJobQ().size());
-		PageJob pj = PageProcessor.getJobQ().remove(0);
+		PageJob pj = PageProcessor.getJobQ().get(0);
 		assertEquals(PageJob.MAX_RETRIES, pj.retryCount);
 		pj.status = JobStatusEnum.SAVE_RESULTS;
 		pj.page.setTitle("SomeName");
-		pp.processOnePage(pj);
-		assertEquals(PageJob.MAX_RETRIES-1, pj.retryCount);
+		pp.acquireData(); // faults because of NULL medialink property in Track object.
+		assertEquals(0, pj.retryCount);
 	}
 }

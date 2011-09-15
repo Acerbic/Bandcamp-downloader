@@ -5,6 +5,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.*;
 
+import javax.swing.SwingUtilities;
+
+import dloader.page.AbstractPage.ProblemsReadingDocumentException;
+
 public class Main {
 	public static final String nl = System.getProperty ( "line.separator" );
 	
@@ -16,10 +20,14 @@ public class Main {
 	public static boolean allowFromCache = true;
 	public static boolean logToCon = true;
 	public static boolean logToFile = false;
+	public static boolean isInConsoleMode = false;
 	// user current directory
 	public static String saveTo = Paths.get("").toAbsolutePath().toString(); 
 
 	public static Logger logger;
+	
+	// this is here to be accessible from the worker thread.
+	public static PageProcessor sharedPageProcessor;
 	
 	private static void parseCommandLine(String[] args) {
 		for (String s : args) {
@@ -117,25 +125,43 @@ public class Main {
 		parseCommandLine(args);
 		initLogger(); // --> logger
 		try {
-			GUI.showGUIWindow();
-			Runnable t = new Runnable() {
-				Thread parent = Thread.currentThread();
-
-				@Override
-				public void run() {
-					parent.interrupt();
-					
-				}
-			};
+			
 			logger.info( String.format(
 					"Starting to download%n from <%s>%n into <%s> %s%n",
 					baseURL, saveTo, forceTagging?"with retagging existing files.":""));
 			
 			PageProcessor.initCache(xmlFileName);
 			PageProcessor.initLogger(logger);
-			PageProcessor pp = new PageProcessor(saveTo.toString(), baseURL, allowFromCache);
-			t.run();
-			pp.acquireData();
+			sharedPageProcessor = new PageProcessor(saveTo.toString(), baseURL, allowFromCache);
+
+			 if (isInConsoleMode) {
+				 Thread t = new Thread() {
+					@Override
+					public void run() {
+						try {
+							sharedPageProcessor.acquireData();
+						} catch (ProblemsReadingDocumentException | IOException e) {
+							Main.logger.log(Level.SEVERE, "", e);
+						}
+					}
+				};
+				t.start();
+				t.join();
+			} else {		
+			
+				// GUI section startup 
+				SwingUtilities.invokeAndWait(new Runnable() {
+					@Override
+					public void run() {
+						GUI.EventDispatchThread = Thread.currentThread();
+						GUI.showGUIWindow();
+					}
+				});
+				
+				if (GUI.EventDispatchThread != null) // should not be null
+					GUI.EventDispatchThread.join();
+			}
+			
 			PageProcessor.saveCache();
 			
 			logger.info( String.format("On total: %d files saved from net (%d bytes) + %d pages viewed%n", 
