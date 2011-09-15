@@ -240,4 +240,23 @@ public class PageProcessor {
 				break; 
 		}
 	}
+
+	/**
+	 * Return the PageJob object for specific page (1-to-1 relationship)
+	 * @param page - the page to look for
+	 * @return PageJob object for that page or null if not found or null argument
+	 */
+	public static PageJob getJobForPage(AbstractPage page) {
+		if (page == null) return null;
+		// XXX: ??? Change  == to URL compare?
+		for (PageJob element: getJobQ()) 
+			if (element.page == page)
+				return element;
+		
+		for (PageJob element: getJobDoneList()) 
+			if (element.page == page)
+				return element;
+		
+		return null;
+	}
 }
