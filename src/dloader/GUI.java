@@ -34,8 +34,6 @@ public class GUI extends JFrame {
 					worker.execute(); // next job GO
 				}
 				return res;
-//				Main.sharedPageProcessor.hostWorker = this;
-//				Main.sharedPageProcessor.acquireData();
 			} catch (Throwable e) {
 				Main.logger.log(Level.SEVERE, "", e);
 			}
@@ -69,11 +67,6 @@ public class GUI extends JFrame {
 				updateTreeByJob(pj);
 			}
 		}
-
-		// worker thread
-//		public void subPublish(PageJob pj) {
-//			publish(pj);
-//		}
 	}
 	
 	Map<PageJob, DefaultMutableTreeNode> jobToTreenode; 
@@ -126,15 +119,19 @@ public class GUI extends JFrame {
 	private static final long serialVersionUID = -919422625610867342L;
 	public static Thread EventDispatchThread = null;
 	static GUI frame = null;
-	static boolean showGUIWindow() {
+	
+	/**
+	 * This is the starting method to create and show GUI
+	 * @param initialJobs - list of initial jobs to display in a job tree
+	 * @return true if success
+	 */
+	static boolean showGUIWindow(List<PageJob> initialJobs) {
 		if (frame == null) {
 			frame = new GUI();
-			// FIXME: yeah, ugly coupling here;
-			frame.updateTreeByJob(PageProcessor.getJobQ().get(0));
+			for (PageJob job: initialJobs)
+				frame.updateTreeByJob(job);
 			frame.pack();
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-//			PageProcessorWorker worker = frame.new PageProcessorWorker();
-//			worker.execute();
 		}
 		frame.setVisible(true);
 		

@@ -152,7 +152,7 @@ public class Main {
 					@Override
 					public void run() {
 						GUI.EventDispatchThread = Thread.currentThread();
-						GUI.showGUIWindow();
+						GUI.showGUIWindow(PageProcessor.getJobQ());
 					}
 				});
 				
