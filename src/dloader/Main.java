@@ -7,8 +7,6 @@ import java.util.logging.*;
 
 import javax.swing.SwingUtilities;
 
-import dloader.page.AbstractPage.ProblemsReadingDocumentException;
-
 public class Main {
 	public static final String nl = System.getProperty ( "line.separator" );
 	
@@ -140,15 +138,15 @@ public class Main {
 					public void run() {
 						try {
 							sharedPageProcessor.acquireData();
-						} catch (ProblemsReadingDocumentException | IOException e) {
+						} catch (Throwable e) {
+							// clean-up
 							Main.logger.log(Level.SEVERE, "", e);
 						}
 					}
 				};
 				t.start();
-				t.join();
+				t.join(); // wait till thread ends
 			} else {		
-			
 				// GUI section startup 
 				SwingUtilities.invokeAndWait(new Runnable() {
 					@Override
@@ -159,7 +157,7 @@ public class Main {
 				});
 				
 				if (GUI.EventDispatchThread != null) // should not be null
-					GUI.EventDispatchThread.join();
+					GUI.EventDispatchThread.join(); // wait till GUI closes
 			}
 			
 			PageProcessor.saveCache();

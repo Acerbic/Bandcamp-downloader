@@ -3,6 +3,7 @@ package dloader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -116,39 +117,56 @@ public class PageProcessor {
 	}
 
 	/**
-	 * Gets one page from the top of a q, reads it from cache or downloads and parses web page.
-	 * Then repeats process for remaining
-	 * @param forceDownload - true if you want ignore cache on this one, all child nodes checks are
-	 * controlled with <b>isReadingCache</b> flag
-	 * @param doc - XML document storing cache on pages data.  
-	 * @throws ProblemsReadingDocumentException if failed. (generally it means that web server did not respond right)
+	 * Processes all jobs in a Q and all jobs they generate 
 	 */
-	void acquireData() throws ProblemsReadingDocumentException, IOException {
-		while (!getJobQ().isEmpty()) { 
-			//TODO convert this into parallel tasks
-			PageJob job = getJobQ().remove(0);
-			try {
-				processOnePage(job);
-				if (hostWorker != null) 
-					hostWorker.subPublish (job); // gui communication
-			} catch (ProblemsReadingDocumentException|IOException e) {
-				if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
-					job.status == JobStatusEnum.SAVE_RESULTS) {
-					if (--job.retryCount > 0)
-						addJob (job); // retry
-					else 
-						// ??log fail
-						job.status = JobStatusEnum.PAGE_FAILED;
-						getJobDoneList().add(job);					
-				}
-//			} catch (InterruptedException e) {
-//				return;
+	void acquireData() {
+		PageJob job = null;
+		do {
+			job = doSingleJob();
+			// this is outdated GUI communication. need to use 1 job per Worker and done() 
+//			if (hostWorker != null) 
+//				hostWorker.subPublish (job); // gui communication
+		} while ( job != null);
+	}
+	
+	/**
+	 * Get one job from the Q and do it (job may re-add itself and new jobs into the Q)
+	 * @return PageJob that was done (in its new status)
+	 */
+	PageJob doSingleJob() {
+		if (getJobQ().isEmpty()) return null;
+		PageJob job = getJobQ().remove(0); 
+//		PageJob job = getNextJob(); 
+		try {
+			processOnePage(job);
+		} catch (ProblemsReadingDocumentException|IOException e) {
+			if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
+				job.status == JobStatusEnum.SAVE_RESULTS) {
+				if (--job.retryCount > 0)
+					addJob (job); // retry
+				else 
+					// ??log fail
+					job.status = JobStatusEnum.PAGE_FAILED;
+					getJobDoneList().add(job);					
 			}
-//			if (hostWorker.isCancelled()) {
-//				return;
-//			}
 		}
-	}  
+		return job;
+	}
+
+	/**
+	 * picks next job to process with the respect to priority and synchronization
+	 * @return the job for this PageProcessor 
+	 */
+	@SuppressWarnings("unused")
+	private PageJob getNextJob() {
+		List<PageJob.JobStatusEnum> priority = new ArrayList<>();
+		priority.add(JobStatusEnum.ADD_CHILDREN_JOBS);
+		priority.add(JobStatusEnum.RECON_PAGE);
+		priority.add(JobStatusEnum.DOWNLOAD_PAGE);
+		priority.add(JobStatusEnum.SAVE_RESULTS);
+		// TODO: implement;
+		return null;
+	}
 
 	/**
 	 * logs results of acquiring metadata (from cache or web)
@@ -195,7 +213,8 @@ public class PageProcessor {
 	}
 	
 	/**
-	 * Gets one page from the top of a queue, reads it from cache or downloads and parses web page.
+	 * Gets one page job, does one operation on it (may fail) 
+	 * and puts job (and/or possibly new jobs) into a queue for further processing
 	 */
 	void processOnePage(PageJob job) throws ProblemsReadingDocumentException, IOException {
 		AbstractPage p = job.page;
@@ -229,6 +248,7 @@ public class PageProcessor {
 						String childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
 						addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
 					}
+				job.retryCount = PageJob.MAX_RETRIES; // reset retries for next faulty operation
 				job.status = JobStatusEnum.SAVE_RESULTS;
 				addJob(job);
 				break;
@@ -258,5 +278,18 @@ public class PageProcessor {
 				return element;
 		
 		return null;
+	}
+	
+	/**
+	 * Seeks uncompleted jobs in a queue, ready to be done (not finished, not failed, not paused... etc.)
+	 * @return true if there is more work to do, false if there are no appropriate jobs
+	 */
+	public static boolean hasMoreJobs() {
+		// XXX: need to revisit this when pause/start/stop functionality will be in place
+		for (PageJob pj: getJobQ()) 
+			if ((pj.status != PageJob.JobStatusEnum.PAGE_DONE) &&
+				(pj.status != PageJob.JobStatusEnum.PAGE_FAILED))
+				return true;
+		return false;
 	}
 }

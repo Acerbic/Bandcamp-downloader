@@ -10,8 +10,8 @@ class PageJob {
 	enum JobStatusEnum { RECON_PAGE, DOWNLOAD_PAGE, 
 		ADD_CHILDREN_JOBS, SAVE_RESULTS, PAGE_DONE, PAGE_FAILED };
 		
-	// the page is BOUND to this job object (1-to-1) and 
-	//	this should not change during execution;
+	// the page is BOUND to this job object (1-to-1) and tracks page processing progress
+	// during execution.
 	final AbstractPage page;
 	PageJob.JobStatusEnum status;
 	String saveTo;
@@ -30,4 +30,5 @@ class PageJob {
 		page = _page; saveTo = _saveTo; status = _status;
 		retryCount = MAX_RETRIES;
 	}
+	
 }
