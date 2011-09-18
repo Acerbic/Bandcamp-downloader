@@ -132,8 +132,18 @@ public class PageProcessor {
 	static void addJob (String saveTo, AbstractPage page, JobStatusEnum status) {
 		assert (saveTo != null);
 		assert (page != null);
-		PageJob j = new PageJob(saveTo,page,status);
-		getJobQ().add(0,j);
+		PageJob job = getJobForPage(page);
+		if (job == null)
+			job = new PageJob(saveTo,page,status);
+		else if (!job.saveTo.equals(saveTo)) {
+			// this weird situation normally should not happen, but who knows...
+			getJobQ().remove(job);
+			job = new PageJob(saveTo,page,status); // restart job with new location
+		} else {
+			// Hmmm... the this EXACT page item is already in a Q.
+			job.status = status;
+		}
+		getJobQ().add(0,job);
 	}
 	
 	/**
@@ -267,6 +277,10 @@ public class PageProcessor {
 		assert (p != null);
 		switch (job.status) {
 			case RECON_PAGE: 
+				if ((isReadingCache && job.isReadFromCache) || job.isReadFromWeb)
+					// this page (and its children is already processed - stop refresh here) 
+					break;
+				
 				if (isReadingCache && cache != null) 
 					job.isReadFromCache = p.loadFromCache(cache.doc);
 				if (job.isReadFromCache) {

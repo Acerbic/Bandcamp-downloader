@@ -13,7 +13,7 @@ class PageJob {
 	// the page is BOUND to this job object (1-to-1) and tracks page processing progress
 	// during execution.
 	final AbstractPage page;
-	PageJob.JobStatusEnum status;
+	JobStatusEnum status;
 	String saveTo;
 	
 	// flags on how page was processed 
@@ -24,10 +24,10 @@ class PageJob {
 	final static int MAX_RETRIES = 3;
 	int retryCount;
 	
-	PageJob (String _saveTo, AbstractPage _page, PageJob.JobStatusEnum _status) {
-		assert (_saveTo != null);
-		assert (_page != null);
-		page = _page; saveTo = _saveTo; status = _status;
+	PageJob (String saveTo, AbstractPage page, PageJob.JobStatusEnum status) {
+		assert (saveTo != null);
+		assert (page != null);
+		this.page = page; this.saveTo = saveTo; this.status = status;
 		retryCount = MAX_RETRIES;
 	}
 	

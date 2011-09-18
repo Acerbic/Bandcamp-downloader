@@ -139,13 +139,12 @@ public class GUI extends JFrame {
 	 * @param initialJobs - list of initial jobs to display in a job tree
 	 * @return true if success
 	 */
-	static boolean showGUIWindow(List<PageJob> initialJobs) {
+	static boolean showGUIWindow(PageJob initialJob) {
 		if (frame == null) {
 			frame = new GUI();
 			frame.pack();
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			for (PageJob job: initialJobs)
-				frame.updateTreeByJob(job);
+			frame.updateTreeByJob(initialJob);
 			if (PageProcessor.hasMoreJobs(true)) {
 				PageProcessorWorker worker = frame.new PageProcessorWorker(true);
 				worker.execute(); // next job GO

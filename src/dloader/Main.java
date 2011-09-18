@@ -153,7 +153,7 @@ public class Main {
 					public void run() {
 						GUI.EventDispatchThread = Thread.currentThread();
 						// sharedPageProcessor.initPriorities(false); //--- default value
-						GUI.showGUIWindow(PageProcessor.getJobQ());
+						GUI.showGUIWindow(sharedPageProcessor.getNextJob(false));
 					}
 				});
 				
