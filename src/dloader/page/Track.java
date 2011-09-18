@@ -277,4 +277,17 @@ public class Track extends AbstractPage {
 	public String getChildrenSaveTo(String saveTo) {
 		return null;
 	}
+
+	@Override
+	public boolean isSavingNotRequired(String saveTo) {
+		// this is commented out because even if file exists it might be needing some tagging
+//		try {
+//			Path p = Paths.get(saveTo, getFSSafeName(getTitle()) + ".mp3");
+//		if (Files.isRegularFile(p) && Files.size(p) > 0)
+//			return true;
+//		} catch (IOException e) {
+//			logger.log(Level.WARNING,null,e);
+//		}
+		return false;
+	}
 }

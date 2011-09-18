@@ -22,7 +22,7 @@ public class PageProcessorTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		mockPP_useCache = new PageProcessor(true);
+		mockPP_useCache = new PageProcessor(null, null, true);
 	}
 
 	@After
@@ -55,27 +55,27 @@ public class PageProcessorTest {
 
 	@Test (expected = IndexOutOfBoundsException.class)
 	public void testProcessOnePageFailOnEmpty() throws ProblemsReadingDocumentException, IOException {
-		mockPP_useCache.processOnePage(PageProcessor.jobQ.remove(0));
+		mockPP_useCache.processOnePage(PageProcessor.getJobQ().remove(0));
 	}
 	
 	@Test
 	public void testProcessOnePageFailedReconGoesToDownload() throws ProblemsReadingDocumentException, IOException {
-		PageProcessor mockPP_noCache = new PageProcessor(false);
+		PageProcessor mockPP_noCache = new PageProcessor(null, null, false);
 		AbstractPage page = new Discography("file://test/homestuck.html");
 
 		// not using cache
 		PageProcessor.addJob(Paths.get("test/download_zone").toString(), page, JobStatusEnum.RECON_PAGE);
-		mockPP_noCache.processOnePage(PageProcessor.jobQ.remove(0));
-		assertEquals(1, PageProcessor.jobQ.size());
-		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, PageProcessor.jobQ.remove(0).status);
-		PageProcessor.jobQ.clear();
+		mockPP_noCache.processOnePage(PageProcessor.getJobQ().remove(0));
+		assertEquals(1, PageProcessor.getJobQ().size());
+		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, PageProcessor.getJobQ().remove(0).status);
+		PageProcessor.getJobQ().clear();
 		
 		// cache is not initiated
 		PageProcessor.addJob(Paths.get("test/download_zone").toString(), page, JobStatusEnum.RECON_PAGE);
-		mockPP_useCache.processOnePage(PageProcessor.jobQ.remove(0));
-		assertEquals(1, PageProcessor.jobQ.size());
-		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, PageProcessor.jobQ.remove(0).status);
-		PageProcessor.jobQ.clear();
+		mockPP_useCache.processOnePage(PageProcessor.getJobQ().remove(0));
+		assertEquals(1, PageProcessor.getJobQ().size());
+		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, PageProcessor.getJobQ().remove(0).status);
+		PageProcessor.getJobQ().clear();
 		
 	}
 	
@@ -84,9 +84,9 @@ public class PageProcessorTest {
 		AbstractPage page = PageProcessor.detectPage("http://homestuck.bandcamp.com");
 		PageProcessor.addJob(Paths.get("test/download_zone").toString(), page, JobStatusEnum.RECON_PAGE);
 		PageProcessor.initCache("test/pages_scan_cache.xml");
-		mockPP_useCache.processOnePage(PageProcessor.jobQ.remove(0));
-		assertEquals(1, PageProcessor.jobQ.size());
-		PageJob job = PageProcessor.jobQ.remove(0);
+		mockPP_useCache.processOnePage(PageProcessor.getJobQ().remove(0));
+		assertEquals(1, PageProcessor.getJobQ().size());
+		PageJob job = PageProcessor.getJobQ().remove(0);
 		assertEquals(JobStatusEnum.ADD_CHILDREN_JOBS, job.status);
 		assertEquals("Homestuck", job.page.getTitle());
 	}
@@ -109,9 +109,9 @@ public class PageProcessorTest {
 		AbstractPage page = new DummyPage("http://homestuck.bandcamp.com");
 		PageProcessor.addJob(Paths.get("test/download_zone").toString(), page, JobStatusEnum.RECON_PAGE);
 		PageProcessor.initCache("test/pages_scan_cache.xml");
-		mockPP_useCache.processOnePage(PageProcessor.jobQ.remove(0));
-		assertEquals(1, PageProcessor.jobQ.size());
-		PageJob job = PageProcessor.jobQ.remove(0);
+		mockPP_useCache.processOnePage(PageProcessor.getJobQ().remove(0));
+		assertEquals(1, PageProcessor.getJobQ().size());
+		PageJob job = PageProcessor.getJobQ().remove(0);
 		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, job.status);
 		assertEquals("Cache failed", job.page.getTitle());
 	}

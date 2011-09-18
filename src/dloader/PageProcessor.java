@@ -3,9 +3,10 @@ package dloader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import dloader.PageJob.JobStatusEnum;
@@ -19,8 +20,7 @@ import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 public class PageProcessor {
 	
 	// shared among parallel PageProcessor instances
-	static List<PageJob> jobQ;
-	static List<PageJob> jobDoneList;
+	static private List<PageJob> jobQ;
 	static XMLCache cache;
 	static Logger logger;
 	
@@ -30,36 +30,77 @@ public class PageProcessor {
 	 */
 	boolean isReadingCache;
 	
-	public GUI.PageProcessorWorker hostWorker = null;
-
+	/**
+	 * priorities system to select next job from the Q
+	 */
+	Map<PageJob.JobStatusEnum, Integer> priorities = new Hashtable<>();
+	/**
+	 * value for the top priority
+	 */
+	int priorities_MIN;
+	/**
+	 * minimum priority value for job statuses that don't get executed 
+	 */
+	int priorities_NOWORK;
+	/**
+	 * minimum value for "heavy"-duty priorities (involving long operations)
+	 */
+	int priorities_HEAVY;	
+	
 	static {
 		jobQ = new LinkedList<PageJob>();
-		jobDoneList = new LinkedList<PageJob>(); 
 	}
 	
 	static List<PageJob> getJobQ() {
 		return jobQ;
 	}
 
-	static List<PageJob> getJobDoneList() {
-		return jobDoneList;
-	}	
+	void initPriorities(boolean structured) {
+		priorities.clear();
+		if (structured) {
+			/**
+			 * structured job order for console application 
+			 * (1st finish THIS item then touch next)
+			 */
+			priorities.put(JobStatusEnum.RECON_PAGE, 0);
+			priorities.put(JobStatusEnum.DOWNLOAD_PAGE, 1);
+			priorities.put(JobStatusEnum.ADD_CHILDREN_JOBS, 2);
+			priorities.put(JobStatusEnum.PRESAVE_CHECK, 3);
+			priorities.put(JobStatusEnum.SAVE_RESULTS, 4);
+			priorities.put(JobStatusEnum.PAGE_DONE, 100);
+			priorities.put(JobStatusEnum.PAGE_FAILED, 100);		
+			priorities_MIN = 0;
+			priorities_NOWORK = 100;
+			priorities_HEAVY = 3;
+		} else {
+			/**
+			 * fast-preview job order for GUI application
+			 */
+			priorities.put(JobStatusEnum.ADD_CHILDREN_JOBS, 0);
+			priorities.put(JobStatusEnum.RECON_PAGE, 1);
+			priorities.put(JobStatusEnum.PRESAVE_CHECK, 2);
+			priorities.put(JobStatusEnum.DOWNLOAD_PAGE, 3);
+			priorities.put(JobStatusEnum.SAVE_RESULTS, 4);
+			priorities.put(JobStatusEnum.PAGE_DONE, 100);
+			priorities.put(JobStatusEnum.PAGE_FAILED, 100);		
+			priorities_MIN = 0;
+			priorities_NOWORK = 100;
+			priorities_HEAVY = 3;			
+		}
+		
+	}
 	/**
 	 * Called for root page; this page will be added to Q and always downloaded;
 	 * @param saveTo - master directory in which this page results will be saved
 	 * @param baseURL - the initial page
+	 * @param isReadingCache - whether this PageProcessor is allowed to read from cache
 	 */
-	PageProcessor(String saveTo, String baseURL, boolean _isReadingCache) {
-		addJob (saveTo, detectPage(baseURL), JobStatusEnum.DOWNLOAD_PAGE);
-		isReadingCache = _isReadingCache;
-	}
-	
-	/**
-	 * This constructor is to create additional PageProcessors on existing jobQ
-	 * @param _isReadingCache
-	 */
-	PageProcessor(boolean _isReadingCache) {
-		isReadingCache = _isReadingCache;		
+	PageProcessor(String saveTo, String baseURL, boolean isReadingCache) {
+		if ((saveTo != null) && (baseURL != null))
+			addJob (saveTo, detectPage(baseURL), JobStatusEnum.DOWNLOAD_PAGE);
+		this.isReadingCache = isReadingCache;
+		// XXX: parameter into constructor??
+		initPriorities(true);
 	}
 	
 	static void initCache (String filename) {
@@ -79,15 +120,18 @@ public class PageProcessor {
 	 * @param j - the job
 	 */
 	static void addJob (PageJob j) {
+		assert (j != null);
 		getJobQ().add(0,j);
 	}
 	/**
 	 * creates new job and adds it to the shared queue
 	 * @param saveTo - directory in which this page results will be saved
-	 * @param page
-	 * @param status
+	 * @param page - the page bound to this job
+	 * @param status - status of a job
 	 */
 	static void addJob (String saveTo, AbstractPage page, JobStatusEnum status) {
+		assert (saveTo != null);
+		assert (page != null);
 		PageJob j = new PageJob(saveTo,page,status);
 		getJobQ().add(0,j);
 	}
@@ -120,23 +164,19 @@ public class PageProcessor {
 	 * Processes all jobs in a Q and all jobs they generate 
 	 */
 	void acquireData() {
-		PageJob job = null;
 		do {
-			job = doSingleJob();
-			// this is outdated GUI communication. need to use 1 job per Worker and done() 
-//			if (hostWorker != null) 
-//				hostWorker.subPublish (job); // gui communication
-		} while ( job != null);
+			doSingleJob(false);
+		} while ( hasMoreJobs(false) );
 	}
 	
 	/**
 	 * Get one job from the Q and do it (job may re-add itself and new jobs into the Q)
-	 * @return PageJob that was done (in its new status)
+	 * @return PageJob that was done (in its new status) 
+	 * or null if no jobs are available;
 	 */
-	PageJob doSingleJob() {
-		if (getJobQ().isEmpty()) return null;
-		PageJob job = getJobQ().remove(0); 
-//		PageJob job = getNextJob(); 
+	PageJob doSingleJob(boolean lightWeight) {
+		PageJob job = getNextJob(lightWeight);
+		if (job == null) return null;
 		try {
 			processOnePage(job);
 		} catch (ProblemsReadingDocumentException|IOException e) {
@@ -147,25 +187,31 @@ public class PageProcessor {
 				else 
 					// ??log fail
 					job.status = JobStatusEnum.PAGE_FAILED;
-					getJobDoneList().add(job);					
+					addJob(job);					
 			}
 		}
 		return job;
 	}
 
 	/**
-	 * picks next job to process with the respect to priority and synchronization
-	 * @return the job for this PageProcessor 
+	 * picks next job to process with the respect to priority, task profile and synchronization
+	 * @return the job for this PageProcessor or null if there are no jobs fitting profile 
 	 */
-	@SuppressWarnings("unused")
-	private PageJob getNextJob() {
-		List<PageJob.JobStatusEnum> priority = new ArrayList<>();
-		priority.add(JobStatusEnum.ADD_CHILDREN_JOBS);
-		priority.add(JobStatusEnum.RECON_PAGE);
-		priority.add(JobStatusEnum.DOWNLOAD_PAGE);
-		priority.add(JobStatusEnum.SAVE_RESULTS);
-		// TODO: implement;
-		return null;
+	public PageJob getNextJob(boolean lightWeight) {
+		// XXX: check for synchronization issues
+		
+		Integer priority = priorities_NOWORK; PageJob nextJob = null;
+		for (PageJob job: getJobQ()) {
+			if (priorities.get(job.status) < priority) {
+				priority = priorities.get(job.status);
+				nextJob = job;
+				if (priority == priorities_MIN) return nextJob; // cancel search for top priority found;
+			}
+		}
+		
+		if (lightWeight && priority >= priorities_HEAVY)
+			return null;
+		else return nextJob;
 	}
 
 	/**
@@ -249,14 +295,24 @@ public class PageProcessor {
 						addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
 					}
 				job.retryCount = PageJob.MAX_RETRIES; // reset retries for next faulty operation
-				job.status = JobStatusEnum.SAVE_RESULTS;
+				job.status = JobStatusEnum.PRESAVE_CHECK;
 				addJob(job);
+				break;
+			case PRESAVE_CHECK:
+				if (job.page.isSavingNotRequired(job.saveTo)) {
+					logDataSave(job); 
+					job.status = JobStatusEnum.PAGE_DONE;
+					addJob(job);					
+				} else {
+					job.status = JobStatusEnum.SAVE_RESULTS;
+					addJob(job);
+				}
 				break;
 			case SAVE_RESULTS:
 				job.saveResultsReport = p.saveResult(job.saveTo); 
 				logDataSave(job); 
 				job.status = JobStatusEnum.PAGE_DONE;
-				getJobDoneList().add(job);					
+				addJob(job);					
 				break; 
 		}
 	}
@@ -273,23 +329,25 @@ public class PageProcessor {
 			if (element.page == page)
 				return element;
 		
-		for (PageJob element: getJobDoneList()) 
-			if (element.page == page)
-				return element;
-		
 		return null;
 	}
 	
 	/**
 	 * Seeks uncompleted jobs in a queue, ready to be done (not finished, not failed, not paused... etc.)
+	 * @param fastPreview - true if in work-preview mode (looking for easy jobs)
 	 * @return true if there is more work to do, false if there are no appropriate jobs
 	 */
-	public static boolean hasMoreJobs() {
+	public static boolean hasMoreJobs(boolean fastPreview) {
 		// XXX: need to revisit this when pause/start/stop functionality will be in place
 		for (PageJob pj: getJobQ()) 
 			if ((pj.status != PageJob.JobStatusEnum.PAGE_DONE) &&
-				(pj.status != PageJob.JobStatusEnum.PAGE_FAILED))
-				return true;
+				(pj.status != PageJob.JobStatusEnum.PAGE_FAILED)) {
+				if (!fastPreview)
+					return true;
+				if ((pj.status != PageJob.JobStatusEnum.DOWNLOAD_PAGE) &&
+					(pj.status != PageJob.JobStatusEnum.SAVE_RESULTS))
+					return true;
+			}
 		return false;
 	}
 }

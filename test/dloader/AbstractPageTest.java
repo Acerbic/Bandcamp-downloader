@@ -45,6 +45,9 @@ public class AbstractPageTest {
 		public AbstractPageDummy(String s) {super(s);}
 
 		public AbstractPageDummy(URL test) {super(test);}
+
+		@Override
+		public boolean isSavingNotRequired(String saveTo) {return false;}
 	}
 
 	@Before

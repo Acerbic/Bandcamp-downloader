@@ -1,6 +1,5 @@
 package dloader.page;
 
-//import java.io.*;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -390,4 +389,13 @@ public abstract class AbstractPage {
 	 * @throws IOException if valid filename cannot be created
 	 */
 	abstract public String getChildrenSaveTo(String saveTo) throws IOException;
+	
+	/**
+	 * Checks if call to saveResult can be skipped (especially if it is a long operation)
+	 * If the effect of saveResult is a minor thing (like simple directory creation) this function is 
+	 * allowed to make call to saveResult and return true;
+	 * @return true if call to saveResult can be skipped (will yield no effect), \t false if it must be performed
+	 */
+	abstract public boolean isSavingNotRequired(String saveTo);
+	
 }

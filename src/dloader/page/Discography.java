@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.logging.Level;
 
 import org.jdom.Document;
 import org.jdom.Element;
@@ -98,6 +99,17 @@ public class Discography extends AbstractPage {
 	@Override
 	public String getChildrenSaveTo(String saveTo) throws IOException {
 		return Paths.get(saveTo, getFSSafeName(getTitle())).toString();
+	}
+
+	@Override
+	public boolean isSavingNotRequired(String saveTo) {
+		try {
+			saveResult(saveTo);
+			return true;
+		} catch (IOException e) {
+			logger.log(Level.WARNING,null,e);
+		}
+		return false; 
 	}
 
 }

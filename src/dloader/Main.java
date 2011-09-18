@@ -102,7 +102,6 @@ public class Main {
 					flush();
 				}
 			};
-//			hConsole.setLevel(Level.ALL);
 			hConsole.setLevel(Level.INFO); // only essentials
 			logger.addHandler(hConsole);
 		}
@@ -137,6 +136,7 @@ public class Main {
 					@Override
 					public void run() {
 						try {
+							sharedPageProcessor.initPriorities(true);
 							sharedPageProcessor.acquireData();
 						} catch (Throwable e) {
 							// clean-up
@@ -152,6 +152,7 @@ public class Main {
 					@Override
 					public void run() {
 						GUI.EventDispatchThread = Thread.currentThread();
+						// sharedPageProcessor.initPriorities(false); //--- default value
 						GUI.showGUIWindow(PageProcessor.getJobQ());
 					}
 				});

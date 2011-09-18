@@ -119,4 +119,17 @@ public class Album extends AbstractPage {
 		return Paths.get(saveTo, getFSSafeName(getTitle())).toString();
 	}
 
+	@Override
+	public boolean isSavingNotRequired(String saveTo) {
+		Path p;
+		try {
+			p = Paths.get(saveTo, getFSSafeName(getTitle()), "cover.jpg");
+		if (Files.isRegularFile(p) && Files.size(p) > 0)
+			return true;
+		} catch (IOException e) {
+			logger.log(Level.WARNING,null,e);
+		}
+		return false;
+	}
+
 }

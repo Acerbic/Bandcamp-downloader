@@ -20,17 +20,22 @@ import javax.swing.JButton;
 import javax.swing.SwingConstants;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import javax.swing.JTextField;
 
 public class GUI extends JFrame {
 	public final class PageProcessorWorker extends
 			SwingWorker<PageJob, PageJob> {
+		boolean isLazyWorker;
+		PageProcessorWorker(boolean isLazyWorker) {
+			this.isLazyWorker = isLazyWorker;
+		}
 		// Worker thread
 		@Override
 		public PageJob doInBackground() {
 			try {
-				PageJob res = Main.sharedPageProcessor.doSingleJob();
-				if (PageProcessor.hasMoreJobs()) {
-					PageProcessorWorker worker = new PageProcessorWorker();
+				PageJob res = Main.sharedPageProcessor.doSingleJob(isLazyWorker);
+				if (PageProcessor.hasMoreJobs(false)) {
+					PageProcessorWorker worker = new PageProcessorWorker(isLazyWorker);
 					worker.execute(); // next job GO
 				}
 				return res;
@@ -98,14 +103,22 @@ public class GUI extends JFrame {
 		JButton btnStart = new JButton("Start!");
 		btnStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (PageProcessor.hasMoreJobs()) {
-					PageProcessorWorker worker = new PageProcessorWorker();
+				if (PageProcessor.hasMoreJobs(false)) {
+					PageProcessorWorker worker = new PageProcessorWorker(false);
 					worker.execute(); // next job GO
 				}				
 			}
 		});
 		btnStart.setHorizontalAlignment(SwingConstants.RIGHT);
 		panel.add(btnStart, BorderLayout.NORTH);
+		
+		JPanel panel_1 = new JPanel();
+		getContentPane().add(panel_1, BorderLayout.NORTH);
+		
+		txtBaseurl = new JTextField();
+		txtBaseurl.setText("baseURL");
+		panel_1.add(txtBaseurl);
+		txtBaseurl.setColumns(10);
 	}
 
 	@Override
@@ -119,6 +132,7 @@ public class GUI extends JFrame {
 	private static final long serialVersionUID = -919422625610867342L;
 	public static Thread EventDispatchThread = null;
 	static GUI frame = null;
+	private JTextField txtBaseurl;
 	
 	/**
 	 * This is the starting method to create and show GUI
@@ -128,10 +142,15 @@ public class GUI extends JFrame {
 	static boolean showGUIWindow(List<PageJob> initialJobs) {
 		if (frame == null) {
 			frame = new GUI();
-			for (PageJob job: initialJobs)
-				frame.updateTreeByJob(job);
 			frame.pack();
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			for (PageJob job: initialJobs)
+				frame.updateTreeByJob(job);
+			if (PageProcessor.hasMoreJobs(true)) {
+				PageProcessorWorker worker = frame.new PageProcessorWorker(true);
+				worker.execute(); // next job GO
+			}
+			
 		}
 		frame.setVisible(true);
 		
@@ -139,6 +158,7 @@ public class GUI extends JFrame {
 	}
 	
 	public void updateTreeByJob(PageJob pj) {
+		if (pj == null) return;
 		// FIXME: should've create DefaultTreeModel explicitly in the 1st place
 		DefaultTreeModel tm = (DefaultTreeModel)tree.getModel();
 		
