@@ -71,7 +71,7 @@ public class PageProcessor {
 			priorities.put(JobStatusEnum.PAGE_FAILED, 100);		
 			priorities_MIN = 0;
 			priorities_NOWORK = 100;
-			priorities_HEAVY = 3;
+			priorities_HEAVY = 4;
 		} else {
 			/**
 			 * fast-preview job order for GUI application
@@ -85,7 +85,7 @@ public class PageProcessor {
 			priorities.put(JobStatusEnum.PAGE_FAILED, 100);		
 			priorities_MIN = 0;
 			priorities_NOWORK = 100;
-			priorities_HEAVY = 3;			
+			priorities_HEAVY = 4;			
 		}
 		
 	}

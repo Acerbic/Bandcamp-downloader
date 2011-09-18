@@ -8,7 +8,21 @@ import dloader.page.AbstractPage;
  */
 class PageJob {
 	enum JobStatusEnum { RECON_PAGE, DOWNLOAD_PAGE, 
-		ADD_CHILDREN_JOBS, PRESAVE_CHECK, SAVE_RESULTS, PAGE_DONE, PAGE_FAILED };
+		ADD_CHILDREN_JOBS, PRESAVE_CHECK, SAVE_RESULTS, PAGE_DONE, PAGE_FAILED;
+		@Override
+		public String toString() {
+			switch (this) {
+			case ADD_CHILDREN_JOBS: return "Add_childre_jobs";
+			case DOWNLOAD_PAGE: return "Download_page";
+			case PAGE_DONE: return "Page_done";
+			case PAGE_FAILED: return "Page_failed";
+			case PRESAVE_CHECK: return "Presave_check";
+			case RECON_PAGE: return "Recon_page";
+			case SAVE_RESULTS: return "Save_results";
+			default: return "";
+			}
+		}
+	};
 		
 	// the page is BOUND to this job object (1-to-1) and tracks page processing progress
 	// during execution.

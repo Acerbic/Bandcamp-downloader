@@ -18,9 +18,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.SwingConstants;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JTextField;
+
+import dloader.PageJob.JobStatusEnum;
 
 public class GUI extends JFrame {
 	public final class PageProcessorWorker extends
@@ -34,7 +37,9 @@ public class GUI extends JFrame {
 		public PageJob doInBackground() {
 			try {
 				PageJob res = Main.sharedPageProcessor.doSingleJob(isLazyWorker);
-				if (PageProcessor.hasMoreJobs(false)) {
+				if (!Thread.currentThread().isInterrupted() &&
+					PageProcessor.hasMoreJobs(isLazyWorker)) {
+					
 					PageProcessorWorker worker = new PageProcessorWorker(isLazyWorker);
 					worker.execute(); // next job GO
 				}
@@ -68,7 +73,6 @@ public class GUI extends JFrame {
 				
 				// remove all consequent reports of this job from current list (duplications)
 				pjList.remove(pj);
-				
 				updateTreeByJob(pj);
 			}
 		}
@@ -124,6 +128,7 @@ public class GUI extends JFrame {
 	@Override
 	public void dispose() {
 		// TODO: insert *interrupt workers and wait on them closing* code here.
+//		SwingWorker
 		frame = null;
 		EventDispatchThread = null;
 		super.dispose();
@@ -139,16 +144,18 @@ public class GUI extends JFrame {
 	 * @param initialJobs - list of initial jobs to display in a job tree
 	 * @return true if success
 	 */
-	static boolean showGUIWindow(PageJob initialJob) {
+	public static boolean showGUIWindow(PageJob initialJob) {
 		if (frame == null) {
 			frame = new GUI();
 			frame.pack();
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			frame.updateTreeByJob(initialJob);
-			if (PageProcessor.hasMoreJobs(true)) {
-				PageProcessorWorker worker = frame.new PageProcessorWorker(true);
-				worker.execute(); // next job GO
-			}
+			// -- following will never be in effect since "download 1st" rule;
+			// -- need to implement "re-download update" feature beforehand 
+//			if (PageProcessor.hasMoreJobs(true)) {
+//				PageProcessorWorker worker = frame.new PageProcessorWorker(true);
+//				worker.execute(); // next job GO
+//			}
 			
 		}
 		frame.setVisible(true);
@@ -168,6 +175,7 @@ public class GUI extends JFrame {
 			PageJob parentJob = PageProcessor.getJobForPage(pj.page.parent);
 			DefaultMutableTreeNode parentNode = null; 
 			String value = (pj.page.getTitle() != null)? pj.page.getTitle() : pj.page.url.toString();
+			value = value + ": " + pj.status.toString();
 			node = new DefaultMutableTreeNode(value, true); 
 			if (parentJob == null) {
 				//add new top element
@@ -180,7 +188,7 @@ public class GUI extends JFrame {
 			} else {
 				// add new leaf element
 				
-				// XXX: Strong assumption here - parent job is already in a tree (was at least recon'd)
+				// Strong assumption here - parent job is already in a tree (was at least recon'd)
 				parentNode = jobToTreenode.get(parentJob);
 				assert (parentNode != null);
 				tm.insertNodeInto(node, parentNode, parentNode.getChildCount());
@@ -188,8 +196,16 @@ public class GUI extends JFrame {
 			}
 		} else {
 			// update element visuals
-			node.setUserObject(pj.page.getTitle());
-			tm.reload(node);
-		}		
+			node.setUserObject(pj.page.getTitle() + ": " + pj.status.toString());
+			tm.nodeChanged(node);
+		}
+		
+		if (pj.status == JobStatusEnum.PAGE_DONE) {
+//			 TODO: fold parent element if every sibling is done too
+		} else {
+			// unfold parent element
+			TreePath tp = new TreePath(tm.getPathToRoot(node.getParent()));
+			tree.expandPath(tp);
+		}
 	}
 }
