@@ -25,6 +25,11 @@ import javax.swing.JTextField;
 
 import dloader.PageJob.JobStatusEnum;
 
+/**
+ * A class to present GUI of downloading process and controls over it
+ * As of right now only ONE project at a time can be downloaded - 1 root item
+ * @author A.Cerbic
+ */
 public class GUI extends JFrame {
 	public final class PageProcessorWorker extends
 			SwingWorker<PageJob, PageJob> {
@@ -36,7 +41,7 @@ public class GUI extends JFrame {
 		@Override
 		public PageJob doInBackground() {
 			try {
-				PageJob res = Main.sharedPageProcessor.doSingleJob(isLazyWorker);
+				PageJob res = PageProcessor.doSingleJob(isLazyWorker);
 				if (!Thread.currentThread().isInterrupted() &&
 					PageProcessor.hasMoreJobs(isLazyWorker)) {
 					
@@ -45,6 +50,7 @@ public class GUI extends JFrame {
 				}
 				return res;
 			} catch (Throwable e) {
+				// FIXME: needs decoupling from Main
 				Main.logger.log(Level.SEVERE, "", e);
 			}
 			return null;
@@ -96,7 +102,6 @@ public class GUI extends JFrame {
 		tree.setModel(new DefaultTreeModel(
 			new DefaultMutableTreeNode("JTree") 
 		));
-		tree.setShowsRootHandles(true);
 		scrollPane.setViewportView(tree);
 		tree.setEditable(true);
 		
@@ -141,7 +146,7 @@ public class GUI extends JFrame {
 	
 	/**
 	 * This is the starting method to create and show GUI
-	 * @param initialJobs - list of initial jobs to display in a job tree
+	 * @param initialJob - initial (root) job to display in a job tree
 	 * @return true if success
 	 */
 	public static boolean showGUIWindow(PageJob initialJob) {
@@ -150,7 +155,7 @@ public class GUI extends JFrame {
 			frame.pack();
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			frame.updateTreeByJob(initialJob);
-			// -- following will never be in effect since "download 1st" rule;
+			// XXX: following will never be in effect since "download 1st" rule;
 			// -- need to implement "re-download update" feature beforehand 
 //			if (PageProcessor.hasMoreJobs(true)) {
 //				PageProcessorWorker worker = frame.new PageProcessorWorker(true);

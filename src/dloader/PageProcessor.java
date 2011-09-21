@@ -7,6 +7,7 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import dloader.PageJob.JobStatusEnum;
@@ -14,47 +15,62 @@ import dloader.page.*;
 import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 
 /**
- * This class handles multiple pages downloads and general algorithm of the job
+ * This class handles multiple PageJob objects and general algorithm of the program
  * @author A.Cerbic
  */
+
 public class PageProcessor {
 	
-	// shared among parallel PageProcessor instances
-	static private List<PageJob> jobQ;
+	/**
+	 * Dynamically growing list of PageJob objects;  
+	 */
+	static List<PageJob> jobQ;
+	/**
+	 * Holds reference to a cache, if one is present (null otherwise)
+	 */
 	static XMLCache cache;
+	/**
+	 * Holds reference to a logger, if one is present (null otherwise)
+	 */
 	static Logger logger;
 	
 	/**
-	 *  true if this instance reads and writes to cache. 
+	 *  true if PageProcessor reads and writes to cache. 
 	 *  false if only writes (when cache is not null)
 	 */
-	boolean isReadingCache;
+	static boolean isReadingCache;
 	
 	/**
 	 * priorities system to select next job from the Q
 	 */
-	Map<PageJob.JobStatusEnum, Integer> priorities = new Hashtable<>();
+	static Map<PageJob.JobStatusEnum, Integer> priorities;
 	/**
 	 * value for the top priority
 	 */
-	int priorities_MIN;
+	static final
+	int PRIORITIES_MIN = 0;
 	/**
 	 * minimum priority value for job statuses that don't get executed 
 	 */
-	int priorities_NOWORK;
+	static final
+	int PRIORITIES_NOWORK = 100;
 	/**
 	 * minimum value for "heavy"-duty priorities (involving long operations)
 	 */
-	int priorities_HEAVY;	
+	static final
+	int PRIORITIES_HEAVY = 4;	
 	
 	static {
+		priorities = new Hashtable<>();
 		jobQ = new LinkedList<PageJob>();
 	}
 	
-	static List<PageJob> getJobQ() {
+	static 
+	List<PageJob> getJobQ() {
 		return jobQ;
 	}
 
+	static private
 	void initPriorities(boolean structured) {
 		priorities.clear();
 		if (structured) {
@@ -69,9 +85,6 @@ public class PageProcessor {
 			priorities.put(JobStatusEnum.SAVE_RESULTS, 4);
 			priorities.put(JobStatusEnum.PAGE_DONE, 100);
 			priorities.put(JobStatusEnum.PAGE_FAILED, 100);		
-			priorities_MIN = 0;
-			priorities_NOWORK = 100;
-			priorities_HEAVY = 4;
 		} else {
 			/**
 			 * fast-preview job order for GUI application
@@ -83,32 +96,37 @@ public class PageProcessor {
 			priorities.put(JobStatusEnum.SAVE_RESULTS, 4);
 			priorities.put(JobStatusEnum.PAGE_DONE, 100);
 			priorities.put(JobStatusEnum.PAGE_FAILED, 100);		
-			priorities_MIN = 0;
-			priorities_NOWORK = 100;
-			priorities_HEAVY = 4;			
 		}
-		
 	}
+	
 	/**
 	 * Called for root page; this page will be added to Q and always downloaded;
 	 * @param saveTo - master directory in which this page results will be saved
 	 * @param baseURL - the initial page
-	 * @param isReadingCache - whether this PageProcessor is allowed to read from cache
+	 * @param isReadingCache - whether PageProcessor is allowed to read from cache
 	 */
-	PageProcessor(String saveTo, String baseURL, boolean isReadingCache) {
+	static 
+	void initPageProcessor(
+			String saveTo, String baseURL, 
+			Logger l,
+			boolean isReadingCache, String cacheFilename,
+			boolean isStructuredJobPriorities) {
+		
 		if ((saveTo != null) && (baseURL != null))
 			addJob (saveTo, detectPage(baseURL), JobStatusEnum.DOWNLOAD_PAGE);
-		this.isReadingCache = isReadingCache;
-		// XXX: parameter into constructor??
-		initPriorities(true);
-	}
-	
-	static void initCache (String filename) {
-		cache = new XMLCache(filename);
-	}
-	
-	static void initLogger(Logger l) {
+		
 		logger = l;
+		
+		PageProcessor.isReadingCache = isReadingCache;
+		try {
+			PageProcessor.cache = new XMLCache(cacheFilename);
+		} catch (IllegalArgumentException e) {
+			if (logger != null) logger.log(Level.WARNING, "", e);
+			PageProcessor.isReadingCache = false;
+			// and follow with cache set to null
+		}
+		
+		initPriorities(isStructuredJobPriorities);
 	}
 	
 	static void saveCache () throws IOException {
@@ -152,7 +170,8 @@ public class PageProcessor {
 	 * @return new PageParser descendant fitting for the page
 	 * @throws IllegalArgumentException - when baseURL is bad or null
 	 */
-	static final AbstractPage detectPage(String baseURL) throws IllegalArgumentException {
+	static final 
+	AbstractPage detectPage(String baseURL) throws IllegalArgumentException {
 		URL u;
 		try {
 			u = new URL(baseURL);
@@ -173,6 +192,7 @@ public class PageProcessor {
 	/**
 	 * Processes all jobs in a Q and all jobs they generate 
 	 */
+	static
 	void acquireData() {
 		do {
 			doSingleJob(false);
@@ -184,6 +204,7 @@ public class PageProcessor {
 	 * @return PageJob that was done (in its new status) 
 	 * or null if no jobs are available;
 	 */
+	static
 	PageJob doSingleJob(boolean lightWeight) {
 		PageJob job = getNextJob(lightWeight);
 		if (job == null) return null;
@@ -207,19 +228,20 @@ public class PageProcessor {
 	 * picks next job to process with the respect to priority, task profile and synchronization
 	 * @return the job for this PageProcessor or null if there are no jobs fitting profile 
 	 */
+	static
 	public PageJob getNextJob(boolean lightWeight) {
 		// XXX: check for synchronization issues
 		
-		Integer priority = priorities_NOWORK; PageJob nextJob = null;
+		Integer priority = PRIORITIES_NOWORK; PageJob nextJob = null;
 		for (PageJob job: getJobQ()) {
 			if (priorities.get(job.status) < priority) {
 				priority = priorities.get(job.status);
 				nextJob = job;
-				if (priority == priorities_MIN) return nextJob; // cancel search for top priority found;
+				if (priority == PRIORITIES_MIN) return nextJob; // cancel search for top priority found;
 			}
 		}
 		
-		if (lightWeight && priority >= priorities_HEAVY)
+		if (lightWeight && priority >= PRIORITIES_HEAVY)
 			return null;
 		else return nextJob;
 	}
@@ -228,7 +250,7 @@ public class PageProcessor {
 	 * logs results of acquiring metadata (from cache or web)
 	 * @param job - the job to report about
 	 */
-	void logInfoSurvey(PageJob job) {
+	static void logInfoSurvey(PageJob job) {
 		AbstractPage page = job.page;
 		if (logger == null) return;
 		String method = "failed";
@@ -251,7 +273,7 @@ public class PageProcessor {
 	 * logs results of saving page's data to disk 
 	 * @param job - the job that was saved, contains saveResultsReport field
 	 */
-	void logDataSave(PageJob job) {
+	static void logDataSave(PageJob job) {
 		if (logger == null) return;
 		String result = job.saveResultsReport;
 		AbstractPage page = job.page;
@@ -272,6 +294,7 @@ public class PageProcessor {
 	 * Gets one page job, does one operation on it (may fail) 
 	 * and puts job (and/or possibly new jobs) into a queue for further processing
 	 */
+	static
 	void processOnePage(PageJob job) throws ProblemsReadingDocumentException, IOException {
 		AbstractPage p = job.page;
 		assert (p != null);

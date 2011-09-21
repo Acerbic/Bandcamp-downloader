@@ -18,11 +18,10 @@ import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 
 public class PageProcessorTest {
 
-	PageProcessor mockPP_useCache;
 	
 	@Before
 	public void setUp() throws Exception {
-		mockPP_useCache = new PageProcessor(null, null, true);
+		PageProcessor.initPageProcessor(null, null, null, false, null, false);
 	}
 
 	@After
@@ -55,24 +54,24 @@ public class PageProcessorTest {
 
 	@Test (expected = IndexOutOfBoundsException.class)
 	public void testProcessOnePageFailOnEmpty() throws ProblemsReadingDocumentException, IOException {
-		mockPP_useCache.processOnePage(PageProcessor.getJobQ().remove(0));
+		PageProcessor.processOnePage(PageProcessor.getJobQ().remove(0));
 	}
 	
 	@Test
 	public void testProcessOnePageFailedReconGoesToDownload() throws ProblemsReadingDocumentException, IOException {
-		PageProcessor mockPP_noCache = new PageProcessor(null, null, false);
+//		PageProcessor mockPP_noCache = new PageProcessor(null, null, false);
 		AbstractPage page = new Discography("file://test/homestuck.html");
 
 		// not using cache
 		PageProcessor.addJob(Paths.get("test/download_zone").toString(), page, JobStatusEnum.RECON_PAGE);
-		mockPP_noCache.processOnePage(PageProcessor.getJobQ().remove(0));
+		PageProcessor.processOnePage(PageProcessor.getJobQ().remove(0));
 		assertEquals(1, PageProcessor.getJobQ().size());
 		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, PageProcessor.getJobQ().remove(0).status);
 		PageProcessor.getJobQ().clear();
 		
 		// cache is not initiated
 		PageProcessor.addJob(Paths.get("test/download_zone").toString(), page, JobStatusEnum.RECON_PAGE);
-		mockPP_useCache.processOnePage(PageProcessor.getJobQ().remove(0));
+		PageProcessor.processOnePage(PageProcessor.getJobQ().remove(0));
 		assertEquals(1, PageProcessor.getJobQ().size());
 		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, PageProcessor.getJobQ().remove(0).status);
 		PageProcessor.getJobQ().clear();
@@ -81,10 +80,11 @@ public class PageProcessorTest {
 	
 	@Test
 	public void testProcessOnePageReconFromCacheSuccess() throws ProblemsReadingDocumentException, IOException {
+		PageProcessor.initPageProcessor(null, null, null, true, "test/pages_scan_cache.xml", false);
 		AbstractPage page = PageProcessor.detectPage("http://homestuck.bandcamp.com");
 		PageProcessor.addJob(Paths.get("test/download_zone").toString(), page, JobStatusEnum.RECON_PAGE);
-		PageProcessor.initCache("test/pages_scan_cache.xml");
-		mockPP_useCache.processOnePage(PageProcessor.getJobQ().remove(0));
+//		PageProcessor.initCache("test/pages_scan_cache.xml");
+		PageProcessor.processOnePage(PageProcessor.getJobQ().remove(0));
 		assertEquals(1, PageProcessor.getJobQ().size());
 		PageJob job = PageProcessor.getJobQ().remove(0);
 		assertEquals(JobStatusEnum.ADD_CHILDREN_JOBS, job.status);
@@ -108,8 +108,8 @@ public class PageProcessorTest {
 
 		AbstractPage page = new DummyPage("http://homestuck.bandcamp.com");
 		PageProcessor.addJob(Paths.get("test/download_zone").toString(), page, JobStatusEnum.RECON_PAGE);
-		PageProcessor.initCache("test/pages_scan_cache.xml");
-		mockPP_useCache.processOnePage(PageProcessor.getJobQ().remove(0));
+		PageProcessor.initPageProcessor(null, null, null, true, "test/pages_scan_cache.xml", false);
+		PageProcessor.processOnePage(PageProcessor.getJobQ().remove(0));
 		assertEquals(1, PageProcessor.getJobQ().size());
 		PageJob job = PageProcessor.getJobQ().remove(0);
 		assertEquals(JobStatusEnum.DOWNLOAD_PAGE, job.status);
@@ -118,29 +118,25 @@ public class PageProcessorTest {
 	
 	@Test
 	public void testProcessOnePageRetryDownloadPage() throws ProblemsReadingDocumentException, IOException {
-		PageProcessor pp = new PageProcessor(
-				Paths.get("test/download_zone").toString(), 
-				"http://rberebrbere.bandcamp.com", 
-				false);
+		PageProcessor.initPageProcessor(Paths.get("test/download_zone").toString(), 
+				"http://rberebrbere.bandcamp.com", null, false, null, false);
 		assertEquals(1, PageProcessor.getJobQ().size());
 		PageJob pj = PageProcessor.getJobQ().get(0);
 		assertEquals(PageJob.MAX_RETRIES, pj.retryCount);
-		pp.acquireData();
+		PageProcessor.acquireData();
 		assertEquals(0, pj.retryCount);
 	}
 	
 	@Test
 	public void testProcessOnePageRetrySavePageResults() throws ProblemsReadingDocumentException, IOException {
-		PageProcessor pp = new PageProcessor(
-				Paths.get("test/download_zone").toString(), 
-				"http://rberebrbere.bandcamp.com/track/failtrack.mp3", 
-				false);
+		PageProcessor.initPageProcessor(Paths.get("test/download_zone").toString(), 
+				"http://rberebrbere.bandcamp.com/track/failtrack.mp3", null, false, null, false);
 		assertEquals(1, PageProcessor.getJobQ().size());
 		PageJob pj = PageProcessor.getJobQ().get(0);
 		assertEquals(PageJob.MAX_RETRIES, pj.retryCount);
 		pj.status = JobStatusEnum.SAVE_RESULTS;
 		pj.page.setTitle("SomeName");
-		pp.acquireData(); // faults because of NULL medialink property in Track object.
+		PageProcessor.acquireData(); // faults because of NULL medialink property in Track object.
 		assertEquals(0, pj.retryCount);
 	}
 }

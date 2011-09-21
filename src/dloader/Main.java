@@ -8,7 +8,7 @@ import java.util.logging.*;
 import javax.swing.SwingUtilities;
 
 public class Main {
-	public static final String nl = System.getProperty ( "line.separator" );
+//	public static final String nl = System.getProperty ( "line.separator" );
 	
 	/* Default values */
 	public static String baseURL = "http://homestuck.bandcamp.com";
@@ -23,9 +23,6 @@ public class Main {
 	public static String saveTo = Paths.get("").toAbsolutePath().toString(); 
 
 	public static Logger logger;
-	
-	// this is here to be accessible from the worker thread.
-	public static PageProcessor sharedPageProcessor;
 	
 	private static void parseCommandLine(String[] args) {
 		for (String s : args) {
@@ -127,17 +124,17 @@ public class Main {
 					"Starting to download%n from <%s>%n into <%s> %s%n",
 					baseURL, saveTo, forceTagging?"with retagging existing files.":""));
 			
-			PageProcessor.initCache(xmlFileName);
-			PageProcessor.initLogger(logger);
-			sharedPageProcessor = new PageProcessor(saveTo.toString(), baseURL, allowFromCache);
-
 			 if (isInConsoleMode) {
-				 Thread t = new Thread() {
+					PageProcessor.initPageProcessor(
+							saveTo.toString(), baseURL, 
+							logger, 
+							allowFromCache, xmlFileName, 
+							true);
+					Thread t = new Thread() {
 					@Override
 					public void run() {
 						try {
-							sharedPageProcessor.initPriorities(true);
-							sharedPageProcessor.acquireData();
+							PageProcessor.acquireData();
 						} catch (Throwable e) {
 							// clean-up
 							Main.logger.log(Level.SEVERE, "", e);
@@ -146,14 +143,18 @@ public class Main {
 				};
 				t.start();
 				t.join(); // wait till thread ends
-			} else {		
+			} else {
+				PageProcessor.initPageProcessor(
+						saveTo.toString(), baseURL, 
+						logger, 
+						allowFromCache, xmlFileName, 
+						false);				
 				// GUI section startup 
 				SwingUtilities.invokeAndWait(new Runnable() {
 					@Override
 					public void run() {
 						GUI.EventDispatchThread = Thread.currentThread();
-						// sharedPageProcessor.initPriorities(false); //--- default value
-						GUI.showGUIWindow(sharedPageProcessor.getNextJob(false));
+						GUI.showGUIWindow(PageProcessor.getNextJob(false));
 					}
 				});
 				

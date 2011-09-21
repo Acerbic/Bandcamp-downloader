@@ -179,6 +179,7 @@ public class Track extends AbstractPage {
 					}
 					// rewrite only absent fields or 
 					// existing if Main.forceTagging is set and no such value in this field
+					// FIXME: this must be fixed to reference Main no more
 					if ((Main.forceTagging && !fieldValueAlreadyExists) || idFieldSet.size()==0) {
 						// rewrite with new value
 						fileTag.set(idNewField); 
