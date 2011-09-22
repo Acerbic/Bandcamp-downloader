@@ -154,12 +154,12 @@ public class Main {
 					@Override
 					public void run() {
 						GUI.EventDispatchThread = Thread.currentThread();
-						GUI.showGUIWindow(PageProcessor.getNextJob(false));
+						GUI.showGUIWindow();
 					}
 				});
 				
-				if (GUI.EventDispatchThread != null) // should not be null
-					GUI.EventDispatchThread.join(); // wait till GUI closes
+				assert (GUI.EventDispatchThread != null); 
+				GUI.EventDispatchThread.join(); // wait till GUI closes
 			}
 			
 			PageProcessor.saveCache();

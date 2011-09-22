@@ -105,7 +105,7 @@ public class PageProcessor {
 	 * @param baseURL - the initial page
 	 * @param isReadingCache - whether PageProcessor is allowed to read from cache
 	 */
-	static 
+	static public synchronized
 	void initPageProcessor(
 			String saveTo, String baseURL, 
 			Logger l,
@@ -139,8 +139,9 @@ public class PageProcessor {
 	 */
 	static void addJob (PageJob j) {
 		assert (j != null);
-		getJobQ().add(0,j);
+		getJobQ().add(0,j); // XXX: check for atomicity
 	}
+	
 	/**
 	 * creates new job and adds it to the shared queue
 	 * @param saveTo - directory in which this page results will be saved
@@ -150,18 +151,20 @@ public class PageProcessor {
 	static void addJob (String saveTo, AbstractPage page, JobStatusEnum status) {
 		assert (saveTo != null);
 		assert (page != null);
-		PageJob job = getJobForPage(page);
-		if (job == null)
-			job = new PageJob(saveTo,page,status);
-		else if (!job.saveTo.equals(saveTo)) {
-			// this weird situation normally should not happen, but who knows...
-			getJobQ().remove(job);
-			job = new PageJob(saveTo,page,status); // restart job with new location
-		} else {
-			// Hmmm... the this EXACT page item is already in a Q.
-			job.status = status;
+		synchronized (getJobQ()) {
+			PageJob job = getJobForPage(page);
+			if (job == null)
+				job = new PageJob(saveTo,page,status);
+			else if (!job.saveTo.equals(saveTo)) {
+				// this weird situation normally should not happen, but who knows...
+				getJobQ().remove(job);
+				job = new PageJob(saveTo,page,status); // restart job with new location
+			} else {
+				// Hmmm... the this EXACT page item is already in a Q.
+				job.status = status;
+			}
+			getJobQ().add(0,job);
 		}
-		getJobQ().add(0,job);
 	}
 	
 	/**
@@ -194,9 +197,10 @@ public class PageProcessor {
 	 */
 	static
 	void acquireData() {
+		PageJob lastJob = null;
 		do {
-			doSingleJob(false);
-		} while ( hasMoreJobs(false) );
+			lastJob = doSingleJob(false);
+		} while ( lastJob != null );
 	}
 	
 	/**
@@ -204,21 +208,26 @@ public class PageProcessor {
 	 * @return PageJob that was done (in its new status) 
 	 * or null if no jobs are available;
 	 */
-	static
+	static public
 	PageJob doSingleJob(boolean lightWeight) {
-		PageJob job = getNextJob(lightWeight);
-		if (job == null) return null;
+		PageJob job = null;
+		synchronized (getJobQ()) {
+			job = getNextJob(lightWeight);
+			if (job == null) return null;
+			getJobQ().remove(job);
+		}
 		try {
-			processOnePage(job);
+			processOnePage(job); // will re-add this job in a new status
 		} catch (ProblemsReadingDocumentException|IOException e) {
-			if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
-				job.status == JobStatusEnum.SAVE_RESULTS) {
-				if (--job.retryCount > 0)
-					addJob (job); // retry
-				else 
-					// ??log fail
-					job.status = JobStatusEnum.PAGE_FAILED;
+			synchronized (job) {
+				if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
+					job.status == JobStatusEnum.SAVE_RESULTS) {
+					if ( --job.retryCount <= 0) {
+						logger.log(Level.WARNING, "[Failed] " + job.toString(), e);
+						job.status = JobStatusEnum.PAGE_FAILED; 
+					}
 					addJob(job);					
+				}
 			}
 		}
 		return job;
@@ -230,14 +239,14 @@ public class PageProcessor {
 	 */
 	static
 	public PageJob getNextJob(boolean lightWeight) {
-		// XXX: check for synchronization issues
-		
 		Integer priority = PRIORITIES_NOWORK; PageJob nextJob = null;
-		for (PageJob job: getJobQ()) {
-			if (priorities.get(job.status) < priority) {
-				priority = priorities.get(job.status);
-				nextJob = job;
-				if (priority == PRIORITIES_MIN) return nextJob; // cancel search for top priority found;
+		synchronized (getJobQ()) {
+			for (PageJob job: getJobQ()) {
+				if (priorities.get(job.status) < priority) {
+					priority = priorities.get(job.status);
+					nextJob = job;
+					if (priority == PRIORITIES_MIN) return nextJob; // cancel search for top priority found;
+				}
 			}
 		}
 		
@@ -254,17 +263,20 @@ public class PageProcessor {
 		AbstractPage page = job.page;
 		if (logger == null) return;
 		String method = "failed";
-		if (job.isReadFromWeb) method = "web";
-		else if (job.isReadFromCache) method = "cache";
-		String log_message = String.format("%s (%s): <%s>%s%n",
-				page.getClass().getSimpleName(),
-				method,
-				page.url.toString(),
-				(page.childPages!=null && page.childPages.length>0)?
-					String.format(" [%s] children", page.childPages.length): "");
-		while (page.parent != null) {
-			log_message = "\t"+log_message;
-			page = page.parent;
+		String log_message = null;
+		synchronized (job) {
+			if (job.isReadFromWeb) method = "web";
+			else if (job.isReadFromCache) method = "cache";
+			log_message = String.format("%s (%s): <%s>%s%n",
+					page.getClass().getSimpleName(),
+					method,
+					page.url.toString(),
+					(page.childPages!=null && page.childPages.length>0)?
+						String.format(" [%s] children", page.childPages.length): "");
+			while (page.parent != null) {
+				log_message = "\t"+log_message;
+				page = page.parent;
+			}
 		}
 		logger.info(log_message);
 	}
@@ -296,6 +308,7 @@ public class PageProcessor {
 	 */
 	static
 	void processOnePage(PageJob job) throws ProblemsReadingDocumentException, IOException {
+		synchronized (job) {
 		AbstractPage p = job.page;
 		assert (p != null);
 		switch (job.status) {
@@ -352,6 +365,7 @@ public class PageProcessor {
 				addJob(job);					
 				break; 
 		}
+		} // synchronized
 	}
 
 	/**
@@ -359,32 +373,17 @@ public class PageProcessor {
 	 * @param page - the page to look for
 	 * @return PageJob object for that page or null if not found or null argument
 	 */
-	public static PageJob getJobForPage(AbstractPage page) {
+	public static  
+	PageJob getJobForPage(AbstractPage page) {
 		if (page == null) return null;
-		// XXX: ??? Change  == to URL compare?
-		for (PageJob element: getJobQ()) 
-			if (element.page == page)
-				return element;
+		
+		synchronized (getJobQ()) {
+			// XXX: ??? Change  == to URL equals compare?
+			for (PageJob element: getJobQ()) 
+				if (element.page == page)
+					return element;
+		}
 		
 		return null;
-	}
-	
-	/**
-	 * Seeks uncompleted jobs in a queue, ready to be done (not finished, not failed, not paused... etc.)
-	 * @param fastPreview - true if in work-preview mode (looking for easy jobs)
-	 * @return true if there is more work to do, false if there are no appropriate jobs
-	 */
-	public static boolean hasMoreJobs(boolean fastPreview) {
-		// XXX: need to revisit this when pause/start/stop functionality will be in place
-		for (PageJob pj: getJobQ()) 
-			if ((pj.status != PageJob.JobStatusEnum.PAGE_DONE) &&
-				(pj.status != PageJob.JobStatusEnum.PAGE_FAILED)) {
-				if (!fastPreview)
-					return true;
-				if ((pj.status != PageJob.JobStatusEnum.DOWNLOAD_PAGE) &&
-					(pj.status != PageJob.JobStatusEnum.SAVE_RESULTS))
-					return true;
-			}
-		return false;
 	}
 }

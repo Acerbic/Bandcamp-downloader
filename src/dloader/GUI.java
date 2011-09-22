@@ -43,7 +43,7 @@ public class GUI extends JFrame {
 			try {
 				PageJob res = PageProcessor.doSingleJob(isLazyWorker);
 				if (!Thread.currentThread().isInterrupted() &&
-					PageProcessor.hasMoreJobs(isLazyWorker)) {
+					res != null) {
 					
 					PageProcessorWorker worker = new PageProcessorWorker(isLazyWorker);
 					worker.execute(); // next job GO
@@ -112,10 +112,10 @@ public class GUI extends JFrame {
 		JButton btnStart = new JButton("Start!");
 		btnStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (PageProcessor.hasMoreJobs(false)) {
+//				if (PageProcessor.hasMoreJobs(false)) {
 					PageProcessorWorker worker = new PageProcessorWorker(false);
 					worker.execute(); // next job GO
-				}				
+//				}				
 			}
 		});
 		btnStart.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -146,15 +146,16 @@ public class GUI extends JFrame {
 	
 	/**
 	 * This is the starting method to create and show GUI
-	 * @param initialJob - initial (root) job to display in a job tree
 	 * @return true if success
 	 */
-	public static boolean showGUIWindow(PageJob initialJob) {
+	public static boolean showGUIWindow() {
 		if (frame == null) {
 			frame = new GUI();
 			frame.pack();
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			frame.updateTreeByJob(initialJob);
+			// strong assumption here: only one job in a list and it is a root page job
+			frame.updateTreeByJob(PageProcessor.getNextJob(false)); 
+			
 			// XXX: following will never be in effect since "download 1st" rule;
 			// -- need to implement "re-download update" feature beforehand 
 //			if (PageProcessor.hasMoreJobs(true)) {

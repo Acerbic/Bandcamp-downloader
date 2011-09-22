@@ -22,13 +22,17 @@ class PageJob {
 			default: return "";
 			}
 		}
-	};
+	}
 		
 	// the page is BOUND to this job object (1-to-1) and tracks page processing progress
 	// during execution.
-	final AbstractPage page;
-	JobStatusEnum status;
-	String saveTo;
+	// FIXME: this is a synchronization problem! 
+	// Thread MUST lock onto PageJob object to operate with associated AbstractPage
+	// but the problem is it is possible to store ref to a page and work with it outside of synchronization area
+	final AbstractPage page;  
+	 
+	JobStatusEnum status;  
+	String saveTo;  
 	
 	// flags on how page was processed 
 	boolean isReadFromCache = false;
@@ -44,5 +48,12 @@ class PageJob {
 		this.page = page; this.saveTo = saveTo; this.status = status;
 		retryCount = MAX_RETRIES;
 	}
+	
+	@Override
+	public synchronized
+	String toString() {
+		return page.getTitle() + ": " + status.toString();
+	}
+	
 	
 }
