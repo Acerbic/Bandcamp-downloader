@@ -125,6 +125,7 @@ public class PageProcessorTest {
 		assertEquals(PageJob.MAX_RETRIES, pj.retryCount);
 		PageProcessor.acquireData();
 		assertEquals(0, pj.retryCount);
+		assertEquals(PageJob.JobStatusEnum.PAGE_FAILED, pj.status);
 	}
 	
 	@Test

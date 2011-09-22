@@ -178,7 +178,7 @@ public class GUI extends JFrame {
 		if (node == null) {
 			// no such node in a tree: ADDING
 			//  check if there is a parent job in a tree;
-			PageJob parentJob = PageProcessor.getJobForPage(pj.page.parent);
+			PageJob parentJob = PageProcessor.getJobForPage(pj.page.getParent());
 			DefaultMutableTreeNode parentNode = null; 
 			String value = (pj.page.getTitle() != null)? pj.page.getTitle() : pj.page.url.toString();
 			value = value + ": " + pj.status.toString();

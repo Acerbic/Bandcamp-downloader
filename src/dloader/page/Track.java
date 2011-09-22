@@ -83,7 +83,6 @@ public class Track extends AbstractPage {
 	
 	public Track(String s) throws IllegalArgumentException {super(s);}
 	public Track(URL url) throws IllegalArgumentException {super(url);}
-	public Track() {super();}
 
 	{
 		defaultProperties = new Properties();
@@ -262,9 +261,9 @@ public class Track extends AbstractPage {
 			String artist = getProperty("artist");
 			// fix track number
 			if (album==null || album.isEmpty())
-				setProperty("album",parent.getTitle());
+				setProperty("album",getParent().getTitle());
 			if (artist==null || artist.isEmpty())
-				setProperty("artist",parent.parent.getTitle());
+				setProperty("artist",getParent().getParent().getTitle());
 		} catch (NullPointerException e) {
 			// skip if not enough parents in a line;
 		}

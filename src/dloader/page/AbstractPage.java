@@ -1,6 +1,8 @@
 package dloader.page;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -52,33 +54,46 @@ public abstract class AbstractPage {
 	}
 	
 	/** 
-	 * title of this item (as stored into cache) - SHOULD NOT be null
+	 * title of this item (as stored into cache) 
 	 */
 	private String title;
+	
 	/**
-	 * url of a page referencing this item - SHOULD NOT be null 
+	 * url of a page referencing this item 
 	 */
-	public URL url;
+	public final URL url;
+	
 	/**
-	 * array of a children items to this one (can be of size zero)
+	 * array of a children items to this one (can be of size zero, can be null).
+	 * Certain elements of this array can be null as well (if child parsing failed)
 	 */
-	public AbstractPage[] childPages;
+	private AbstractPage[] childPages;
 	
 	/**
 	 * reference to a parent item (may be null)
 	 */
-	public AbstractPage parent;
+	private AbstractPage parent;
 	
 	/**
 	 * Inherited by all descendants and instances, providing unified logging.
 	 */
 	protected static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);;
 	
-	/**
-	 * Is called ONLY for Class.newInstance() reason.
-	 * Make sure setUrl(URL url) is called right after it. 
-	 */
-	public AbstractPage() {}
+	public synchronized final AbstractPage[] getChildPages() {
+		return childPages;
+	}
+
+	public synchronized final void setChildPages(AbstractPage[] childPages) {
+		this.childPages = childPages;
+	}
+
+	public synchronized final AbstractPage getParent() {
+		return parent;
+	}
+
+	public synchronized final void setParent(AbstractPage parent) {
+		this.parent = parent;
+	}
 
 	/**
 	 * Constructs from web address
@@ -93,19 +108,21 @@ public abstract class AbstractPage {
 
 	/**
 	 * Constructs from given URL object 
-	 * @param _url - gets assigned by reference, not copied.
-	 * @throws IllegalArgumentException if _url == null 
+	 * @param url - gets assigned by reference, not copied.
+	 * @throws IllegalArgumentException if url == null 
 	 */
-	public AbstractPage(URL _url) throws IllegalArgumentException {
-		if (_url == null) throw new IllegalArgumentException();
-		url = _url;
+	public AbstractPage(URL url) throws IllegalArgumentException {
+		if (url == null) throw new IllegalArgumentException();
+		this.url = url;
 	}
 
-	public String getTitle() {
+	public synchronized
+	String getTitle() {
 		return title;
 	}
 
-	public void setTitle(String title) {
+	public synchronized
+	void setTitle(String title) {
 		this.title = title;
 	}
 
@@ -158,20 +175,22 @@ public abstract class AbstractPage {
 			throw new ProblemsReadingDocumentException(e);
 		}
 
-		// discover info about this page
-		parseSelf(doc);  
-			
-		// discover info about children pages
-		@SuppressWarnings("unchecked")
-		List<Element> result = (List<Element>) queryXPathList(getChildNodesXPath(), doc);
-		childPages = new AbstractPage[result.size()]; // might be initialized to zero-sized array
-		for (int i = 0; i<result.size(); i++) {
-			try {
-				childPages[i] = parseChild(result.get(i));
-				childPages[i].parent = this;
-			} catch (ProblemsReadingDocumentException e) {
-				logger.log(Level.WARNING, "unable to parse child data", e);
-			} // skip this child to next one
+		synchronized (this) {
+			// discover info about this page
+			parseSelf(doc);  
+				
+			// discover info about children pages
+			@SuppressWarnings("unchecked")
+			List<Element> result = (List<Element>) queryXPathList(getChildNodesXPath(), doc);
+			childPages = new AbstractPage[result.size()] ; // might be initialized to zero-sized array
+			for (int i = 0; i<result.size(); i++) {
+				try {
+					childPages[i] = parseChild(result.get(i));
+					childPages[i].parent = this;
+				} catch (ProblemsReadingDocumentException e) {
+					logger.log(Level.WARNING, "unable to parse child data", e);
+				} // skip this child to next one
+			}
 		}
 		logger.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
 	}
@@ -194,7 +213,8 @@ public abstract class AbstractPage {
 	 * @param doc - JDOM Document to load from 
 	 * @return true if data acquired successfully, false otherwise
 	 */
-	public boolean loadFromCache (org.jdom.Document doc) {
+	public synchronized 
+	boolean loadFromCache (org.jdom.Document doc) {
 		if (doc == null) return false;
 		
 		logger.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
@@ -277,19 +297,25 @@ public abstract class AbstractPage {
 	 * @return new PageParser child node.
 	 * @throws ProblemsReadingDocumentException if anything went wrong
 	 */
+	@SuppressWarnings("unchecked")
+	private
 	AbstractPage readCacheChild(Element childRef) throws ProblemsReadingDocumentException {
 		AbstractPage child = null;
+		String u = childRef.getAttributeValue("url");
+		String className = childRef.getAttributeValue("class");
+		String packageName = AbstractPage.class.getPackage().getName();
+		Class<? extends AbstractPage> cl;
+		Constructor<? extends AbstractPage> cons;
 		try {
-			String u = childRef.getAttributeValue("url");
-			String c = childRef.getAttributeValue("class");
-			String packageName = AbstractPage.class.getPackage().getName();
-			child = (AbstractPage)Class.forName(packageName+ "." +c).newInstance();
-			child.setUrl(u);
-		} catch (IllegalAccessException|ClassNotFoundException|
-				InstantiationException|MalformedURLException|
-				NullPointerException e1) {
-			throw new ProblemsReadingDocumentException(e1);
-		}  
+			cl = (Class<? extends AbstractPage>) Class.forName(packageName+ "." +className);
+			cons = cl.getConstructor(String.class);
+			child = cons.newInstance(u);
+		} catch (NoSuchMethodException | SecurityException | 
+				IllegalArgumentException | InvocationTargetException | 
+				ClassNotFoundException | InstantiationException | 
+				IllegalAccessException| NullPointerException e) {
+			throw new ProblemsReadingDocumentException(e);
+		}
 		return child;
 	}
 	
@@ -330,7 +356,8 @@ public abstract class AbstractPage {
 	 * Only references to child pages are saved, not the pages data.
 	 * @param doc - JDOM Document holding a cache to save to
 	 */
-	public void saveToCache (org.jdom.Document doc) {
+	public synchronized
+	void saveToCache (org.jdom.Document doc) {
 		assert (doc != null);
 		
 		// absolutely required fields
@@ -367,20 +394,13 @@ public abstract class AbstractPage {
 	 * Scans XML tree to find the 1st Element eligible to read from
 	 * @return found Element or null
 	 */
+	private
 	Element scanXMLForThisElement(org.jdom.Document doc) {
 		assert (doc != null); assert (url != null);
 		String searchXPath = String.format("//%s[@url='%s']",getClass().getSimpleName(),url.toString());
 		List<?> result = queryXPathList(searchXPath, doc);
 		
 		return result.size()>0?(Element)result.get(0):null;
-	}
-	/**
-	 * Fixes the url after no-argument constructor was called
-	 * @param s - URL String to initialize from
-	 * @throws MalformedURLException if s is bad or null
-	 */
-	void setUrl(String s) throws MalformedURLException {
-		url = resolveLink(s);
 	}
 
 	/**

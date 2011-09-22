@@ -223,7 +223,8 @@ public class PageProcessor {
 				if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
 					job.status == JobStatusEnum.SAVE_RESULTS) {
 					if ( --job.retryCount <= 0) {
-						logger.log(Level.WARNING, "[Failed] " + job.toString(), e);
+						if (logger != null)
+							logger.log(Level.WARNING, "[Failed] " + job.toString(), e);
 						job.status = JobStatusEnum.PAGE_FAILED; 
 					}
 					addJob(job);					
@@ -267,15 +268,16 @@ public class PageProcessor {
 		synchronized (job) {
 			if (job.isReadFromWeb) method = "web";
 			else if (job.isReadFromCache) method = "cache";
+			int childPagesNum = (page.getChildPages() != null)? page.getChildPages().length: 0;
 			log_message = String.format("%s (%s): <%s>%s%n",
 					page.getClass().getSimpleName(),
 					method,
 					page.url.toString(),
-					(page.childPages!=null && page.childPages.length>0)?
-						String.format(" [%s] children", page.childPages.length): "");
-			while (page.parent != null) {
+					(childPagesNum > 0)?
+						String.format(" [%s] children", childPagesNum): "");
+			while (page.getParent() != null) {
 				log_message = "\t"+log_message;
-				page = page.parent;
+				page = page.getParent();
 			}
 		}
 		logger.info(log_message);
@@ -295,9 +297,9 @@ public class PageProcessor {
 				page.getTitle().toString(),
 				result
 				);
-		while (page.parent != null) {
+		while (page.getParent() != null) {
 			log_message = "\t"+log_message;
-			page = page.parent;
+			page = page.getParent();
 		}
 		logger.info(log_message);
 	}
@@ -327,23 +329,28 @@ public class PageProcessor {
 				addJob(job); 
 				break;
 			case DOWNLOAD_PAGE:
-				p.downloadPage();
-				job.isReadFromWeb = true;
-				
-				StatisticGatherer.totalPageDownloadFinished++;
-				if (cache != null)
-					p.saveToCache(cache.doc);
+				synchronized (p) {
+					p.downloadPage();
+					job.isReadFromWeb = true;
+					
+					StatisticGatherer.totalPageDownloadFinished++;
+					if (cache != null)
+						p.saveToCache(cache.doc);
+				}
 				job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
 				logInfoSurvey(job);
 				addJob (job);
 				break;
 			case ADD_CHILDREN_JOBS: 
-				if (job.page.childPages != null)
-					for (int i = 0; i < job.page.childPages.length; i++) {
-						AbstractPage child = job.page.childPages[i];
-						String childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
-						addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
-					}
+				synchronized (p) {
+					AbstractPage[] childPages = job.page.getChildPages();
+					if (childPages != null)
+						for (int i = 0; i < childPages.length; i++) {
+							AbstractPage child = childPages[i];
+							String childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
+							addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
+						}
+				}
 				job.retryCount = PageJob.MAX_RETRIES; // reset retries for next faulty operation
 				job.status = JobStatusEnum.PRESAVE_CHECK;
 				addJob(job);

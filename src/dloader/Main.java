@@ -123,13 +123,13 @@ public class Main {
 			logger.info( String.format(
 					"Starting to download%n from <%s>%n into <%s> %s%n",
 					baseURL, saveTo, forceTagging?"with retagging existing files.":""));
+			PageProcessor.initPageProcessor(
+					saveTo.toString(), baseURL, 
+					logger, 
+					allowFromCache, xmlFileName, 
+					isInConsoleMode);
 			
 			 if (isInConsoleMode) {
-					PageProcessor.initPageProcessor(
-							saveTo.toString(), baseURL, 
-							logger, 
-							allowFromCache, xmlFileName, 
-							true);
 					Thread t = new Thread() {
 					@Override
 					public void run() {
@@ -144,11 +144,6 @@ public class Main {
 				t.start();
 				t.join(); // wait till thread ends
 			} else {
-				PageProcessor.initPageProcessor(
-						saveTo.toString(), baseURL, 
-						logger, 
-						allowFromCache, xmlFileName, 
-						false);				
 				// GUI section startup 
 				SwingUtilities.invokeAndWait(new Runnable() {
 					@Override

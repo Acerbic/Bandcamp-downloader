@@ -30,8 +30,6 @@ public class Discography extends AbstractPage {
 
 	public Discography(String s) throws IllegalArgumentException {super(s);}
 	
-	public Discography() {super();}
-
 	@Override
 	protected void parseSelf(Document doc) throws ProblemsReadingDocumentException  {
 		List<?> result = queryXPathList("//pre:title", doc);

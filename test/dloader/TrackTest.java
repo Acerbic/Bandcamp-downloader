@@ -28,7 +28,7 @@ public class TrackTest {
 	Path workingCopyPath;
 	@Before
 	public void setUp() throws Exception {
-		t = new Track();
+		t = new Track("http://sampleband.bandcamp.com/track/sampletesttrack");
 		t.setTitle("Revelations III");
 		t.setProperty("album", "Sburb");
 		t.setProperty("track", "12");

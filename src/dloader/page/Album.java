@@ -39,8 +39,6 @@ public class Album extends AbstractPage {
 
 	public Album(String s) throws IllegalArgumentException {super(s);}
 
-	public Album() {super();}
-	
 	@Override
 	public String saveResult(String saveTo) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
