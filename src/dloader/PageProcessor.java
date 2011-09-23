@@ -3,6 +3,7 @@ package dloader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -63,7 +64,7 @@ public class PageProcessor {
 	
 	static {
 		priorities = new Hashtable<>();
-		jobQ = new LinkedList<PageJob>();
+		jobQ = Collections.synchronizedList(new LinkedList<PageJob>());
 	}
 	
 	static public
@@ -140,7 +141,7 @@ public class PageProcessor {
 	 */
 	static void addJob (PageJob j) {
 		assert (j != null);
-		getJobQ().add(0,j); // XXX: check for atomicity
+		getJobQ().add(0,j); 
 	}
 	
 	/**
@@ -158,11 +159,13 @@ public class PageProcessor {
 				job = new PageJob(saveTo,page,status);
 			else if (!job.saveTo.equals(saveTo)) {
 				// this weird situation normally should not happen, but who knows...
+				logger.log(Level.SEVERE, "Adding a job with same page and different 'saveTo': " + job.page.getTitle());
 				getJobQ().remove(job);
 				job = new PageJob(saveTo,page,status); // restart job with new location
 			} else {
-				// Hmmm... the this EXACT page item is already in a Q.
-				job.status = status;
+				// Hmmm... this EXACT page item is already in a Q.
+				logger.log(Level.SEVERE, "Adding a job with same page and same 'saveTo': " + job.page.getTitle());
+				synchronized (job) { job.status = status;}
 			}
 			getJobQ().add(0,job);
 		}
@@ -313,8 +316,7 @@ public class PageProcessor {
 	 */
 	static
 	void processOnePage(PageJob job) throws ProblemsReadingDocumentException, IOException {
-		AbstractPage p = job.page;
-		assert (p != null);
+		AbstractPage page = job.page;
 		switch (job.status) {
 			case RECON_PAGE: 
 				if ((isReadingCache && job.isReadFromCache) || job.isReadFromWeb)
@@ -322,7 +324,7 @@ public class PageProcessor {
 					break;
 				
 				if (isReadingCache && cache != null) 
-					job.isReadFromCache = p.loadFromCache(cache.doc);
+					job.isReadFromCache = page.loadFromCache(cache.doc);
 				if (job.isReadFromCache) {
 					job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
 					logInfoSurvey(job);
@@ -331,25 +333,25 @@ public class PageProcessor {
 				addJob(job); 
 				break;
 			case DOWNLOAD_PAGE:
-				synchronized (p) {
-					p.downloadPage();
+				synchronized (page) {
+					page.downloadPage();
 					job.isReadFromWeb = true;
 					
-					StatisticGatherer.totalPageDownloadFinished++;
+					StatisticGatherer.totalPageDownloadFinished.incrementAndGet();
 					if (cache != null)
-						p.saveToCache(cache.doc);
+						page.saveToCache(cache.doc);
 				}
 				job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
 				logInfoSurvey(job);
 				addJob (job);
 				break;
 			case ADD_CHILDREN_JOBS: 
-				synchronized (p) {
-					AbstractPage[] childPages = job.page.getChildPages();
+				synchronized (page) {
+					AbstractPage[] childPages = page.getChildPages();
 					if (childPages != null)
 						for (int i = 0; i < childPages.length; i++) {
 							AbstractPage child = childPages[i];
-							String childrenSaveTo = job.page.getChildrenSaveTo(job.saveTo);
+							String childrenSaveTo = page.getChildrenSaveTo(job.saveTo);
 							addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
 						}
 				}
@@ -368,7 +370,7 @@ public class PageProcessor {
 				}
 				break;
 			case SAVE_RESULTS:
-				job.saveResultsReport = p.saveResult(job.saveTo); 
+				job.saveResultsReport = page.saveResult(job.saveTo); 
 				logDataSave(job); 
 				job.status = JobStatusEnum.PAGE_DONE;
 				addJob(job);					

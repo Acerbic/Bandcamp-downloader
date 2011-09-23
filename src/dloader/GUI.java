@@ -187,8 +187,8 @@ public class GUI extends JFrame {
 				// Strong assumption here - if page have parent, parent-job is already in a tree (was at least recon'd)
 				assert ((pj.page.getParent()==null && parentNode==null)  ||
 						(pj.page.getParent()!=null && parentNode!=null));
-				// FIXME: code in chance child elements are added to tree before parent elements 
-				// due to weird event Q shenanigans
+				// FIXME: code in chance children elements are added to tree before parent elements 
+				// due to weird event Q shenanigans (child's "parent" field will be not null!)
 				
 				
 				node = new DefaultMutableTreeNode(pj, true); 
@@ -215,7 +215,7 @@ public class GUI extends JFrame {
 			}
 			
 			if (pj.status == JobStatusEnum.PAGE_DONE) {
-	//			 TODO: fold parent element if every sibling is done too
+	//			 XXX: ??? fold parent element if every sibling is done too
 			} else {
 				// unfold parent element
 				TreePath tp = new TreePath(tm.getPathToRoot(node.getParent()));

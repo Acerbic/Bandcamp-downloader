@@ -40,7 +40,7 @@ public class WebDownloader {
 	 * @throws IOException on stream problems AND on server errors/timeouts
 	 */
 	public static long fetchWebFile(URL from, String to) throws IOException {
-		StatisticGatherer.totalFileDownloadAttempts++;
+		StatisticGatherer.totalFileDownloadAttempts.incrementAndGet();
 		
 		Path dstPath = Paths.get(to);
 		/* if file does not exist, continue
@@ -85,8 +85,8 @@ public class WebDownloader {
 			// BOoooo. how to know that OS is done with the file?
 			// waiting for file to be released. possible infinite loop / clinch here.
 			// while (!Files.isWritable(p)) ;
-			StatisticGatherer.totalFileDownloadFinished++;
-			StatisticGatherer.totalBytesDownloaded += Files.size(dstPath);
+			StatisticGatherer.totalFileDownloadFinished.incrementAndGet();
+			StatisticGatherer.totalBytesDownloaded.addAndGet(Files.size(dstPath));
 			return Files.size(dstPath);
 		}
 		throw new IOException("Java fucked up and lost your file!");

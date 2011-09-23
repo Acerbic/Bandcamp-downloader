@@ -35,7 +35,8 @@ public class Main {
 							.print("homestuck.bandcamp.com downloader by A.Cerbic, 04.2011.\n"
 									+ "\tuse these command-line parameters:\n"
 									+ "\t\t-?\t to call for this help, duh!\n"
-									+ "\t\t-silent\t to run this app ninja-style. \n"
+									+ "\t\t-console to launch without GUI\n"
+									+ "\t\t-silent\t to run this app ninja-style. (has effect only if -console is present too)\n"
 									+ "\t\t\t Beware, 500+ Mb download will leave you against blinking cursor for a while.\n"
 									+ "\t\t-log\t to let the program take some notes into '"+logFile+"' file\n"
 									+ "\t\t-d<URL>\t to start downloading from some URL other than default (http://homestuck.bandcamp.com)\n"
@@ -70,6 +71,7 @@ public class Main {
 					break;
 				case 'f': forceTagging = true; break;
 				case 'r': allowFromCache = false; break;
+				case 'c': isInConsoleMode = true; break;
 			} //switch
 		} //for
 	}
