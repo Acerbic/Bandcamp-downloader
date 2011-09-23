@@ -173,7 +173,7 @@ public class PageProcessor {
 	 * @return new PageParser descendant fitting for the page
 	 * @throws IllegalArgumentException - when baseURL is bad or null
 	 */
-	static final 
+	static final public
 	AbstractPage detectPage(String baseURL) throws IllegalArgumentException {
 		URL u;
 		try {

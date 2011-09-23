@@ -54,7 +54,8 @@ public class Discography extends AbstractPage {
 	}
 
 	@Override
-	public String saveResult(String saveTo) throws IOException {
+	public synchronized
+	String saveResult(String saveTo) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 		return null;

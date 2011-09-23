@@ -35,8 +35,7 @@ public class Track extends AbstractPage {
 	 * Set of custom properties read from page, saved to cache and 
 	 * resulting audio file metadata tags
 	 */	
-	Properties defaultProperties;
-	Properties properties;
+	volatile Properties properties;
 	
 	@Override
 	public String getTitle() {
@@ -81,16 +80,15 @@ public class Track extends AbstractPage {
 		dataPatterns.put("comment", Pattern.compile(".*trackinfo:.*\"has_info\":\"([^\"]*)\".*", Pattern.DOTALL));				
 	}
 	
+	{
+		properties = new Properties();
+	}
 	public Track(String s) throws IllegalArgumentException {super(s);}
 	public Track(URL url) throws IllegalArgumentException {super(url);}
-
-	{
-		defaultProperties = new Properties();
-		properties = new Properties(defaultProperties);
-	}
 	
 	@Override
-	public String saveResult(String saveTo) throws IOException {
+	public synchronized 
+	String saveResult(String saveTo) throws IOException {
 		Files.createDirectories(Paths.get(saveTo));
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()) + ".mp3");
 		boolean wasDownloaded = 
@@ -112,6 +110,7 @@ public class Track extends AbstractPage {
 	 * @param fileTag - the tag to be examined and mimicked
 	 * @return mapping {Track property name -> audio tag field id}
 	 */
+	private
 	Map<String,String> getTextFieldIds(Tag fileTag) {
 		Map<String,String> tagToCustomFrame = new HashMap<String,String>();
 		
@@ -142,7 +141,7 @@ public class Track extends AbstractPage {
 	 * @return true if actual write operation happened
 	 * @throws IOException - file read/write problems
 	 */
-	public boolean tagAudioFile(String file) throws IOException {
+	boolean tagAudioFile(String file) throws IOException {
 		try {
 			AudioFile theFile = AudioFileIO.read(Paths.get(file).toFile());
 			entagged.audioformats.Tag fileTag = theFile.getTag();
@@ -280,7 +279,9 @@ public class Track extends AbstractPage {
 
 	@Override
 	public boolean isSavingNotRequired(String saveTo) {
-		// this is commented out because even if file exists it might be needing some tagging
+		// this is commented out because even if file exists it might be 
+		// needing some tagging
+		// TODO: implement proper check for tags present (honor the "ForceRetag" flag)
 //		try {
 //			Path p = Paths.get(saveTo, getFSSafeName(getTitle()) + ".mp3");
 //		if (Files.isRegularFile(p) && Files.size(p) > 0)

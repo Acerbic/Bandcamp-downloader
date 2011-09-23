@@ -1,4 +1,4 @@
-package dloader;
+package dloader.page;
 
 import static org.junit.Assert.*;
 
@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import dloader.page.AbstractPage;
 import dloader.page.AbstractPage.ProblemsReadingDocumentException;
+import dloader.*;
 
 public class AbstractPageTest {
 	

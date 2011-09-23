@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry including="dloader/*.java" kind="src" path="test"/>
+	<classpathentry including="**/*.java" kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry exported="true" kind="lib" path="lib/entagged-audioformats-0.15.jar" sourcepath="D:/Gleb/JavaLibrary/entagged-audioformats-source-0.15"/>
 	<classpathentry exported="true" kind="lib" path="lib/jaxen-1.1.3.jar">

@@ -56,7 +56,7 @@ public abstract class AbstractPage {
 	/** 
 	 * title of this item (as stored into cache) 
 	 */
-	private String title;
+	private volatile String title;
 	
 	/**
 	 * url of a page referencing this item 
@@ -67,33 +67,25 @@ public abstract class AbstractPage {
 	 * array of a children items to this one (can be of size zero, can be null).
 	 * Certain elements of this array can be null as well (if child parsing failed)
 	 */
-	private AbstractPage[] childPages;
+	private volatile AbstractPage[] childPages;
 	
 	/**
 	 * reference to a parent item (may be null)
 	 */
-	private AbstractPage parent;
+	private volatile AbstractPage parent;
 	
 	/**
 	 * Inherited by all descendants and instances, providing unified logging.
 	 */
 	protected static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);;
 	
-	public synchronized final AbstractPage[] getChildPages() {
-		return childPages;
-	}
+// these three are not synchronized because they only read values that declared volatile
+	public final AbstractPage[] getChildPages() { return childPages; }
+	public final AbstractPage getParent() {	return parent;	}
+	public String getTitle() {return title;} 
+	
+	public synchronized void setTitle(String title) {this.title = title;}
 
-	public synchronized final void setChildPages(AbstractPage[] childPages) {
-		this.childPages = childPages;
-	}
-
-	public synchronized final AbstractPage getParent() {
-		return parent;
-	}
-
-	public synchronized final void setParent(AbstractPage parent) {
-		this.parent = parent;
-	}
 
 	/**
 	 * Constructs from web address
@@ -116,16 +108,6 @@ public abstract class AbstractPage {
 		this.url = url;
 	}
 
-	public synchronized
-	String getTitle() {
-		return title;
-	}
-
-	public synchronized
-	void setTitle(String title) {
-		this.title = title;
-	}
-
 	/**
 	 * Convert a string to a proper file name (NOT path, only filename).
 	 * (don't check for existing file collisions, only validness of a name) 
@@ -133,7 +115,8 @@ public abstract class AbstractPage {
 	 * @return proper file name
 	 * @throws IOException if file name is not valid  
 	 */
-	public static String getFSSafeName(String name) throws IOException   {
+	public static final
+	String getFSSafeName(String name) throws IOException   {
 		for (char c : ":/\\*?\"<>|\t\n\r".toCharArray())
 			name = name.replace(String.valueOf(c), "");
 		name = name.trim(); // only trailing spaces are forbidden
@@ -360,9 +343,8 @@ public abstract class AbstractPage {
 	void saveToCache (org.jdom.Document doc) {
 		assert (doc != null);
 		
-		// absolutely required fields
-		if (getTitle()==null || url==null)
-			return;
+		// absolutely required field
+		if (getTitle()==null) return;
 		//1. Compose this one and childrefs
 		Element e = getSpecificDataXML();
 		if (e==null) return; // element is corrupt and should not be cached 
@@ -396,7 +378,7 @@ public abstract class AbstractPage {
 	 */
 	private
 	Element scanXMLForThisElement(org.jdom.Document doc) {
-		assert (doc != null); assert (url != null);
+		assert (doc != null); 
 		String searchXPath = String.format("//%s[@url='%s']",getClass().getSimpleName(),url.toString());
 		List<?> result = queryXPathList(searchXPath, doc);
 		
@@ -414,6 +396,7 @@ public abstract class AbstractPage {
 	 * Checks if call to saveResult can be skipped (especially if it is a long operation)
 	 * If the effect of saveResult is a minor thing (like simple directory creation) this function is 
 	 * allowed to make call to saveResult and return true;
+	 * @param saveTo - path to where this item will be saved in consequent call to saveResult 
 	 * @return true if call to saveResult can be skipped (will yield no effect), \t false if it must be performed
 	 */
 	abstract public boolean isSavingNotRequired(String saveTo);

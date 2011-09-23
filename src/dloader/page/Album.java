@@ -24,7 +24,7 @@ public class Album extends AbstractPage {
 	/**
 	 * link to the album cover
 	 */
-	public URL coverUrl;
+	public volatile URL coverUrl; // hope volatile is enough
 	/**
 	 * arbitrary additional info
 	 */
@@ -39,18 +39,31 @@ public class Album extends AbstractPage {
 
 	public Album(String s) throws IllegalArgumentException {super(s);}
 
+	/**
+	 * Builds path to save cover image to disk
+	 * @param saveTo - saving path for parenting item
+	 * @return path to album cover image
+	 * @throws IOException
+	 */
+	public String getCoverSavePath(String saveTo) throws IOException {
+		Path p = Paths.get(getChildrenSaveTo(saveTo), "cover.jpg");
+		return p.toString();
+	}
+	
 	@Override
-	public String saveResult(String saveTo) throws IOException {
+	public synchronized
+	String saveResult(String saveTo) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 			
-		if (WebDownloader.fetchWebFile(coverUrl, p.resolve("cover.jpg").toString()) != 0) 
+		if (WebDownloader.fetchWebFile(coverUrl, getCoverSavePath(saveTo)) != 0) 
 			return "cover image downloaded";
 		else return null;
 	}
 
 	@Override
-	protected void readCacheSelf(Element e) throws ProblemsReadingDocumentException{
+	protected 
+	void readCacheSelf(Element e) throws ProblemsReadingDocumentException{
 		try {
 			coverUrl = resolveLink(e.getAttributeValue("coverUrl"));
 		} catch (MalformedURLException e1) {
@@ -68,7 +81,8 @@ public class Album extends AbstractPage {
 	}
 
 	@Override
-	protected AbstractPage parseChild(Element element) throws ProblemsReadingDocumentException {
+	protected  
+	AbstractPage parseChild(Element element) throws ProblemsReadingDocumentException {
 		try {
 			trackCounter++; // that includes counting for failed parsing
 			URL u = resolveLink(element.getAttributeValue("href"));
@@ -84,7 +98,8 @@ public class Album extends AbstractPage {
 	}
 
 	@Override
-	protected void parseSelf(Document doc) throws ProblemsReadingDocumentException {
+	protected 
+	void parseSelf(Document doc) throws ProblemsReadingDocumentException {
 		@SuppressWarnings("unchecked")
 		List<Element> imgList = (List<Element>) queryXPathList("//pre:div[@id='tralbumArt']/pre:img", doc);
 		if (imgList.size() > 0) {
@@ -118,12 +133,13 @@ public class Album extends AbstractPage {
 	}
 
 	@Override
-	public boolean isSavingNotRequired(String saveTo) {
+	public synchronized
+	boolean isSavingNotRequired(String saveTo) {
 		Path p;
 		try {
-			p = Paths.get(saveTo, getFSSafeName(getTitle()), "cover.jpg");
-		if (Files.isRegularFile(p) && Files.size(p) > 0)
-			return true;
+			p = Paths.get(getChildrenSaveTo(saveTo));
+			if (Files.isRegularFile(p) && Files.size(p) > 0)
+				return true;
 		} catch (IOException e) {
 			logger.log(Level.WARNING,null,e);
 		}
