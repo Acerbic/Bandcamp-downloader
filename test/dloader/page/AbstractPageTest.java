@@ -97,8 +97,7 @@ public class AbstractPageTest {
 	public void testDownloadPageDummyFromLocal() throws ProblemsReadingDocumentException {
 		AbstractPageDummy p = new AbstractPageDummy("file:///D:/Gleb/Eclipse Workspaces/Dloader/Dloader/test/Homestuck.htm");
 		p.downloadPage();
-		assertNotNull(p.getChildPages());
-		assertEquals(0, p.getChildPages().length);
+		assertEquals(0, p.getChildPagesNum());
 	}
 
 	@Test
@@ -124,7 +123,7 @@ public class AbstractPageTest {
 		assertEquals(true, pNoChildren.loadFromCache(cache.doc));
 		assertEquals("Black Rose / Green Sun", pNoChildren.getTitle());
 		assertNull(pNoChildren.getParent());
-		assertNull(pNoChildren.getChildPages());
+		assertEquals(0, pNoChildren.getChildPagesNum());
 	}
 	
 	@Test
@@ -133,9 +132,8 @@ public class AbstractPageTest {
 		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
 		assertEquals(true, p.loadFromCache(cache.doc));
 		assertEquals("Demos", p.getTitle());
-		assertNotNull(p.getChildPages());
-		assertEquals(7, p.getChildPages().length);
-		assertEquals("http://noctura.bandcamp.com/track/dont-save-me-acoustic-for-x103", p.getChildPages()[5].url.toString());
+		assertEquals(7, p.getChildPagesNum());
+		assertEquals("http://noctura.bandcamp.com/track/dont-save-me-acoustic-for-x103", p.getChild(5).url.toString());
 	}
 	
 	@Test

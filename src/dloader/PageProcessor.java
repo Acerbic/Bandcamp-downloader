@@ -274,7 +274,7 @@ public class PageProcessor {
 		synchronized (job) {
 			if (job.isReadFromWeb) method = "web";
 			else if (job.isReadFromCache) method = "cache";
-			int childPagesNum = (page.getChildPages() != null)? page.getChildPages().length: 0;
+			int childPagesNum = page.getChildPagesNum();
 			log_message = String.format("%s (%s): <%s>%s%n",
 					page.getClass().getSimpleName(),
 					method,
@@ -347,13 +347,11 @@ public class PageProcessor {
 				break;
 			case ADD_CHILDREN_JOBS: 
 				synchronized (page) {
-					AbstractPage[] childPages = page.getChildPages();
-					if (childPages != null)
-						for (int i = 0; i < childPages.length; i++) {
-							AbstractPage child = childPages[i];
-							String childrenSaveTo = page.getChildrenSaveTo(job.saveTo);
-							addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
-						}
+					for (int i = 0; i < page.getChildPagesNum(); i++) {
+						AbstractPage child = page.getChild(i);
+						String childrenSaveTo = page.getChildrenSaveTo(job.saveTo);
+						addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
+					}
 				}
 				job.retryCount = PageJob.MAX_RETRIES; // reset retries for next faulty operation
 				job.status = JobStatusEnum.PRESAVE_CHECK;

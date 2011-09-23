@@ -38,12 +38,14 @@ public class Track extends AbstractPage {
 	volatile Properties properties;
 	
 	@Override
-	public String getTitle() {
+	public synchronized
+	String getTitle() {
 		return properties.getProperty("title");
 	};
 
 	@Override
-	public void setTitle(String title) {
+	public synchronized
+	void setTitle(String title) {
 		properties.setProperty("title", title);
 	};
 

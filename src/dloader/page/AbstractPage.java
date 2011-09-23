@@ -64,10 +64,11 @@ public abstract class AbstractPage {
 	public final URL url;
 	
 	/**
-	 * array of a children items to this one (can be of size zero, can be null).
-	 * Certain elements of this array can be null as well (if child parsing failed)
+	 * List of a children items to this page (can be of size zero)
 	 */
-	private volatile AbstractPage[] childPages;
+	// is not synchronizedList because is confined within instance, 
+	// all operations that access it are under (this) lock
+	private final List<AbstractPage> childPages; 
 	
 	/**
 	 * reference to a parent item (may be null)
@@ -79,12 +80,16 @@ public abstract class AbstractPage {
 	 */
 	protected static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);;
 	
-// these three are not synchronized because they only read values that declared volatile
-	public final AbstractPage[] getChildPages() { return childPages; }
-	public final AbstractPage getParent() {	return parent;	}
+// these are not synchronized because they only read values that declared volatile and effectively immutable
+	public final AbstractPage getParent() {return parent;	}
 	public String getTitle() {return title;} 
 	
-	public synchronized void setTitle(String title) {this.title = title;}
+	public synchronized 
+	void setTitle(String title) {this.title = title;}
+	public synchronized final 
+	int getChildPagesNum() {return childPages.size();}
+	public synchronized final 
+	AbstractPage getChild(int n) {return childPages.get(n);}
 
 
 	/**
@@ -96,6 +101,7 @@ public abstract class AbstractPage {
 		try {url = resolveLink(stringURL);}
 		catch (MalformedURLException e) {throw new IllegalArgumentException(e);}
 		catch (NullPointerException e) {throw new IllegalArgumentException(e);}
+		childPages = new ArrayList<>();
 	}
 
 	/**
@@ -106,6 +112,7 @@ public abstract class AbstractPage {
 	public AbstractPage(URL url) throws IllegalArgumentException {
 		if (url == null) throw new IllegalArgumentException();
 		this.url = url;
+		childPages = new ArrayList<>();
 	}
 
 	/**
@@ -165,11 +172,11 @@ public abstract class AbstractPage {
 			// discover info about children pages
 			@SuppressWarnings("unchecked")
 			List<Element> result = (List<Element>) queryXPathList(getChildNodesXPath(), doc);
-			childPages = new AbstractPage[result.size()] ; // might be initialized to zero-sized array
 			for (int i = 0; i<result.size(); i++) {
 				try {
-					childPages[i] = parseChild(result.get(i));
-					childPages[i].parent = this;
+					AbstractPage child = parseChild(result.get(i));
+					child.parent = this;
+					childPages.add(child);
 				} catch (ProblemsReadingDocumentException e) {
 					logger.log(Level.WARNING, "unable to parse child data", e);
 				} // skip this child to next one
@@ -213,18 +220,18 @@ public abstract class AbstractPage {
 			List<Element> l = e.getContent(new ElementFilter("childref"));
 			int size = l.size();
 			if (size>0) {
-				childPages = new AbstractPage[size];
 				Iterator<Element> itr = l.listIterator();
 				for (int i=0; i<size; i++) {
-					childPages[i] = readCacheChild(itr.next());
-					childPages[i].parent = this; 
+					AbstractPage child = readCacheChild(itr.next());
+					child.parent = this;
+					childPages.add(child);
 				}
 			}
 			logger.log(Level.FINE, String.format("\t...Finished reading %s.%n",url.toString()));
 			return true;
 		} catch (ProblemsReadingDocumentException e) {
 			// If ANY problem, quit with a fail code
-			childPages = null; 
+			childPages.clear(); 
 			return false;
 		}
 		
@@ -401,4 +408,9 @@ public abstract class AbstractPage {
 	 */
 	abstract public boolean isSavingNotRequired(String saveTo);
 	
+	@Override
+	public 
+	String toString() {
+		return (getTitle() == null)? url.toString(): getTitle();
+	}
 }

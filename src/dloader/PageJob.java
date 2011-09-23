@@ -53,12 +53,10 @@ class PageJob {
 	}
 	
 	@Override
-	public synchronized
+	public 
 	String toString() {
-		String title_area = page.getTitle();
-		title_area = (title_area == null)? page.url.toString(): title_area;
 		String recon_area = isReadFromWeb? "[web] " : (isReadFromCache? "[cache] ": "");
-		return title_area + ": " + recon_area + status.toString();
+		return page.getTitle() + ": " + recon_area + status.toString();
 	}
 	
 	
