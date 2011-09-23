@@ -26,21 +26,24 @@ class PageJob {
 		
 	// the page is BOUND to this job object (1-to-1) and tracks page processing progress
 	// during execution.
-	// FIXME: this is a synchronization problem! 
-	// Thread MUST lock onto PageJob object to operate with associated AbstractPage
-	// but the problem is it is possible to store ref to a page and work with it outside of synchronization area
-	final AbstractPage page;  
+	final public AbstractPage page;  
 	 
-	JobStatusEnum status;  
-	String saveTo;  
+	final public String saveTo;
+	
+	// I rely on volatile definition and not on synchronized getters and setters because
+	//   only one thread at a time writes to the fields (dedicated SwingWorker thread if GUI is on)
+	//   and other threads (Event Dispatch) only read from them.
+	// Another SwingWorker can not access this PageJob object since the first one 
+	//   removes it from the jobQ and "doSingleJob" locks on PageJob object the whole time it works on it.
+	volatile public JobStatusEnum status;  
 	
 	// flags on how page was processed 
-	boolean isReadFromCache = false;
-	boolean isReadFromWeb = false;
-	String saveResultsReport = null;
+	volatile public boolean isReadFromCache = false;
+	volatile public boolean isReadFromWeb = false;
+	volatile public String saveResultsReport = null;
 
 	final static int MAX_RETRIES = 3;
-	int retryCount;
+	volatile public int retryCount;
 	
 	PageJob (String saveTo, AbstractPage page, PageJob.JobStatusEnum status) {
 		assert (saveTo != null);
@@ -52,7 +55,10 @@ class PageJob {
 	@Override
 	public synchronized
 	String toString() {
-		return page.getTitle() + ": " + status.toString();
+		String title_area = page.getTitle();
+		title_area = (title_area == null)? page.url.toString(): title_area;
+		String recon_area = isReadFromWeb? "[web] " : (isReadFromCache? "[cache] ": "");
+		return title_area + ": " + recon_area + status.toString();
 	}
 	
 	

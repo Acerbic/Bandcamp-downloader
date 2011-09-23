@@ -43,7 +43,7 @@ public class WebDownloader {
 		StatisticGatherer.totalFileDownloadAttempts++;
 		
 		Path dstPath = Paths.get(to);
-		/* if file not exist, continue
+		/* if file does not exist, continue
 		 * If file exists, is regular and not zero-sized, return 0 (skip)
 		 * if file exists, regular and size zero, delete it and continue
 		 * if file exists, not regular - error

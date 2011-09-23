@@ -5,6 +5,7 @@ package dloader;
  * @author A.Cerbic
  */
 public class StatisticGatherer {
+	// FIXME: this needs MAJOR rework for proper handling of multi-threaded access
 
 	//	public final static int MAX_LENGTH_CHECKS = 5;
 	/* statistics section */

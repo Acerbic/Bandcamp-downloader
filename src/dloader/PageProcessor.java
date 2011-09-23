@@ -24,7 +24,7 @@ public class PageProcessor {
 	/**
 	 * Dynamically growing list of PageJob objects;  
 	 */
-	static List<PageJob> jobQ;
+	static final List<PageJob> jobQ;
 	/**
 	 * Holds reference to a cache, if one is present (null otherwise)
 	 */
@@ -43,7 +43,8 @@ public class PageProcessor {
 	/**
 	 * priorities system to select next job from the Q
 	 */
-	static Map<PageJob.JobStatusEnum, Integer> priorities;
+	static final
+	Map<PageJob.JobStatusEnum, Integer> priorities;
 	/**
 	 * value for the top priority
 	 */
@@ -65,7 +66,7 @@ public class PageProcessor {
 		jobQ = new LinkedList<PageJob>();
 	}
 	
-	static 
+	static public
 	List<PageJob> getJobQ() {
 		return jobQ;
 	}
@@ -195,7 +196,7 @@ public class PageProcessor {
 	/**
 	 * Processes all jobs in a Q and all jobs they generate 
 	 */
-	static
+	static public
 	void acquireData() {
 		PageJob lastJob = null;
 		do {
@@ -216,18 +217,20 @@ public class PageProcessor {
 			if (job == null) return null;
 			getJobQ().remove(job);
 		}
-		try {
-			processOnePage(job); // will re-add this job in a new status
-		} catch (ProblemsReadingDocumentException|IOException e) {
-			synchronized (job) {
-				if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
-					job.status == JobStatusEnum.SAVE_RESULTS) {
-					if ( --job.retryCount <= 0) {
-						if (logger != null)
-							logger.log(Level.WARNING, "[Failed] " + job.toString(), e);
-						job.status = JobStatusEnum.PAGE_FAILED; 
+		synchronized (job) {
+			try {
+				processOnePage(job); // will re-add this job in a new status
+			} catch (ProblemsReadingDocumentException|IOException e) {
+				synchronized (job) {
+					if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
+						job.status == JobStatusEnum.SAVE_RESULTS) {
+						if ( --job.retryCount <= 0) {
+							if (logger != null)
+								logger.log(Level.WARNING, "[Failed] " + job.toString(), e);
+							job.status = JobStatusEnum.PAGE_FAILED; 
+						}
+						addJob(job);					
 					}
-					addJob(job);					
 				}
 			}
 		}
@@ -310,7 +313,6 @@ public class PageProcessor {
 	 */
 	static
 	void processOnePage(PageJob job) throws ProblemsReadingDocumentException, IOException {
-		synchronized (job) {
 		AbstractPage p = job.page;
 		assert (p != null);
 		switch (job.status) {
@@ -372,11 +374,12 @@ public class PageProcessor {
 				addJob(job);					
 				break; 
 		}
-		} // synchronized
 	}
 
 	/**
 	 * Return the PageJob object for specific page (1-to-1 relationship)
+	 * only this snapshot of job q is scanned! So, jobs that are temporary removed from q 
+	 * (or not added yet) can fall off the grid. 
 	 * @param page - the page to look for
 	 * @return PageJob object for that page or null if not found or null argument
 	 */

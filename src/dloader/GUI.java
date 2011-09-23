@@ -24,6 +24,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.JTextField;
 
 import dloader.PageJob.JobStatusEnum;
+import dloader.page.AbstractPage;
 
 /**
  * A class to present GUI of downloading process and controls over it
@@ -33,7 +34,7 @@ import dloader.PageJob.JobStatusEnum;
 public class GUI extends JFrame {
 	public final class PageProcessorWorker extends
 			SwingWorker<PageJob, PageJob> {
-		boolean isLazyWorker;
+		final boolean isLazyWorker;
 		PageProcessorWorker(boolean isLazyWorker) {
 			this.isLazyWorker = isLazyWorker;
 		}
@@ -112,10 +113,8 @@ public class GUI extends JFrame {
 		JButton btnStart = new JButton("Start!");
 		btnStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-//				if (PageProcessor.hasMoreJobs(false)) {
-					PageProcessorWorker worker = new PageProcessorWorker(false);
-					worker.execute(); // next job GO
-//				}				
+				PageProcessorWorker worker = new PageProcessorWorker(false);
+				worker.execute(); // next job GO
 			}
 		});
 		btnStart.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -141,7 +140,7 @@ public class GUI extends JFrame {
 
 	private static final long serialVersionUID = -919422625610867342L;
 	public static Thread EventDispatchThread = null;
-	static GUI frame = null;
+	private static GUI frame = null;
 	private JTextField txtBaseurl;
 	
 	/**
@@ -170,48 +169,67 @@ public class GUI extends JFrame {
 	}
 	
 	public void updateTreeByJob(PageJob pj) {
-		if (pj == null) return;
-		// FIXME: should've create DefaultTreeModel explicitly in the 1st place
-		DefaultTreeModel tm = (DefaultTreeModel)tree.getModel();
-		
-		DefaultMutableTreeNode node = jobToTreenode.get(pj);
-		if (node == null) {
-			// no such node in a tree: ADDING
-			//  check if there is a parent job in a tree;
-			PageJob parentJob = PageProcessor.getJobForPage(pj.page.getParent());
-			DefaultMutableTreeNode parentNode = null; 
-			String value = (pj.page.getTitle() != null)? pj.page.getTitle() : pj.page.url.toString();
-			value = value + ": " + pj.status.toString();
-			node = new DefaultMutableTreeNode(value, true); 
-			if (parentJob == null) {
-				//add new top element
-				parentNode = (DefaultMutableTreeNode) tm.getRoot();
-				tm.insertNodeInto(node, parentNode, parentNode.getChildCount());
-				jobToTreenode.put(pj, node); // XXX: should be a weak reference;
+		synchronized (pj) {
+			if (pj == null) return; // must be here for PageProcessorWorker logic
+			// FIXME: should've create DefaultTreeModel explicitly in the 1st place
+			DefaultTreeModel tm = (DefaultTreeModel)tree.getModel();
+			
+			DefaultMutableTreeNode node = jobToTreenode.get(pj);
+			if (node == null) {
+				// no such node in a tree: ADDING
+				//  check if there is a parent job in a tree;
 				
-				// expand root element to show this one.
-				tree.expandPath(new TreePath(parentNode));
+				//// NOT using PageProcessor.getJobForPage because jobs are detached from that when in progress
+	//			PageJob parentJob = PageProcessor.getJobForPage(pj.page.getParent());
+				
+				DefaultMutableTreeNode parentNode = getTreeNodeByPage(pj.page.getParent());
+				
+				// Strong assumption here - if page have parent, parent-job is already in a tree (was at least recon'd)
+				assert ((pj.page.getParent()==null && parentNode==null)  ||
+						(pj.page.getParent()!=null && parentNode!=null));
+				// FIXME: code in chance child elements are added to tree before parent elements 
+				// due to weird event Q shenanigans
+				
+				
+				node = new DefaultMutableTreeNode(pj, true); 
+				if (parentNode == null) {
+					//add new top element
+					
+					parentNode = (DefaultMutableTreeNode) tm.getRoot();
+					tm.insertNodeInto(node, parentNode, parentNode.getChildCount()); // to the end!
+					jobToTreenode.put(pj, node); // XXX: should be a weak reference;
+					
+					// expand root element to show this one.
+					tree.expandPath(new TreePath(parentNode));
+				} else {
+					// add new leaf element
+					
+	//				assert (parentNode != null); //duplication of above strong assumption
+					tm.insertNodeInto(node, parentNode, parentNode.getChildCount());
+					jobToTreenode.put(pj, node); // XXX: should be a weak reference;
+				}
 			} else {
-				// add new leaf element
-				
-				// Strong assumption here - parent job is already in a tree (was at least recon'd)
-				parentNode = jobToTreenode.get(parentJob);
-				assert (parentNode != null);
-				tm.insertNodeInto(node, parentNode, parentNode.getChildCount());
-				jobToTreenode.put(pj, node); // XXX: should be a weak reference;
+				// update element visuals
+	//			node.setUserObject(pj.page.getTitle() + ": " + pj.status.toString());
+				tm.nodeChanged(node);
 			}
-		} else {
-			// update element visuals
-			node.setUserObject(pj.page.getTitle() + ": " + pj.status.toString());
-			tm.nodeChanged(node);
+			
+			if (pj.status == JobStatusEnum.PAGE_DONE) {
+	//			 TODO: fold parent element if every sibling is done too
+			} else {
+				// unfold parent element
+				TreePath tp = new TreePath(tm.getPathToRoot(node.getParent()));
+				tree.expandPath(tp);
+			}
 		}
-		
-		if (pj.status == JobStatusEnum.PAGE_DONE) {
-//			 TODO: fold parent element if every sibling is done too
-		} else {
-			// unfold parent element
-			TreePath tp = new TreePath(tm.getPathToRoot(node.getParent()));
-			tree.expandPath(tp);
+	}
+	
+	private
+	DefaultMutableTreeNode getTreeNodeByPage(AbstractPage page) {
+		for (Map.Entry<PageJob, DefaultMutableTreeNode> entry: jobToTreenode.entrySet()) {
+			if (entry.getKey().page == page)
+				return entry.getValue();
 		}
+		return null;
 	}
 }

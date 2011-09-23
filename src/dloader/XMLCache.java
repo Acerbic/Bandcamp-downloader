@@ -28,7 +28,7 @@ public class XMLCache {
 	
 	private Path xmlFile;
 	
-	public Document doc;
+	public final Document doc;
 	
 /**
  * Loads file and parses it into org.jdom.Document
@@ -39,6 +39,7 @@ public class XMLCache {
  */
 	public XMLCache(String xmlFileName) {
 		Logger l = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+		Document doc = null;
 		if (xmlFileName==null || xmlFileName.isEmpty()) 
 			throw new IllegalArgumentException("Cache file name cannot be empty or null");
 		
@@ -63,7 +64,8 @@ public class XMLCache {
 		Format xmlOutputFormat = outputter.getFormat();
 		xmlOutputFormat.setIndent("  ");
 		xmlOutputFormat.setLineSeparator(System.getProperty("line.separator"));
-		outputter.setFormat(xmlOutputFormat);		
+		outputter.setFormat(xmlOutputFormat);
+		this.doc = doc;
 	}
 
 	/**
