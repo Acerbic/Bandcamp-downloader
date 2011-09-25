@@ -35,9 +35,9 @@ public class Album extends AbstractPage {
 	 */
 	private int trackCounter;
 
-	public Album(URL url) throws IllegalArgumentException {super(url);}
+	public Album(URL url, AbstractPage parent) throws IllegalArgumentException {super(url, parent);}
 
-	public Album(String s) throws IllegalArgumentException {super(s);}
+	public Album(String s, AbstractPage parent) throws IllegalArgumentException {super(s, parent);}
 
 	/**
 	 * Builds path to save cover image to disk
@@ -86,7 +86,7 @@ public class Album extends AbstractPage {
 		try {
 			trackCounter++; // that includes counting for failed parsing
 			URL u = resolveLink(element.getAttributeValue("href"));
-			Track t = new Track(u);
+			Track t = new Track(u, this);
 			t.setTitle(element.getText());
 			// may be set default property instead?
 			t.setProperty("track", String.valueOf(trackCounter));

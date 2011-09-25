@@ -187,11 +187,11 @@ public class PageProcessor {
 		}
 		
 		if (baseURL.contains("/track/")) 
-			return new Track(baseURL);
+			return new Track(baseURL, null);
 		if (baseURL.contains("/album/")) 
-			return new Album(baseURL);
+			return new Album(baseURL, null);
 		if (u.getPath().isEmpty() || u.getPath().equals("/"))
-			return new Discography(baseURL);
+			return new Discography(baseURL, null);
 		
 		throw new IllegalArgumentException();
 	}
@@ -274,16 +274,16 @@ public class PageProcessor {
 		synchronized (job) {
 			if (job.isReadFromWeb) method = "web";
 			else if (job.isReadFromCache) method = "cache";
-			int childPagesNum = page.getChildPagesNum();
+			int childPagesNum = page.childPages.size();
 			log_message = String.format("%s (%s): <%s>%s%n",
 					page.getClass().getSimpleName(),
 					method,
 					page.url.toString(),
 					(childPagesNum > 0)?
 						String.format(" [%s] children", childPagesNum): "");
-			while (page.getParent() != null) {
+			while (page.parent != null) {
 				log_message = "\t"+log_message;
-				page = page.getParent();
+				page = page.parent;
 			}
 		}
 		logger.info(log_message);
@@ -303,9 +303,9 @@ public class PageProcessor {
 				page.getTitle().toString(),
 				result
 				);
-		while (page.getParent() != null) {
+		while (page.parent != null) {
 			log_message = "\t"+log_message;
-			page = page.getParent();
+			page = page.parent;
 		}
 		logger.info(log_message);
 	}
@@ -346,9 +346,8 @@ public class PageProcessor {
 				addJob (job);
 				break;
 			case ADD_CHILDREN_JOBS: 
-				synchronized (page) {
-					for (int i = 0; i < page.getChildPagesNum(); i++) {
-						AbstractPage child = page.getChild(i);
+				synchronized (page.childPages) { // locking while iterating demanded by synchronizedList() protocol
+					for (AbstractPage child: page.childPages) {
 						String childrenSaveTo = page.getChildrenSaveTo(job.saveTo);
 						addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
 					}

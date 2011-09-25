@@ -26,9 +26,9 @@ public class Discography extends AbstractPage {
 	 */
 	private DiscographyListVariant variant = DiscographyListVariant.SIDEBAR; 
 
-	public Discography(URL url) throws IllegalArgumentException {super(url);}
+	public Discography(URL url, AbstractPage parent) throws IllegalArgumentException {super(url, parent);}
 
-	public Discography(String s) throws IllegalArgumentException {super(s);}
+	public Discography(String s, AbstractPage parent) throws IllegalArgumentException {super(s, parent);}
 	
 	@Override
 	protected void parseSelf(Document doc) throws ProblemsReadingDocumentException  {
@@ -86,7 +86,7 @@ public class Discography extends AbstractPage {
 	protected AbstractPage parseChild(Element element) throws ProblemsReadingDocumentException  {
 		try {
 			URL u = resolveLink(element.getAttributeValue("href"));
-			Album c = new Album(u);
+			Album c = new Album(u, this);
 			c.setTitle(element.getText());
 			return c;
 		} catch (NullPointerException|IllegalArgumentException|

@@ -43,9 +43,9 @@ public class AbstractPageTest {
 		@Override
 		public String getChildrenSaveTo(String saveTo) throws IOException {return null;}
 		
-		public AbstractPageDummy(String s) {super(s);}
+		public AbstractPageDummy(String s) {super(s, null);}
 
-		public AbstractPageDummy(URL test) {super(test);}
+		public AbstractPageDummy(URL test) {super(test, null);}
 
 		@Override
 		public boolean isSavingNotRequired(String saveTo) {return false;}
@@ -97,7 +97,7 @@ public class AbstractPageTest {
 	public void testDownloadPageDummyFromLocal() throws ProblemsReadingDocumentException {
 		AbstractPageDummy p = new AbstractPageDummy("file:///D:/Gleb/Eclipse Workspaces/Dloader/Dloader/test/Homestuck.htm");
 		p.downloadPage();
-		assertEquals(0, p.getChildPagesNum());
+		assertEquals(0, p.childPages.size());
 	}
 
 	@Test
@@ -122,8 +122,8 @@ public class AbstractPageTest {
 		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
 		assertEquals(true, pNoChildren.loadFromCache(cache.doc));
 		assertEquals("Black Rose / Green Sun", pNoChildren.getTitle());
-		assertNull(pNoChildren.getParent());
-		assertEquals(0, pNoChildren.getChildPagesNum());
+		assertNull(pNoChildren.parent);
+		assertEquals(0, pNoChildren.childPages.size());
 	}
 	
 	@Test
@@ -132,8 +132,8 @@ public class AbstractPageTest {
 		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
 		assertEquals(true, p.loadFromCache(cache.doc));
 		assertEquals("Demos", p.getTitle());
-		assertEquals(7, p.getChildPagesNum());
-		assertEquals("http://noctura.bandcamp.com/track/dont-save-me-acoustic-for-x103", p.getChild(5).url.toString());
+		assertEquals(7, p.childPages.size());
+		assertEquals("http://noctura.bandcamp.com/track/dont-save-me-acoustic-for-x103", p.childPages.get(5).url.toString());
 	}
 	
 	@Test

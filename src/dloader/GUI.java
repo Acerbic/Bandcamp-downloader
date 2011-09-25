@@ -86,7 +86,8 @@ public class GUI extends JFrame {
 	}
 	
 	Map<PageJob, DefaultMutableTreeNode> jobToTreenode; 
-	JTree tree;
+	JTree treeComponent;
+	DefaultTreeModel treeModel;
 	
 	public GUI() {
 		//FIXME: replace with some weak references to PageJobs and deal with depleted nodes.
@@ -98,13 +99,14 @@ public class GUI extends JFrame {
 		JScrollPane scrollPane = new JScrollPane();
 		getContentPane().add(scrollPane, BorderLayout.CENTER);
 		
-		tree = new JTree();
-		tree.setRootVisible(false);
-		tree.setModel(new DefaultTreeModel(
-			new DefaultMutableTreeNode("JTree") 
-		));
-		scrollPane.setViewportView(tree);
-		tree.setEditable(true);
+		treeComponent = new JTree();
+		treeComponent.setRootVisible(false);
+		treeModel = new DefaultTreeModel(
+				new DefaultMutableTreeNode("JTree") 
+				);
+		treeComponent.setModel(treeModel);
+		scrollPane.setViewportView(treeComponent);
+		treeComponent.setEditable(true);
 		
 		JPanel panel = new JPanel();
 		getContentPane().add(panel, BorderLayout.EAST);
@@ -169,11 +171,8 @@ public class GUI extends JFrame {
 	}
 	
 	public void updateTreeByJob(PageJob pj) {
+		if (pj == null) return; // must be here for PageProcessorWorker logic
 		synchronized (pj) {
-			if (pj == null) return; // must be here for PageProcessorWorker logic
-			// FIXME: should've create DefaultTreeModel explicitly in the 1st place
-			DefaultTreeModel tm = (DefaultTreeModel)tree.getModel();
-			
 			DefaultMutableTreeNode node = jobToTreenode.get(pj);
 			if (node == null) {
 				// no such node in a tree: ADDING
@@ -182,11 +181,11 @@ public class GUI extends JFrame {
 				//// NOT using PageProcessor.getJobForPage because jobs are detached from that when in progress
 	//			PageJob parentJob = PageProcessor.getJobForPage(pj.page.getParent());
 				
-				DefaultMutableTreeNode parentNode = getTreeNodeByPage(pj.page.getParent());
+				DefaultMutableTreeNode parentNode = getTreeNodeByPage(pj.page.parent);
 				
 				// Strong assumption here - if page have parent, parent-job is already in a tree (was at least recon'd)
-				assert ((pj.page.getParent()==null && parentNode==null)  ||
-						(pj.page.getParent()!=null && parentNode!=null));
+				assert ((pj.page.parent==null && parentNode==null)  ||
+						(pj.page.parent!=null && parentNode!=null));
 				// FIXME: code in chance children elements are added to tree before parent elements 
 				// due to weird event Q shenanigans (child's "parent" field will be not null!)
 				
@@ -195,31 +194,31 @@ public class GUI extends JFrame {
 				if (parentNode == null) {
 					//add new top element
 					
-					parentNode = (DefaultMutableTreeNode) tm.getRoot();
-					tm.insertNodeInto(node, parentNode, parentNode.getChildCount()); // to the end!
+					parentNode = (DefaultMutableTreeNode) treeModel.getRoot();
+					treeModel.insertNodeInto(node, parentNode, parentNode.getChildCount()); // to the end!
 					jobToTreenode.put(pj, node); // XXX: should be a weak reference;
 					
 					// expand root element to show this one.
-					tree.expandPath(new TreePath(parentNode));
+					treeComponent.expandPath(new TreePath(parentNode));
 				} else {
 					// add new leaf element
 					
 	//				assert (parentNode != null); //duplication of above strong assumption
-					tm.insertNodeInto(node, parentNode, parentNode.getChildCount());
+					treeModel.insertNodeInto(node, parentNode, parentNode.getChildCount());
 					jobToTreenode.put(pj, node); // XXX: should be a weak reference;
 				}
 			} else {
 				// update element visuals
 	//			node.setUserObject(pj.page.getTitle() + ": " + pj.status.toString());
-				tm.nodeChanged(node);
+				treeModel.nodeChanged(node);
 			}
 			
 			if (pj.status == JobStatusEnum.PAGE_DONE) {
 	//			 XXX: ??? fold parent element if every sibling is done too
 			} else {
 				// unfold parent element
-				TreePath tp = new TreePath(tm.getPathToRoot(node.getParent()));
-				tree.expandPath(tp);
+				TreePath tp = new TreePath(treeModel.getPathToRoot(node.getParent()));
+				treeComponent.expandPath(tp);
 			}
 		}
 	}

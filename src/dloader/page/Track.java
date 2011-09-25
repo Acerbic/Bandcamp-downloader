@@ -85,8 +85,8 @@ public class Track extends AbstractPage {
 	{
 		properties = new Properties();
 	}
-	public Track(String s) throws IllegalArgumentException {super(s);}
-	public Track(URL url) throws IllegalArgumentException {super(url);}
+	public Track(String s, AbstractPage parent) throws IllegalArgumentException {super(s, parent);}
+	public Track(URL url, AbstractPage parent) throws IllegalArgumentException {super(url, parent);}
 	
 	@Override
 	public synchronized 
@@ -262,9 +262,11 @@ public class Track extends AbstractPage {
 			String artist = getProperty("artist");
 			// fix track number
 			if (album==null || album.isEmpty())
-				setProperty("album",getParent().getTitle());
+//				setProperty("album",getParent().getTitle());
+				setProperty("album",parent.getTitle());
 			if (artist==null || artist.isEmpty())
-				setProperty("artist",getParent().getParent().getTitle());
+//				setProperty("artist",getParent().getParent().getTitle());
+				setProperty("artist",parent.parent.getTitle());
 		} catch (NullPointerException e) {
 			// skip if not enough parents in a line;
 		}

@@ -60,7 +60,7 @@ public class PageProcessorTest {
 	@Test
 	public void testProcessOnePageFailedReconGoesToDownload() throws ProblemsReadingDocumentException, IOException {
 //		PageProcessor mockPP_noCache = new PageProcessor(null, null, false);
-		AbstractPage page = new Discography("file://test/homestuck.html");
+		AbstractPage page = new Discography("file://test/homestuck.html", null);
 
 		// not using cache
 		PageProcessor.addJob(Paths.get("test/download_zone").toString(), page, JobStatusEnum.RECON_PAGE);
@@ -95,7 +95,7 @@ public class PageProcessorTest {
 	public void testProcessOnePageReconFromCacheFails() throws ProblemsReadingDocumentException, IOException {
 		class DummyPage extends Discography{
 			public DummyPage(String string) {
-				super(string);
+				super(string, null);
 			}
 
 			@Override
