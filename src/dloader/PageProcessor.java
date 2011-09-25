@@ -346,11 +346,9 @@ public class PageProcessor {
 				addJob (job);
 				break;
 			case ADD_CHILDREN_JOBS: 
-				synchronized (page.childPages) { // locking while iterating demanded by synchronizedList() protocol
-					for (AbstractPage child: page.childPages) {
-						String childrenSaveTo = page.getChildrenSaveTo(job.saveTo);
-						addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
-					}
+				for (AbstractPage child: page.childPages) {
+					String childrenSaveTo = page.getChildrenSaveTo(job.saveTo);
+					addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
 				}
 				job.retryCount = PageJob.MAX_RETRIES; // reset retries for next faulty operation
 				job.status = JobStatusEnum.PRESAVE_CHECK;

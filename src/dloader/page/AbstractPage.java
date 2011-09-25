@@ -8,8 +8,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.*;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,8 +28,11 @@ import dloader.WebDownloader;
  * Basic class to download page, parse it and download elements it references.
  * 
  *   Objects of this class are mutable 
- *   (effectively immutable after initialization with downloadPage() and loadFromCache(),
- *    but that can be delayed)
+ *   	(effectively immutable after initialization with downloadPage() and loadFromCache(),
+ *     	but that can be delayed).
+ *   Objects of this class are thread-safe without any external locking: 
+ *      two mutable fields( title and childPages ) don't form invariant dependency 
+ *      and refer to thread-safe objects themself.
  */
 public abstract class AbstractPage {
 
@@ -60,7 +64,7 @@ public abstract class AbstractPage {
 	/** 
 	 * title of this item 
 	 */
-	private volatile String title; // guarded by (this) on write. volatile for reading
+	private String title; // guarded by (this). getter/setter are synchronized 
 	
 	/**
 	 * url of a page referencing this item 
@@ -72,23 +76,21 @@ public abstract class AbstractPage {
 	public final AbstractPage parent;
 	
 	/**
-	 * List of a children items to this page (can be of size zero)
+	 * List of a children items to this page (can be of size zero) 
 	 */
-	public final List<AbstractPage> childPages = Collections.synchronizedList(new ArrayList<AbstractPage>()); 
+	public final Collection<AbstractPage> childPages = new LinkedBlockingQueue<>(); 
 
 	/**
 	 * Inherited by all descendants and instances, providing unified logging.
 	 */
-	protected static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);;
+	protected static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 	
-	public String getTitle() {return title;} 
+	public synchronized
+	String getTitle() {return title;} 
 	
 	public synchronized 
 	void setTitle(String title) {this.title = title;}
-//	public final 
-//	int getChildPagesNum() {return childPages.size();}
-//	public final 
-//	AbstractPage getChild(int n) {return childPages.get(n);}
+
 
 	/**
 	 * Constructs from web address
@@ -170,7 +172,7 @@ public abstract class AbstractPage {
 			// discover info about children pages
 			childPages.clear();
 			@SuppressWarnings("unchecked")
-			List<Element> result = (List<Element>) queryXPathList(getChildNodesXPath(), doc);
+			Collection<Element> result = (Collection<Element>) queryXPathList(getChildNodesXPath(), doc);
 			for (Element el: result) 
 				try {
 					childPages.add(parseChild(el));
@@ -215,7 +217,7 @@ public abstract class AbstractPage {
 			
 			childPages.clear(); // discard previous data if any.
 			@SuppressWarnings("unchecked")
-			List<Element> l = e.getContent(new ElementFilter("childref"));
+			Collection<Element> l = e.getContent(new ElementFilter("childref"));
 			for (Element el: l) 
 				childPages.add( readCacheChild(el) );
 			
@@ -223,7 +225,8 @@ public abstract class AbstractPage {
 			return true;
 		} catch (ProblemsReadingDocumentException e) {
 			// If ANY problem, quit with a fail code
-			childPages.clear(); 
+			childPages.clear();
+			setTitle(null);
 			return false;
 		}
 		
@@ -349,26 +352,27 @@ public abstract class AbstractPage {
 		if (e==null) return; // element is corrupt and should not be cached 
 		e.setAttribute("title", getTitle());
 		e.setAttribute("url", url.toString());
-		if (childPages != null) 
-			for (AbstractPage child: childPages) 
-				if (child != null) {
-					Element childElement = new Element("childref");
-					childElement.setAttribute("class",child.getClass().getSimpleName());
-					childElement.setAttribute("url",child.url.toString());
-					e.addContent(childElement);
-				}
-		//2. Drop old elements with the same URL
-		Element root = doc.getRootElement();
-		
-		@SuppressWarnings("unchecked")
-		List<Element> oldCachedElements = (List<Element>) queryXPathList(
-				String.format("//%s[@url='%s']",e.getName(),url.toString()), 
-				doc);
-		for (Element current: oldCachedElements) 
-			current.detach();
+		for (AbstractPage child: childPages) 
+			if (child != null) {
+				Element childElement = new Element("childref");
+				childElement.setAttribute("class",child.getClass().getSimpleName());
+				childElement.setAttribute("url",child.url.toString());
+				e.addContent(childElement);
+			}
+		synchronized (doc) {
+			//2. Drop old elements with the same URL
+			Element root = doc.getRootElement();
+			
+			@SuppressWarnings("unchecked")
+			Collection<Element> oldCachedElements = (Collection<Element>) queryXPathList(
+					String.format("//%s[@url='%s']",e.getName(),url.toString()), 
+					doc);
+			for (Element current: oldCachedElements) 
+				current.detach();
 
-		//3. Add this element to cache
-		root.addContent(e);
+			//3. Add this element to cache
+			root.addContent(e);
+		}
 	}
 
 	/**
@@ -401,7 +405,7 @@ public abstract class AbstractPage {
 	abstract public boolean isSavingNotRequired(String saveTo);
 	
 	@Override
-	public 
+	public synchronized
 	String toString() {
 		return (getTitle() == null)? url.toString(): getTitle();
 	}

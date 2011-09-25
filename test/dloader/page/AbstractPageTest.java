@@ -133,7 +133,13 @@ public class AbstractPageTest {
 		assertEquals(true, p.loadFromCache(cache.doc));
 		assertEquals("Demos", p.getTitle());
 		assertEquals(7, p.childPages.size());
-		assertEquals("http://noctura.bandcamp.com/track/dont-save-me-acoustic-for-x103", p.childPages.get(5).url.toString());
+		boolean found = false;
+		for (AbstractPage childPage: p.childPages) {
+			if (childPage.url.toString().equals(
+				"http://noctura.bandcamp.com/track/dont-save-me-acoustic-for-x103"))
+				found = true;
+		}
+		assertEquals(true, found);
 	}
 	
 	@Test

@@ -178,16 +178,14 @@ public class GUI extends JFrame {
 				// no such node in a tree: ADDING
 				//  check if there is a parent job in a tree;
 				
-				//// NOT using PageProcessor.getJobForPage because jobs are detached from that when in progress
-	//			PageJob parentJob = PageProcessor.getJobForPage(pj.page.getParent());
-				
 				DefaultMutableTreeNode parentNode = getTreeNodeByPage(pj.page.parent);
 				
-				// Strong assumption here - if page have parent, parent-job is already in a tree (was at least recon'd)
+				// Strong assumption here - if page have parent, parent-job node is already in a tree (was at least recon'd)
+				// that is: parent tree-nodes are created B4 child tree-nodes 
 				assert ((pj.page.parent==null && parentNode==null)  ||
 						(pj.page.parent!=null && parentNode!=null));
 				// FIXME: code in chance children elements are added to tree before parent elements 
-				// due to weird event Q shenanigans (child's "parent" field will be not null!)
+				// due to weird event Q shenanigans 
 				
 				
 				node = new DefaultMutableTreeNode(pj, true); 

@@ -56,7 +56,7 @@ class PageJob {
 	public 
 	String toString() {
 		String recon_area = isReadFromWeb? "[web] " : (isReadFromCache? "[cache] ": "");
-		return page.getTitle() + ": " + recon_area + status.toString();
+		return page.toString() + ": " + recon_area + status.toString();
 	}
 	
 	
