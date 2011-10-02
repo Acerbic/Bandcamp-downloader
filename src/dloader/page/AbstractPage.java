@@ -407,6 +407,7 @@ public abstract class AbstractPage {
 	@Override
 	public synchronized
 	String toString() {
-		return (getTitle() == null)? url.toString(): getTitle();
+		String className = this.getClass().getSimpleName();
+		return ((getTitle() == null)? url.toString(): getTitle()) + "[" +className+ "]";
 	}
 }

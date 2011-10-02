@@ -6,6 +6,7 @@ import javax.swing.SwingWorker;
 
 import java.awt.BorderLayout;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -49,6 +50,7 @@ public class GUI extends JFrame {
 					PageProcessorWorker worker = new PageProcessorWorker(isLazyWorker);
 					worker.execute(); // next job GO
 				}
+				
 				return res;
 			} catch (Throwable e) {
 				// FIXME: needs decoupling from Main
@@ -85,13 +87,62 @@ public class GUI extends JFrame {
 		}
 	}
 	
-	Map<PageJob, DefaultMutableTreeNode> jobToTreenode; 
+	/**
+	 * 
+	 * @author A.Cerbic
+	 */
+	class TreeNodeCacher {
+		private Map<PageJob, DefaultMutableTreeNode> jobToTreenode = new Hashtable<>();
+		
+		/**
+		 * Looks up a DefaultMutableTreeNode in a jobToTreenode reference map for given AbstractPage.
+		 * Searching job by page is valid since they are coupled 1-to-1 
+		 * @param page - the page which job progress is displayed by tree node question.
+		 * @return the tree node for given page or null if not found (null argument yields null in return)
+		 */
+		public
+		DefaultMutableTreeNode getTreeNodeByPage(AbstractPage page) {
+			if (page == null) return null;
+			for (Map.Entry<PageJob, DefaultMutableTreeNode> entry: jobToTreenode.entrySet()) {
+				if (entry.getKey().page == page)
+					return entry.getValue();
+			}
+			return null;
+		}		
+		
+		/**
+		 * Puts tree node in a cache. 
+		 * @param node
+		 */
+		public
+		void putTreeNodeInCache(DefaultMutableTreeNode node) {
+			if (node == null) return;
+			PageJob pj = null;
+			if (node.getUserObject() instanceof PageJob)
+				pj = (PageJob) node.getUserObject();
+			else {
+				Main.logger.log(Level.SEVERE, "Not a PageJob in a tree!!!");
+				return;
+			}
+			jobToTreenode.put(pj, node); // XXX: should be a weak reference;
+			
+		}
+		
+		public
+		DefaultMutableTreeNode getTreeNodeByPageJob(PageJob pj) {
+			if (pj == null) return null;
+			return jobToTreenode.get(pj);
+		}		
+	}
+	List<AbstractPage> wantedParents;
 	JTree treeComponent;
 	DefaultTreeModel treeModel;
+	TreeNodeCacher nodeList;
 	
 	public GUI() {
 		//FIXME: replace with some weak references to PageJobs and deal with depleted nodes.
-		jobToTreenode = new Hashtable<>();
+		wantedParents = new LinkedList<>();
+		nodeList = new TreeNodeCacher();
 
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setTitle("Bandcamp downloader");
@@ -101,9 +152,7 @@ public class GUI extends JFrame {
 		
 		treeComponent = new JTree();
 		treeComponent.setRootVisible(false);
-		treeModel = new DefaultTreeModel(
-				new DefaultMutableTreeNode("JTree") 
-				);
+		treeModel = new DefaultTreeModel(new DefaultMutableTreeNode("JTree"));
 		treeComponent.setModel(treeModel);
 		scrollPane.setViewportView(treeComponent);
 		treeComponent.setEditable(true);
@@ -173,60 +222,58 @@ public class GUI extends JFrame {
 	public void updateTreeByJob(PageJob pj) {
 		if (pj == null) return; // must be here for PageProcessorWorker logic
 		synchronized (pj) {
-			DefaultMutableTreeNode node = jobToTreenode.get(pj);
+			DefaultMutableTreeNode node = nodeList.getTreeNodeByPageJob(pj);
 			if (node == null) {
 				// no such node in a tree: ADDING
+				
+				node = new DefaultMutableTreeNode(pj, true);
+				nodeList.putTreeNodeInCache(node);
+				// if THIS node is in wanted list, pick up its lost kids.
+				if (wantedParents.remove(pj.page)) {
+					for (AbstractPage kidPage: pj.page.childPages) {
+						DefaultMutableTreeNode kidNode = nodeList.getTreeNodeByPage(kidPage);
+						if (kidNode != null)
+							// XXX: Ordering?
+							treeModel.insertNodeInto(kidNode, node, node.getChildCount());
+					}
+				}
 				//  check if there is a parent job in a tree;
-				
-				DefaultMutableTreeNode parentNode = getTreeNodeByPage(pj.page.parent);
-				
-				// Strong assumption here - if page have parent, parent-job node is already in a tree (was at least recon'd)
-				// that is: parent tree-nodes are created B4 child tree-nodes 
-				assert ((pj.page.parent==null && parentNode==null)  ||
-						(pj.page.parent!=null && parentNode!=null));
-				// FIXME: code in chance children elements are added to tree before parent elements 
-				// due to weird event Q shenanigans 
-				
-				
-				node = new DefaultMutableTreeNode(pj, true); 
-				if (parentNode == null) {
-					//add new top element
-					
-					parentNode = (DefaultMutableTreeNode) treeModel.getRoot();
-					treeModel.insertNodeInto(node, parentNode, parentNode.getChildCount()); // to the end!
-					jobToTreenode.put(pj, node); // XXX: should be a weak reference;
-					
-					// expand root element to show this one.
-					treeComponent.expandPath(new TreePath(parentNode));
-				} else {
+				DefaultMutableTreeNode parentNode = nodeList.getTreeNodeByPage(pj.page.parent);
+				if (parentNode != null) {
 					// add new leaf element
-					
-	//				assert (parentNode != null); //duplication of above strong assumption
+					// XXX: Ordering?
 					treeModel.insertNodeInto(node, parentNode, parentNode.getChildCount());
-					jobToTreenode.put(pj, node); // XXX: should be a weak reference;
+				} else {
+					// parentNode == null AND 
+					if (pj.page.parent!=null) {
+						// this page's is not in a system yet. 
+						// add this node as hidden, add this node's parent page to wanted list
+						wantedParents.add(pj.page.parent);
+					} else {
+						//add new top element
+						parentNode = (DefaultMutableTreeNode) treeModel.getRoot();
+						// XXX: Ordering?
+						treeModel.insertNodeInto(node, parentNode, parentNode.getChildCount()); // to the end!
+						// expand root element to show this one.
+						treeComponent.expandPath(new TreePath(parentNode));
+					}
 				}
 			} else {
 				// update element visuals
-	//			node.setUserObject(pj.page.getTitle() + ": " + pj.status.toString());
 				treeModel.nodeChanged(node);
 			}
 			
 			if (pj.status == JobStatusEnum.PAGE_DONE) {
 	//			 XXX: ??? fold parent element if every sibling is done too
 			} else {
-				// unfold parent element
-				TreePath tp = new TreePath(treeModel.getPathToRoot(node.getParent()));
-				treeComponent.expandPath(tp);
+				// unfold parent element IF this node actually is in a tree
+				if (node.getParent() != null) {
+					TreePath tp = new TreePath(treeModel.getPathToRoot(node.getParent()));
+					treeComponent.expandPath(tp);
+				}
 			}
 		}
 	}
 	
-	private
-	DefaultMutableTreeNode getTreeNodeByPage(AbstractPage page) {
-		for (Map.Entry<PageJob, DefaultMutableTreeNode> entry: jobToTreenode.entrySet()) {
-			if (entry.getKey().page == page)
-				return entry.getValue();
-		}
-		return null;
-	}
+
 }
