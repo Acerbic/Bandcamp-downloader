@@ -88,7 +88,9 @@ public class GUI extends JFrame {
 	}
 	
 	/**
-	 * 
+	 * This class stores references to DefaultMutableTreeNode, 
+	 * whether they are part of some TreeModel or not
+	 * This class is not thread safe.
 	 * @author A.Cerbic
 	 */
 	class TreeNodeCacher {
@@ -112,19 +114,15 @@ public class GUI extends JFrame {
 		
 		/**
 		 * Puts tree node in a cache. 
-		 * @param node
+		 * @param node - must have a PageJob object as user object
 		 */
 		public
 		void putTreeNodeInCache(DefaultMutableTreeNode node) {
 			if (node == null) return;
-			PageJob pj = null;
-			if (node.getUserObject() instanceof PageJob)
-				pj = (PageJob) node.getUserObject();
-			else {
-				Main.logger.log(Level.SEVERE, "Not a PageJob in a tree!!!");
-				return;
-			}
-			jobToTreenode.put(pj, node); // XXX: should be a weak reference;
+			Object pj = node.getUserObject();
+			if (!(node.getUserObject() instanceof PageJob))
+				throw new IllegalArgumentException("User object is not a PageJob");
+			jobToTreenode.put((PageJob)pj, node); 
 			
 		}
 		
@@ -140,7 +138,7 @@ public class GUI extends JFrame {
 	TreeNodeCacher nodeList;
 	
 	public GUI() {
-		//FIXME: replace with some weak references to PageJobs and deal with depleted nodes.
+		//FIXME: replace with some weak references to AbstractPages
 		wantedParents = new LinkedList<>();
 		nodeList = new TreeNodeCacher();
 
@@ -200,7 +198,7 @@ public class GUI extends JFrame {
 	 */
 	public static boolean showGUIWindow() {
 		if (frame == null) {
-			frame = new GUI();
+			frame = new GUI(); // singleton
 			frame.pack();
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			// strong assumption here: only one job in a list and it is a root page job
@@ -225,9 +223,9 @@ public class GUI extends JFrame {
 			DefaultMutableTreeNode node = nodeList.getTreeNodeByPageJob(pj);
 			if (node == null) {
 				// no such node in a tree: ADDING
-				
 				node = new DefaultMutableTreeNode(pj, true);
 				nodeList.putTreeNodeInCache(node);
+				
 				// if THIS node is in wanted list, pick up its lost kids.
 				if (wantedParents.remove(pj.page)) {
 					for (AbstractPage kidPage: pj.page.childPages) {
@@ -237,7 +235,7 @@ public class GUI extends JFrame {
 							treeModel.insertNodeInto(kidNode, node, node.getChildCount());
 					}
 				}
-				//  check if there is a parent job in a tree;
+				//  check if there is a parent node in a tree;
 				DefaultMutableTreeNode parentNode = nodeList.getTreeNodeByPage(pj.page.parent);
 				if (parentNode != null) {
 					// add new leaf element
@@ -246,7 +244,7 @@ public class GUI extends JFrame {
 				} else {
 					// parentNode == null AND 
 					if (pj.page.parent!=null) {
-						// this page's is not in a system yet. 
+						// this page's parent is not in a tree yet. 
 						// add this node as hidden, add this node's parent page to wanted list
 						wantedParents.add(pj.page.parent);
 					} else {
