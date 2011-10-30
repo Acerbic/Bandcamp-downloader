@@ -39,7 +39,7 @@ public class Discography extends AbstractPage {
 			throw new ProblemsReadingDocumentException("Can't read discography title");
 
 		// now detect type of Discography
-		result = queryXPathList("//pre:ul[@title='Discography']", doc);
+		result = queryXPathList("//pre:div[@id='discography']", doc);
 		if (result.size()>0) {
 			variant = DiscographyListVariant.SIDEBAR;
 			return;
@@ -75,7 +75,7 @@ public class Discography extends AbstractPage {
 	protected String getChildNodesXPath() {
 		switch (variant) {
 			case SIDEBAR:
-				return "//pre:ul[@title='Discography']//pre:div[@class='trackTitle']/pre:a";
+				return "//pre:div[@id='discography']//pre:div[@class='trackTitle']/pre:a";
 			case CENTRAL_INDEX:
 				return "//pre:div[@id='indexpage']//pre:h1/pre:a";
 		}

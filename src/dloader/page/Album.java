@@ -124,7 +124,7 @@ public class Album extends AbstractPage {
 
 	@Override
 	protected String getChildNodesXPath() {
-		return "//pre:table[@id='track_table']//pre:td/pre:div[@class='title']//pre:a";
+		return "//pre:tr[@class='track_row_view']//pre:td/pre:div[@class='title']//pre:a";
 	}
 
 	@Override
