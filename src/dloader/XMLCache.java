@@ -18,6 +18,8 @@ import java.util.logging.Logger;
 
 /**
  * Class to store data from previously downloaded pages.
+ * 
+ * This class is thread-safe.
  * @author A.Cerbic
  */
 public class XMLCache {
