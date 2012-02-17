@@ -324,7 +324,7 @@ public class PageProcessor {
 					break;
 				
 				if (isReadingCache && cache != null) 
-					job.isReadFromCache = page.loadFromCache(cache.doc);
+//					job.isReadFromCache = page.loadFromCache(cache.doc);
 				if (job.isReadFromCache) {
 					job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
 					logInfoSurvey(job);
