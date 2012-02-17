@@ -32,7 +32,7 @@ import dloader.WebDownloader;
  *     	but that can be delayed).
  *   Objects of this class are thread-safe without any external locking: 
  *      two mutable fields( title and childPages ) don't form invariant dependency 
- *      and refer to thread-safe objects themself.
+ *      and refer to thread-safe objects themselves.
  */
 public abstract class AbstractPage {
 
@@ -67,9 +67,11 @@ public abstract class AbstractPage {
 	private String title; // guarded by (this). getter/setter are synchronized 
 	
 	/**
-	 * url of a page referencing this item 
+	 * URL of a page referencing this item 
 	 */
 	public final URL url;
+	
+	public final String saveTo;
 	/**
 	 * reference to a parent item (may be null)
 	 */
@@ -78,6 +80,7 @@ public abstract class AbstractPage {
 	/**
 	 * List of a children items to this page (can be of size zero) 
 	 */
+	//FIXME: more concurrent collection, please
 	public final Collection<AbstractPage> childPages = new LinkedBlockingQueue<>(); 
 
 	/**
@@ -97,10 +100,13 @@ public abstract class AbstractPage {
 	 * @param stringURL - web address
 	 * @throws IllegalArgumentException if stringURL is null or bad 
 	 */
-	public AbstractPage(String stringURL, AbstractPage parent) throws IllegalArgumentException {
+	public AbstractPage(String stringURL, String saveTo, AbstractPage parent) throws IllegalArgumentException {
 		try {url = resolveLink(stringURL);}
 		catch (MalformedURLException e) {throw new IllegalArgumentException(e);}
 		catch (NullPointerException e) {throw new IllegalArgumentException(e);}
+		assert (saveTo != null);
+		//FIXME better check of the directory to save to.
+		this.saveTo = saveTo;
 		this.parent = parent;
 	}
 
@@ -109,11 +115,11 @@ public abstract class AbstractPage {
 	 * @param url - gets assigned by reference, not copied.
 	 * @throws IllegalArgumentException if url == null 
 	 */
-	public AbstractPage(URL url, AbstractPage parent) throws IllegalArgumentException {
-		if (url == null) throw new IllegalArgumentException();
-		this.url = url;
-		this.parent = parent; 
-	}
+//	public AbstractPage(URL url, AbstractPage parent) throws IllegalArgumentException {
+//		if (url == null) throw new IllegalArgumentException();
+//		this.url = url;
+//		this.parent = parent; 
+//	}
 
 	/**
 	 * Convert a string to a proper file name (NOT path, only filename).
@@ -202,8 +208,9 @@ public abstract class AbstractPage {
 	 * @param doc - JDOM Document to load from 
 	 * @return true if data acquired successfully, false otherwise
 	 */
-	public synchronized 
-	boolean loadFromCache (org.jdom.Document doc) {
+	protected 
+	boolean loadFromCache (/*org.jdom.Document doc*/) {
+		org.jdom.Document doc = PageProcessor.cache;
 		if (doc == null) return false;
 		
 		logger.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
