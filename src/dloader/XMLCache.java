@@ -42,9 +42,9 @@ public class XMLCache {
 	public XMLCache(String xmlFileName) {
 		Logger l = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 		Document doc = null;
-		if (xmlFileName==null || xmlFileName.isEmpty()) 
-			throw new IllegalArgumentException("Cache file name cannot be empty or null");
 		
+		if (xmlFileName!=null && !xmlFileName.isEmpty()) 
+//			throw new IllegalArgumentException("Cache file name cannot be empty or null");
 		try {
 			xmlFile = Paths.get(xmlFileName);
 			if (Files.exists(xmlFile)) {
@@ -75,6 +75,7 @@ public class XMLCache {
 	 * @throws IOException - if problems occur.
 	 */
 	public void saveCache() throws IOException {
+		if (xmlFile != null)
 		synchronized (doc) {
 			try (OutputStream outStream = Files.newOutputStream(xmlFile)) { 
 				outputter.output(doc, outStream);
