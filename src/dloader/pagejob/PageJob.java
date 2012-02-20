@@ -67,10 +67,21 @@ public abstract class PageJob {
 	 * @return true if switch to SELECTED state was successful, false otherwise
 	 */
 	public final synchronized
-	boolean setSelectedStatus() {
+	boolean select() {
 		if (status == JobStatus.PENDING) {
 			status = JobStatus.SELECTED;
 			owningThread = Thread.currentThread();
+			return true;
+		}
+		return false;
+	}
+	
+	public final synchronized
+	boolean release() {
+		if (status == JobStatus.SELECTED &&
+			owningThread == Thread.currentThread()) {
+			owningThread = null;
+			status = JobStatus.PENDING;
 			return true;
 		}
 		return false;

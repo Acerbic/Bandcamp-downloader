@@ -8,6 +8,7 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,8 +20,8 @@ import dloader.page.AbstractPage.ProblemsReadingDocumentException;
  * This class handles multiple PageJob objects and general algorithm of the program
  * @author A.Cerbic
  */
-
-public class PageProcessor {
+public final 
+class PageProcessor {
 	
 	/**
 	 * Dynamically growing list of PageJob objects;  
@@ -29,12 +30,28 @@ public class PageProcessor {
 	/**
 	 * Holds reference to a cache, if one is present (null otherwise)
 	 */
-	static XMLCache cache;
+	private static XMLCache cache;
+	public static final XMLCache getCache() {
+		return cache;
+	}
+
 	/**
 	 * Holds reference to a logger, if one is present (null otherwise)
 	 */
-	static Logger logger;
+	private static 
+	Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+	public static final 
+	Logger getLogger() {return logger;}
 	
+	public static
+	void log(Level l, String s) {
+		logger.log(l,s);
+	}
+	public static
+	void log(Level l, String s, Throwable e) {
+		logger.log(l,s,e);
+	}
+
 	/**
 	 *  true if PageProcessor reads and writes to cache. 
 	 *  false if only writes (when cache is not null)
@@ -115,7 +132,7 @@ public class PageProcessor {
 			boolean isStructuredJobPriorities) {
 		
 		if ((saveTo != null) && (baseURL != null))
-			addJob (saveTo, detectPage(baseURL), JobStatusEnum.DOWNLOAD_PAGE);
+			addJob (saveTo, detectPage(baseURL, saveTo), JobStatusEnum.DOWNLOAD_PAGE);
 		
 		logger = l;
 		
@@ -178,7 +195,7 @@ public class PageProcessor {
 	 * @throws IllegalArgumentException - when baseURL is bad or null
 	 */
 	static final public
-	AbstractPage detectPage(String baseURL) throws IllegalArgumentException {
+	AbstractPage detectPage(String baseURL, String saveTo) throws IllegalArgumentException {
 		URL u;
 		try {
 			u = new URL(baseURL);
@@ -187,11 +204,11 @@ public class PageProcessor {
 		}
 		
 		if (baseURL.contains("/track/")) 
-			return new Track(baseURL, null);
+			return new Track(baseURL.toString(), saveTo, null);
 		if (baseURL.contains("/album/")) 
-			return new Album(baseURL, null);
+			return new Album(baseURL.toString(), saveTo, null);
 		if (u.getPath().isEmpty() || u.getPath().equals("/"))
-			return new Discography(baseURL, null);
+			return new Discography(baseURL.toString(), saveTo, null);
 		
 		throw new IllegalArgumentException();
 	}
@@ -334,12 +351,12 @@ public class PageProcessor {
 				break;
 			case DOWNLOAD_PAGE:
 				synchronized (page) {
-					page.downloadPage();
+					page.downloadPage(new AtomicInteger(0));
 					job.isReadFromWeb = true;
 					
 					StatisticGatherer.totalPageDownloadFinished.incrementAndGet();
 					if (cache != null)
-						page.saveToCache(cache.doc);
+						page.saveToCache();
 				}
 				job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
 				logInfoSurvey(job);
@@ -347,7 +364,7 @@ public class PageProcessor {
 				break;
 			case ADD_CHILDREN_JOBS: 
 				for (AbstractPage child: page.childPages) {
-					String childrenSaveTo = page.getChildrenSaveTo(job.saveTo);
+					String childrenSaveTo = page.getChildrenSaveTo();
 					addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
 				}
 				job.retryCount = PageJob.MAX_RETRIES; // reset retries for next faulty operation
@@ -355,7 +372,7 @@ public class PageProcessor {
 				addJob(job);
 				break;
 			case PRESAVE_CHECK:
-				if (job.page.isSavingNotRequired(job.saveTo)) {
+				if (job.page.isSavingNotRequired()) {
 					logDataSave(job); 
 					job.status = JobStatusEnum.PAGE_DONE;
 					addJob(job);					
@@ -365,7 +382,7 @@ public class PageProcessor {
 				}
 				break;
 			case SAVE_RESULTS:
-				job.saveResultsReport = page.saveResult(job.saveTo); 
+				job.saveResultsReport = page.saveResult(new AtomicInteger(0)); 
 				logDataSave(job); 
 				job.status = JobStatusEnum.PAGE_DONE;
 				addJob(job);					

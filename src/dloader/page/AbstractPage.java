@@ -10,14 +10,10 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-<<<<<<< OURS
 import java.util.concurrent.LinkedBlockingQueue;
-=======
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
->>>>>>> THEIRS
+
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.jaxen.JaxenException;
 import org.jaxen.XPath;
@@ -26,6 +22,7 @@ import org.jdom.*;
 import org.jdom.filter.ElementFilter;
 import org.jdom.input.SAXBuilder;
 
+import dloader.PageProcessor;
 import dloader.WebDownloader;
 
 
@@ -88,17 +85,11 @@ public abstract class AbstractPage {
 	//FIXME: more concurrent collection, please
 	public final Collection<AbstractPage> childPages = new LinkedBlockingQueue<>(); 
 
-	/**
-	 * Inherited by all descendants and instances, providing unified logging.
-	 */
-	protected static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-	
 	public synchronized
 	String getTitle() {return title;} 
 	
 	public synchronized 
 	void setTitle(String title) {this.title = title;}
-
 
 	/**
 	 * Constructs from web address
@@ -114,17 +105,6 @@ public abstract class AbstractPage {
 		this.saveTo = saveTo;
 		this.parent = parent;
 	}
-
-	/**
-	 * Constructs from given URL object 
-	 * @param url - gets assigned by reference, not copied.
-	 * @throws IllegalArgumentException if url == null 
-	 */
-//	public AbstractPage(URL url, AbstractPage parent) throws IllegalArgumentException {
-//		if (url == null) throw new IllegalArgumentException();
-//		this.url = url;
-//		this.parent = parent; 
-//	}
 
 	/**
 	 * Convert a string to a proper file name (NOT path, only filename).
@@ -162,8 +142,8 @@ public abstract class AbstractPage {
 	 * Downloads the page, parses it and creates child nodes.
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
-	public void downloadPage() throws ProblemsReadingDocumentException {
-		logger.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
+	public void downloadPage(AtomicInteger progressIndicator) throws ProblemsReadingDocumentException {
+		PageProcessor.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
 		
 		org.jdom.Document doc = null;
 		try {
@@ -188,11 +168,11 @@ public abstract class AbstractPage {
 				try {
 					childPages.add(parseChild(el));
 				} catch (ProblemsReadingDocumentException e) {
-					logger.log(Level.WARNING, "unable to parse child data", e);
+					PageProcessor.log(Level.WARNING, "unable to parse child data", e);
 				} // skip this child to next one
 			
 		}
-		logger.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
+		PageProcessor.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
 	}
 
 	/**
@@ -213,14 +193,12 @@ public abstract class AbstractPage {
 	 * @param doc - JDOM Document to load from 
 	 * @return true if data acquired successfully, false otherwise
 	 */
-	protected 
-	boolean loadFromCache (/*org.jdom.Document doc*/) {
-		org.jdom.Document doc = PageProcessor.cache;
-		if (doc == null) return false;
+	public synchronized 
+	boolean loadFromCache () {
 		
-		logger.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
+		PageProcessor.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
 		try {
-			Element e = scanXMLForThisElement(doc);
+			Element e = PageProcessor.getCache().getElementForPage(this.getClass().getSimpleName(), url.toString());
 			if (null == e) return false;
 			String t = e.getAttributeValue("title");
 			if (t == null) return false;
@@ -233,9 +211,9 @@ public abstract class AbstractPage {
 			for (Element el: l) 
 				childPages.add( readCacheChild(el) );
 			
-			logger.log(Level.FINE, String.format("\t...Finished reading %s.%n",url.toString()));
+			PageProcessor.log(Level.FINE, String.format("\t...Finished reading %s.%n",url.toString()));
 			return true;
-		} catch (ProblemsReadingDocumentException e) {
+		} catch (ProblemsReadingDocumentException|NullPointerException e) {
 			// If ANY problem, quit with a fail code
 			childPages.clear();
 			setTitle(null);
@@ -283,7 +261,7 @@ public abstract class AbstractPage {
 			xpath.addNamespace("pre", nsURI);
 			return xpath.selectNodes(doc);
 		} catch (JaxenException e) {
-			logger.log(Level.SEVERE,"",e);
+			PageProcessor.log(Level.SEVERE,"",e);
 			return new ArrayList<Object>(0);
 		} 
 	}
@@ -347,7 +325,7 @@ public abstract class AbstractPage {
 	 * @return operation status report string, "" or null if nothing to report (operation skipped)
 	 * @throws IOException if saving was terminated by error - retry might be possible.
 	 */
-	public abstract String saveResult(String saveTo, AtomicInteger progressIndicator) throws IOException;
+	public abstract String saveResult(AtomicInteger progressIndicator) throws IOException;
 
 	/**
 	 * Saves this page data into XML tree. 
@@ -355,8 +333,8 @@ public abstract class AbstractPage {
 	 * @param doc - JDOM Document holding a cache to save to
 	 */
 	public synchronized
-	void saveToCache (org.jdom.Document doc) {
-		assert (doc != null);
+	void saveToCache (/*org.jdom.Document doc*/) {
+//		assert (doc != null);
 		
 		// absolutely required field
 		if (getTitle()==null) return;
@@ -372,33 +350,7 @@ public abstract class AbstractPage {
 				childElement.setAttribute("url",child.url.toString());
 				e.addContent(childElement);
 			}
-		synchronized (doc) {
-			//2. Drop old elements with the same URL
-			Element root = doc.getRootElement();
-			
-			@SuppressWarnings("unchecked")
-			Collection<Element> oldCachedElements = (Collection<Element>) queryXPathList(
-					String.format("//%s[@url='%s']",e.getName(),url.toString()), 
-					doc);
-			for (Element current: oldCachedElements) 
-				current.detach();
-
-			//3. Add this element to cache
-			root.addContent(e);
-		}
-	}
-
-	/**
-	 * Scans XML tree to find the 1st Element eligible to read from
-	 * @return found Element or null
-	 */
-	private
-	Element scanXMLForThisElement(org.jdom.Document doc) {
-		assert (doc != null); 
-		String searchXPath = String.format("//%s[@url='%s']",getClass().getSimpleName(),url.toString());
-		List<?> result = queryXPathList(searchXPath, doc);
-		
-		return result.size()>0?(Element)result.get(0):null;
+		PageProcessor.getCache().addElementWithReplacement(e);
 	}
 
 	/**
@@ -406,16 +358,15 @@ public abstract class AbstractPage {
 	 * @return saving path for the children pages or null if no children expected
 	 * @throws IOException if valid filename cannot be created
 	 */
-	abstract public String getChildrenSaveTo(String saveTo) throws IOException;
+	abstract public String getChildrenSaveTo() throws IOException;
 	
 	/**
 	 * Checks if call to saveResult can be skipped (especially if it is a long operation)
 	 * If the effect of saveResult is a minor thing (like simple directory creation) this function is 
 	 * allowed to make call to saveResult and return true;
-	 * @param saveTo - path to where this item will be saved in consequent call to saveResult 
 	 * @return true if call to saveResult can be skipped (will yield no effect), \t false if it must be performed
 	 */
-	abstract public boolean isSavingNotRequired(String saveTo);
+	abstract public boolean isSavingNotRequired();
 	
 	@Override
 	public synchronized

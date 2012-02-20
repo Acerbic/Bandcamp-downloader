@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import org.jdom.Document;
 import org.jdom.Element;
 
+import dloader.PageProcessor;
 import dloader.WebDownloader;
 
 /**
@@ -36,32 +37,26 @@ public class Album extends AbstractPage {
 	 */
 	private int trackCounter;
 
-	public Album(URL url, AbstractPage parent) throws IllegalArgumentException {super(url, parent);}
-
-	public Album(String s, AbstractPage parent) throws IllegalArgumentException {super(s, parent);}
+	public Album(String url, String saveTo, AbstractPage parent) throws IllegalArgumentException 
+		{super(url, saveTo, parent);}
 
 	/**
 	 * Builds path to save cover image to disk
-	 * @param saveTo - saving path for parenting item
 	 * @return path to album cover image
 	 * @throws IOException
 	 */
-	public String getCoverSavePath(String saveTo) throws IOException {
-		Path p = Paths.get(getChildrenSaveTo(saveTo), "cover.jpg");
+	public String getCoverSavePath() throws IOException {
+		Path p = Paths.get(getChildrenSaveTo(), "cover.jpg");
 		return p.toString();
 	}
 	
 	@Override
 	public synchronized
-	String saveResult(String saveTo, AtomicInteger progressIndicator) throws IOException {
+	String saveResult(AtomicInteger progressIndicator) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 			
-<<<<<<< OURS
-		if (WebDownloader.fetchWebFile(coverUrl, getCoverSavePath(saveTo)) != 0) 
-=======
-		if (WebDownloader.fetchWebFile(coverUrl, getCoverSavePath(saveTo), progressIndicator) != 0) 
->>>>>>> THEIRS
+		if (WebDownloader.fetchWebFile(coverUrl, getCoverSavePath()) != 0) 
 			return "cover image downloaded";
 		else return null;
 	}
@@ -91,13 +86,14 @@ public class Album extends AbstractPage {
 		try {
 			trackCounter++; // that includes counting for failed parsing
 			URL u = resolveLink(element.getAttributeValue("href"));
-			Track t = new Track(u, this);
+			Track t;
+			t = new Track(u.toString(), getChildrenSaveTo(), this);
 			t.setTitle(element.getText());
 			// may be set default property instead?
 			t.setProperty("track", String.valueOf(trackCounter));
 			return t;
 		} catch (IllegalArgumentException|NullPointerException|
-				MalformedURLException e) {
+				IOException e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
 	}
@@ -111,7 +107,7 @@ public class Album extends AbstractPage {
 			try {
 				coverUrl = resolveLink((imgList.get(0)).getAttributeValue("src"));
 			} catch (MalformedURLException e) {
-				logger.log(Level.WARNING, String.format("can't get album art for <%s>", url.toString()), e);
+				PageProcessor.log(Level.WARNING, String.format("can't get album art for <%s>", url.toString()), e);
 			}
 		}
 		
@@ -133,20 +129,20 @@ public class Album extends AbstractPage {
 	}
 
 	@Override
-	public String getChildrenSaveTo(String saveTo) throws IOException {
+	public String getChildrenSaveTo() throws IOException {
 		return Paths.get(saveTo, getFSSafeName(getTitle())).toString();
 	}
 
 	@Override
 	public synchronized
-	boolean isSavingNotRequired(String saveTo) {
+	boolean isSavingNotRequired() {
 		Path p;
 		try {
-			p = Paths.get(getChildrenSaveTo(saveTo));
+			p = Paths.get(getChildrenSaveTo());
 			if (Files.isRegularFile(p) && Files.size(p) > 0)
 				return true;
 		} catch (IOException e) {
-			logger.log(Level.WARNING,null,e);
+			PageProcessor.log(Level.WARNING,null,e);
 		}
 		return false;
 	}

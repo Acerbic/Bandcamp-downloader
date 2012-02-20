@@ -1,7 +1,6 @@
 package dloader.page;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,6 +11,8 @@ import java.util.logging.Level;
 
 import org.jdom.Document;
 import org.jdom.Element;
+
+import dloader.PageProcessor;
 
 
 /**
@@ -27,9 +28,9 @@ public class Discography extends AbstractPage {
 	 */
 	private DiscographyListVariant variant = DiscographyListVariant.SIDEBAR; 
 
-	public Discography(URL url, AbstractPage parent) throws IllegalArgumentException {super(url, parent);}
 
-	public Discography(String s, AbstractPage parent) throws IllegalArgumentException {super(s, parent);}
+	public Discography(String url, String saveTo, AbstractPage parent) throws IllegalArgumentException
+		{super(url, saveTo, parent);}
 	
 	@Override
 	protected void parseSelf(Document doc) throws ProblemsReadingDocumentException  {
@@ -56,7 +57,7 @@ public class Discography extends AbstractPage {
 
 	@Override
 	public synchronized
-	String saveResult(String saveTo, AtomicInteger progressIndicator) throws IOException {
+	String saveResult(AtomicInteger progressIndicator) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 		return null;
@@ -87,27 +88,27 @@ public class Discography extends AbstractPage {
 	protected AbstractPage parseChild(Element element) throws ProblemsReadingDocumentException  {
 		try {
 			URL u = resolveLink(element.getAttributeValue("href"));
-			Album c = new Album(u, this);
+			Album c = new Album(u.toString(), getChildrenSaveTo(), this);
 			c.setTitle(element.getText());
 			return c;
 		} catch (NullPointerException|IllegalArgumentException|
-				MalformedURLException e) {
+				IOException e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
 	}
 
 	@Override
-	public String getChildrenSaveTo(String saveTo) throws IOException {
+	public String getChildrenSaveTo() throws IOException {
 		return Paths.get(saveTo, getFSSafeName(getTitle())).toString();
 	}
 
 	@Override
-	public boolean isSavingNotRequired(String saveTo) {
+	public boolean isSavingNotRequired() {
 		try {
-			saveResult(saveTo, null);
+			saveResult(null);
 			return true;
 		} catch (IOException e) {
-			logger.log(Level.WARNING,null,e);
+			PageProcessor.log(Level.WARNING,null,e);
 		}
 		return false; 
 	}

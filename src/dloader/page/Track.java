@@ -2,8 +2,6 @@ package dloader.page;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -16,6 +14,7 @@ import org.jdom.Document;
 import org.jdom.Element;
 
 import dloader.Main;
+import dloader.PageProcessor;
 import dloader.WebDownloader;
 
 import entagged.audioformats.AudioFile;
@@ -86,36 +85,15 @@ public class Track extends AbstractPage {
 	{
 		properties = new Properties();
 	}
-	public Track(String s, AbstractPage parent) throws IllegalArgumentException {super(s, parent);}
-	public Track(URL url, AbstractPage parent) throws IllegalArgumentException {super(url, parent);}
+	public Track(String url, String saveTo, AbstractPage parent) throws IllegalArgumentException 
+		{super(url, saveTo, parent);}
 	
 	@Override
-<<<<<<< OURS
 	public synchronized 
-	String saveResult(String saveTo) throws IOException {
-=======
-	public  
-	String saveResult(String saveTo, AtomicInteger progressIndicator) throws IOException {
-		String title;
-		String mediaLink;
-		synchronized (this) {
-			title = getTitle();
-			mediaLink = getProperty("mediaLink");
-		}
->>>>>>> THEIRS
-		Files.createDirectories(Paths.get(saveTo));
-<<<<<<< OURS
+	String saveResult(AtomicInteger progressIndicator) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()) + ".mp3");
-=======
-		Path p = Paths.get(saveTo, getFSSafeName(title) + ".mp3");
-		
->>>>>>> THEIRS
 		boolean wasDownloaded = 
-<<<<<<< OURS
 				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
-=======
-				WebDownloader.fetchWebFile(mediaLink, p.toString(), progressIndicator) != 0;
->>>>>>> THEIRS
 		
 		String statusReport = "skipped";
 		if (tagAudioFile(p.toString()))
@@ -141,7 +119,7 @@ public class Track extends AbstractPage {
 		try {
 			class_clone = fileTag.getClass().newInstance();
 		} catch (InstantiationException|IllegalAccessException e1) {
-			logger.log(Level.SEVERE, "Can't clone file metadata tag class", e1);
+			PageProcessor.log(Level.SEVERE, "Can't clone file metadata tag class", e1);
 			return null;
 		}
 		class_clone.addAlbum("album");
@@ -298,12 +276,12 @@ public class Track extends AbstractPage {
 		return null;
 	}
 	@Override
-	public String getChildrenSaveTo(String saveTo) {
+	public String getChildrenSaveTo() {
 		return null;
 	}
 
 	@Override
-	public boolean isSavingNotRequired(String saveTo) {
+	public boolean isSavingNotRequired() {
 		// this is commented out because even if file exists it might be 
 		// needing some tagging
 		// TODO: implement proper check for tags present (honor the "ForceRetag" flag)
@@ -312,7 +290,7 @@ public class Track extends AbstractPage {
 //		if (Files.isRegularFile(p) && Files.size(p) > 0)
 //			return true;
 //		} catch (IOException e) {
-//			logger.log(Level.WARNING,null,e);
+//			PageProcessor.log(Level.WARNING,null,e);
 //		}
 		return false;
 	}
