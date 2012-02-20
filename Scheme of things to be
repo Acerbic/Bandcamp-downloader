@@ -11,7 +11,7 @@ GUI.
 4) Пользователь может указать программе
 4.1) UPDATE: скачать ТОЛЬКО повреждённые/удалённые/новые файлы  
 4.2) CLEAN: удалить "лишние" файлы.
-4.3) SCAN-FIX: обновить существующие файлы новыми данными из интернета
+4.3) SCAN-FIX-MP3TAGS: обновить существующие файлы новыми данными из интернета
  (тэги MP3)
 4.4) RESET: ФОРСИРОВАТЬ обновление всего 
  (скачка по-новой и удаление лишних файлов)
@@ -19,3 +19,44 @@ GUI.
  удалить каталог с загрузками средствами OS.
 4.5) SCAN: обновить инфо обо всех страницах (этой и потомках), отобразив
  разницу (элемент появился/удалён/не изменился) 
+ 
+ Алгоритмы (jobs):
+ 5.1) Чтение/ремонт кэша. 
+   Loaded = {}
+   LoadFromCache
+  		-> success: Loaded += RepeatForEveryChild [tree walk recursive], Loaded += this
+  		-> fail: "5.2"(this) [new job]
+  	return Loaded
+ 5.2) Обновление данных о страницах из сети - может использоваться без предварительной загрузки из кэша.
+   LoadFromCache, DownloadPage (temp)
+   ComparePageData(this-temp)
+   				 	-> no diff: this-"5.1" [new job], return {}
+   					-> any diff: UpdateThisPage(temp), RepeatForEveryChild [new jobs recursive], return {this}
+ 5.3) Поиск лишних файлов.
+	FileList := {};
+	FileList += GetThisPageFiles;
+	ForEveryChild
+		FileList += child.GetParentalFiles; // файлы создаваемые в родительском каталоге
+	ExtraFiles = GetActualFiles - FileList;
+	ExtraFiles += RepeatForEveryChild [tree walk recursive]
+	return ExtraFiles;
+ 5.4) Валидация файлов.
+ 	ValidSavedPages = {};
+ 	InvalidSavedPages = {}
+	CheckSaveValidness
+		ok: ValidSavedPages += this;
+		fail: InvalidSavedPages += this;
+	(ValidSavedPages, InvalidSavedPages) += RepeatForEveryChild [tree walk recursive]
+	return (ValidSavedPages, InvalidSavedPages)
+ 5.5) SCAN.
+  "5.2", "5.3", "5.4"
+ 5.6) UPDATE.
+  ****** "5.2", "5.4"
+  ForEvery "InvalidSavedPage" - SavePageResults [new jobs]
+ 5.7) CLEAN.
+  ****** "5.2", "5.3"
+  ForEvery "ExtraFiles" - system.DeleteFile [list walk]
+ 5.7) SCAN-FIX-MP3TAGS.
+  ****** "5.2", "5.4"
+  ForEvery "InvalidSavedPage" - SavePageResults [new jobs]
+  ForEvery "ValidSavedPage" - if (Page is File) FixTags [list walk]     		 				  		
