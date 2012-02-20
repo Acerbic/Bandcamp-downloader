@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,11 +53,15 @@ public class Album extends AbstractPage {
 	
 	@Override
 	public synchronized
-	String saveResult(String saveTo) throws IOException {
+	String saveResult(String saveTo, AtomicInteger progressIndicator) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 			
+<<<<<<< OURS
 		if (WebDownloader.fetchWebFile(coverUrl, getCoverSavePath(saveTo)) != 0) 
+=======
+		if (WebDownloader.fetchWebFile(coverUrl, getCoverSavePath(saveTo), progressIndicator) != 0) 
+>>>>>>> THEIRS
 			return "cover image downloaded";
 		else return null;
 	}

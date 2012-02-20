@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import org.jdom.Document;
@@ -55,7 +56,7 @@ public class Discography extends AbstractPage {
 
 	@Override
 	public synchronized
-	String saveResult(String saveTo) throws IOException {
+	String saveResult(String saveTo, AtomicInteger progressIndicator) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 		return null;
@@ -103,7 +104,7 @@ public class Discography extends AbstractPage {
 	@Override
 	public boolean isSavingNotRequired(String saveTo) {
 		try {
-			saveResult(saveTo);
+			saveResult(saveTo, null);
 			return true;
 		} catch (IOException e) {
 			logger.log(Level.WARNING,null,e);

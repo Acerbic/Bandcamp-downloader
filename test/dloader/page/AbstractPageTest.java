@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jdom.Document;
 import org.jdom.Element;
@@ -38,7 +39,7 @@ public class AbstractPageTest {
 				throws ProblemsReadingDocumentException {}
 
 		@Override
-		public String saveResult(String saveTo) throws IOException {return null;}
+		public String saveResult(String saveTo, AtomicInteger progressIndicator) throws IOException {return null;}
 
 		@Override
 		public String getChildrenSaveTo(String saveTo) throws IOException {return null;}

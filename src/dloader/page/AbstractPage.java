@@ -10,7 +10,12 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+<<<<<<< OURS
 import java.util.concurrent.LinkedBlockingQueue;
+=======
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+>>>>>>> THEIRS
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -338,10 +343,11 @@ public abstract class AbstractPage {
 	/**
 	 * Saves extracted data to disk, then saves children too. 
 	 * @param saveTo - directory to save info to.
+	 * @param progressIndicator - ref to a variable to output progress of long operations
 	 * @return operation status report string, "" or null if nothing to report (operation skipped)
 	 * @throws IOException if saving was terminated by error - retry might be possible.
 	 */
-	public abstract String saveResult(String saveTo) throws IOException;
+	public abstract String saveResult(String saveTo, AtomicInteger progressIndicator) throws IOException;
 
 	/**
 	 * Saves this page data into XML tree. 

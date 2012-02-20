@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -89,12 +90,32 @@ public class Track extends AbstractPage {
 	public Track(URL url, AbstractPage parent) throws IllegalArgumentException {super(url, parent);}
 	
 	@Override
+<<<<<<< OURS
 	public synchronized 
 	String saveResult(String saveTo) throws IOException {
+=======
+	public  
+	String saveResult(String saveTo, AtomicInteger progressIndicator) throws IOException {
+		String title;
+		String mediaLink;
+		synchronized (this) {
+			title = getTitle();
+			mediaLink = getProperty("mediaLink");
+		}
+>>>>>>> THEIRS
 		Files.createDirectories(Paths.get(saveTo));
+<<<<<<< OURS
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()) + ".mp3");
+=======
+		Path p = Paths.get(saveTo, getFSSafeName(title) + ".mp3");
+		
+>>>>>>> THEIRS
 		boolean wasDownloaded = 
+<<<<<<< OURS
 				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
+=======
+				WebDownloader.fetchWebFile(mediaLink, p.toString(), progressIndicator) != 0;
+>>>>>>> THEIRS
 		
 		String statusReport = "skipped";
 		if (tagAudioFile(p.toString()))
