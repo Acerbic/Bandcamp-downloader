@@ -52,9 +52,8 @@ public abstract class PageJob {
 	 *  To report progress of lengthy jobs. Initial value is 0, top value is 100.
 	 *  This value is for indication only and has no restriction to job status or completion.
 	 */
+	//XXX Should the getter be synchronized really?
 	protected AtomicInteger progressIndicator;
-
-	
 	public synchronized final 
 	AtomicInteger getProgressIndicator() {return progressIndicator;}
 

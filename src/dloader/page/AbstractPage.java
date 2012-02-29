@@ -9,6 +9,7 @@ import java.net.URLConnection;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -74,6 +75,7 @@ public abstract class AbstractPage {
 	public final URL url;
 	
 	public final String saveTo;
+	
 	/**
 	 * reference to a parent item (may be null)
 	 */
@@ -83,6 +85,8 @@ public abstract class AbstractPage {
 	 * List of a children items to this page (can be of size zero) 
 	 */
 	//FIXME: more concurrent collection, please
+	// compound operation on Collection should obtain lock to (this), like compound 
+	// operations on AbstractPage object
 	public final Collection<AbstractPage> childPages = new LinkedBlockingQueue<>(); 
 
 	public synchronized
@@ -138,43 +142,6 @@ public abstract class AbstractPage {
 		return name;
 	}
 
-	/** 
-	 * Downloads the page, parses it and creates child nodes.
-	 * @throws ProblemsReadingDocumentException if any error
-	 */
-	public void downloadPage(AtomicInteger progressIndicator) throws ProblemsReadingDocumentException {
-		PageProcessor.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
-		
-		org.jdom.Document doc = null;
-		try {
-			SAXBuilder builder = new SAXBuilder("org.ccil.cowan.tagsoup.Parser");
-			URLConnection connection = url.openConnection();
-			if (!WebDownloader.checkHttpResponseOK(connection))		
-				throw new ProblemsReadingDocumentException("Error response from server");
-			doc = builder.build(connection.getInputStream());
-		} catch (IOException|JDOMException e) {
-			throw new ProblemsReadingDocumentException(e);
-		}
-
-		synchronized (this) {
-			// discover info about this page
-			parseSelf(doc);  
-				
-			// discover info about children pages
-			childPages.clear();
-			@SuppressWarnings("unchecked")
-			Collection<Element> result = (Collection<Element>) queryXPathList(getChildNodesXPath(), doc);
-			for (Element el: result) 
-				try {
-					childPages.add(parseChild(el));
-				} catch (ProblemsReadingDocumentException e) {
-					PageProcessor.log(Level.WARNING, "unable to parse child data", e);
-				} // skip this child to next one
-			
-		}
-		PageProcessor.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
-	}
-
 	/**
 	 * Returns an XPath string to get links to children pages 
 	 * from current page. All tags in the path are in "pre" namespace.
@@ -188,40 +155,6 @@ public abstract class AbstractPage {
 	 */
 	protected abstract Element getSpecificDataXML() ;	
 
-	/**
-	 * Gets data about this page from cache (JDOM tree) and creates child nodes.
-	 * @param doc - JDOM Document to load from 
-	 * @return true if data acquired successfully, false otherwise
-	 */
-	public synchronized 
-	boolean loadFromCache () {
-		
-		PageProcessor.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
-		try {
-			Element e = PageProcessor.getCache().getElementForPage(this.getClass().getSimpleName(), url.toString());
-			if (null == e) return false;
-			String t = e.getAttributeValue("title");
-			if (t == null) return false;
-			setTitle(t);  
-			readCacheSelf(e);
-			
-			childPages.clear(); // discard previous data if any.
-			@SuppressWarnings("unchecked")
-			Collection<Element> l = e.getContent(new ElementFilter("childref"));
-			for (Element el: l) 
-				childPages.add( readCacheChild(el) );
-			
-			PageProcessor.log(Level.FINE, String.format("\t...Finished reading %s.%n",url.toString()));
-			return true;
-		} catch (ProblemsReadingDocumentException|NullPointerException e) {
-			// If ANY problem, quit with a fail code
-			childPages.clear();
-			setTitle(null);
-			return false;
-		}
-		
-	}
-	
 	/**
 	 * Extracts information from downloaded page about child pages
 	 * @param element - fragment of a page containing data about a child page
@@ -319,6 +252,79 @@ public abstract class AbstractPage {
 	}
 
 	/**
+	 * Gets data about this page from cache (JDOM tree) and creates child nodes.
+	 * @param doc - JDOM Document to load from 
+	 * @return true if data acquired successfully, false otherwise
+	 */
+	public synchronized final
+	boolean loadFromCache () {
+		
+		PageProcessor.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
+		try {
+			Element e = PageProcessor.getCache().getElementForPage(
+					this.getClass().getSimpleName(), url.toString());
+			if (null == e) return false;
+			String t = e.getAttributeValue("title");
+			if (t == null) return false;
+			setTitle(t);  
+			readCacheSelf(e);
+			
+			childPages.clear(); // discard previous data if any.
+			@SuppressWarnings("unchecked")
+			Collection<Element> l = e.getContent(new ElementFilter("childref"));
+			for (Element el: l) 
+				childPages.add( readCacheChild(el) );
+			
+			PageProcessor.log(Level.FINE, String.format("\t...Finished reading %s.%n",url.toString()));
+			return true;
+		} catch (ProblemsReadingDocumentException|NullPointerException e) {
+			// If ANY problem, quit with a fail code
+			childPages.clear();
+			setTitle(null);
+			return false;
+		}
+	}
+
+	/** 
+	 * Downloads the page, parses it and creates child nodes.
+	 * @throws ProblemsReadingDocumentException if any error
+	 */
+	public final 
+	void downloadPage(AtomicInteger progressIndicator) throws ProblemsReadingDocumentException {
+		PageProcessor.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
+		
+		org.jdom.Document doc = null;
+		try {
+			SAXBuilder builder = new SAXBuilder("org.ccil.cowan.tagsoup.Parser");
+			URLConnection connection = url.openConnection();
+			if (!WebDownloader.checkHttpResponseOK(connection))		
+				throw new ProblemsReadingDocumentException("Error response from server");
+			//FIXME: need to be replaced with explicit download and parsing call, to make use of progressIndicator
+			doc = builder.build(connection.getInputStream());
+		} catch (IOException|JDOMException e) {
+			throw new ProblemsReadingDocumentException(e);
+		}
+	
+		synchronized (this) {
+			// discover info about this page
+			parseSelf(doc);  
+				
+			// discover info about children pages
+			childPages.clear();
+			@SuppressWarnings("unchecked")
+			Collection<Element> result = (Collection<Element>) queryXPathList(getChildNodesXPath(), doc);
+			for (Element el: result) 
+				try {
+					childPages.add(parseChild(el));
+				} catch (ProblemsReadingDocumentException e) {
+					PageProcessor.log(Level.WARNING, "unable to parse child data", e);
+				} // skip this child to next one
+			
+		}
+		PageProcessor.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
+	}
+
+	/**
 	 * Saves extracted data to disk, then saves children too. 
 	 * @param saveTo - directory to save info to.
 	 * @param progressIndicator - ref to a variable to output progress of long operations
@@ -373,5 +379,32 @@ public abstract class AbstractPage {
 	String toString() {
 		String className = this.getClass().getSimpleName();
 		return ((getTitle() == null)? url.toString(): getTitle()) + "[" +className+ "]";
+	}
+	
+	/**
+	 * Limited comparison: title, url, children urls
+	 */
+	@Override
+	public synchronized
+	boolean equals(Object x) {
+		if (! (x instanceof AbstractPage) ) return false;
+		AbstractPage ref = (AbstractPage) x;
+		if (! getTitle().equals(ref.getTitle())) return false;
+		if (! url.equals(ref.url)) return false;
+		if (childPages.size()!=ref.childPages.size()) return false;
+		
+		Collection<AbstractPage> refchildren = new LinkedList<AbstractPage>();
+		refchildren.addAll(ref.childPages);
+		for (AbstractPage child: childPages) {
+			AbstractPage found = null;
+			for (AbstractPage iterator: childPages) 
+				if (iterator.url.equals(child.url)) {
+					found = iterator;
+					break;
+				}
+			if (found == null) return false;
+			else refchildren.remove(found); // else statement is a little speed optimization 
+		}
+		return false;
 	}
 }
