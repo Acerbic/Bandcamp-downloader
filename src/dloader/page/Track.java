@@ -294,4 +294,15 @@ public class Track extends AbstractPage {
 //		}
 		return false;
 	}
+
+	@Override
+	public Collection<String> getThisPageFiles() {
+		Collection <String> fileset = new LinkedList<String>();
+		try {
+			fileset.add( Paths.get(saveTo, getFSSafeName(getTitle()) + ".mp3").toString());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+		}
+		return fileset;
+	}
 }

@@ -407,4 +407,7 @@ public abstract class AbstractPage {
 		}
 		return false;
 	}
+	
+	public abstract 
+	Collection<String> getThisPageFiles();
 }

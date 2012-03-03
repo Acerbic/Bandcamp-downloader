@@ -5,6 +5,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -111,6 +113,13 @@ public class Discography extends AbstractPage {
 			PageProcessor.log(Level.WARNING,null,e);
 		}
 		return false; 
+	}
+
+	@Override
+	public Collection<String> getThisPageFiles() {
+		Collection <String> fileset = new LinkedList<String>();
+		fileset.add( Paths.get(saveTo).toString() );
+		return fileset;
 	}
 
 }
