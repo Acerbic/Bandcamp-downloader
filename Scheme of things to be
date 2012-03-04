@@ -69,6 +69,6 @@ GUI.
    6.4) UpdateThisPage(temp)
    6.5) GetThisPageFiles - all the files this page create on disk. DONE
 //   6.6) GetParentalFiles
-   6.7) CheckSaveValidness
-   6.8) SavePageResults - done
-   6.9) Track.FixTags     		 				  		
+   6.7) CheckSaveValidness - done
+   6.8) SavePageResults - done???
+   6.9) Track.FixTags - tagAudioFile(...) - done

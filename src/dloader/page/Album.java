@@ -43,7 +43,7 @@ public class Album extends AbstractPage {
 		{super(url, saveTo, parent);}
 
 	/**
-	 * Builds path to save cover image to disk
+	 * Builds full path to save cover image to disk, including filename
 	 * @return path to album cover image
 	 * @throws IOException
 	 */
@@ -141,6 +141,8 @@ public class Album extends AbstractPage {
 		Path p;
 		try {
 			p = Paths.get(getChildrenSaveTo());
+			if (! Files.isDirectory(p)) return false;
+			p = Paths.get(getCoverSavePath());
 			if (Files.isRegularFile(p) && Files.size(p) > 0)
 				return true;
 		} catch (IOException e) {
@@ -154,7 +156,7 @@ public class Album extends AbstractPage {
 		Collection <String> fileset = new LinkedList<String>();
 		fileset.add( Paths.get(saveTo).toString());
 		try {
-			fileset.add( Paths.get(saveTo, getCoverSavePath()).toString());
+			fileset.add( Paths.get(getCoverSavePath()).toString());
 		} catch (IOException e) {
 			//TODO: add handler here
 		} 

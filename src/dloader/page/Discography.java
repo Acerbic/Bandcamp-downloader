@@ -106,13 +106,15 @@ public class Discography extends AbstractPage {
 
 	@Override
 	public boolean isSavingNotRequired() {
+		Path p;
 		try {
-			saveResult(null);
-			return true;
+			p = Paths.get(getChildrenSaveTo());
+			if (Files.isDirectory(p))
+				return true;
 		} catch (IOException e) {
 			PageProcessor.log(Level.WARNING,null,e);
 		}
-		return false; 
+		return false;
 	}
 
 	@Override

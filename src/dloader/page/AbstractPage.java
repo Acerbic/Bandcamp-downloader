@@ -119,6 +119,7 @@ public abstract class AbstractPage {
 	 */
 	public static final
 	String getFSSafeName(String name) throws IOException   {
+		assert (name != null);
 		for (char c : ":/\\*?\"<>|\t\n\r".toCharArray())
 			name = name.replace(String.valueOf(c), "");
 		name = name.trim(); // only trailing spaces are forbidden
@@ -368,8 +369,6 @@ public abstract class AbstractPage {
 	
 	/**
 	 * Checks if call to saveResult can be skipped (especially if it is a long operation)
-	 * If the effect of saveResult is a minor thing (like simple directory creation) this function is 
-	 * allowed to make call to saveResult and return true;
 	 * @return true if call to saveResult can be skipped (will yield no effect), \t false if it must be performed
 	 */
 	abstract public boolean isSavingNotRequired();
