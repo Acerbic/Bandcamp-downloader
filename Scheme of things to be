@@ -2,7 +2,7 @@ Usage patterns. Gui.
 
 GUI.
 1) На старте загружаются задания предыдущей сессии.
-2) При загрузке задание проводит "самотестирование" без 
+2) При загрузке задание проводит "самотестирование" RESCAN без 
  запроса пользователя - загружает данные из кэша, сверяет
  обновление "корневой" страницы, проверяет целостность файлов 
  на диске. (если корневая изменилась - также проверяются дети, рекурсивно) 
@@ -17,8 +17,9 @@ GUI.
  (скачка по-новой и удаление лишних файлов)
  !!!! возможно, эту опцию не предоставлять, вместо этого предложить пользователю
  удалить каталог с загрузками средствами OS.
-4.5) SCAN: обновить инфо обо всех страницах (этой и потомках), отобразив
- разницу (элемент появился/удалён/не изменился) 
+4.5) RESCAN: обновить инфо обо всех страницах (этой и потомках), отобразив
+ разницу (элемент появился/удалён/не изменился) - автоматически выполняется при загрузке
+ нового задания
  
  Алгоритмы (jobs):
  5.1) Чтение/ремонт кэша. 
@@ -32,11 +33,11 @@ GUI.
    UpdateFromNet
    		-> no diff: this-"5.1" [new job], return {}
    		-> updated: RepeatForEveryChild [new jobs recursive], return {this}
- 5.3) Поиск лишних файлов.
+ 5.3) Поиск лишних файлов. ???
 	FileList := {};
 	FileList += GetThisPageFiles;
 	ForEveryChild
-		FileList += child.GetParentalFiles; // файлы создаваемые в родительском каталоге
+		FileList += child.GetThisPageFiles; // файлы создаваемые в родительском каталоге
 	ExtraFiles = system.GetActualFiles - FileList;
 	ExtraFiles += RepeatForEveryChild [tree walk recursive]
 	return ExtraFiles;
@@ -48,7 +49,7 @@ GUI.
 		fail: InvalidSavedPages += this;
 	(ValidSavedPages, InvalidSavedPages) += RepeatForEveryChild [tree walk recursive]
 	return (ValidSavedPages, InvalidSavedPages)
- 5.5) SCAN.
+ 5.5) RESCAN.
   "5.2", "5.3", "5.4"
  5.6) UPDATE.
   ****** "5.2", "5.4"
@@ -66,8 +67,8 @@ GUI.
 //   6.2) DownloadPage (temp) - done (this)
 //   6.3) ComparePageData (this-temp) - done 
    6.4) UpdateFromNet(this) - done
-   6.5) GetThisPageFiles
-   6.6) GetParentalFiles
-   6.7) CheckSaveValidness
-   6.8) SavePageResults
-   6.9) Track.FixTags     		 				  		
+   6.5) GetThisPageFiles - all the files this page create on disk. DONE
+//   6.6) GetParentalFiles
+   6.7) CheckSaveValidness - done
+   6.8) SavePageResults - done???
+   6.9) Track.FixTags - tagAudioFile(...) - done

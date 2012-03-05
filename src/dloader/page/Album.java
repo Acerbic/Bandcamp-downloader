@@ -5,6 +5,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -41,7 +43,7 @@ public class Album extends AbstractPage {
 		{super(url, saveTo, parent);}
 
 	/**
-	 * Builds path to save cover image to disk
+	 * Builds full path to save cover image to disk, including filename
 	 * @return path to album cover image
 	 * @throws IOException
 	 */
@@ -139,12 +141,26 @@ public class Album extends AbstractPage {
 		Path p;
 		try {
 			p = Paths.get(getChildrenSaveTo());
+			if (! Files.isDirectory(p)) return false;
+			p = Paths.get(getCoverSavePath());
 			if (Files.isRegularFile(p) && Files.size(p) > 0)
 				return true;
 		} catch (IOException e) {
 			PageProcessor.log(Level.WARNING,null,e);
 		}
 		return false;
+	}
+
+	@Override
+	public Collection<String> getThisPageFiles() {
+		Collection <String> fileset = new LinkedList<String>();
+		fileset.add( Paths.get(saveTo).toString());
+		try {
+			fileset.add( Paths.get(getCoverSavePath()).toString());
+		} catch (IOException e) {
+			//TODO: add handler here
+		} 
+		return fileset;
 	}
 
 }

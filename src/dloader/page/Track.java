@@ -2,6 +2,7 @@ package dloader.page;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -10,6 +11,7 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.hamcrest.core.IsNull;
 import org.jdom.Document;
 import org.jdom.Element;
 
@@ -35,16 +37,16 @@ public class Track extends AbstractPage {
 	 * Set of custom properties read from page, saved to cache and 
 	 * resulting audio file metadata tags
 	 */	
-	volatile Properties properties;
+	private Properties properties; // thread-safe class
 	
 	@Override
-	public synchronized
+	public 
 	String getTitle() {
 		return properties.getProperty("title");
 	};
 
 	@Override
-	public synchronized
+	public 
 	void setTitle(String title) {
 		properties.setProperty("title", title);
 	};
@@ -52,13 +54,15 @@ public class Track extends AbstractPage {
 	/**
 	 * Ease of use	
 	 */
-	public String getProperty(String name) {
+	public 
+	String getProperty(String name) {
 		return properties.getProperty(name);
 	}
 	/**
 	 * Ease of use	
 	 */
-	public String setProperty(String name, String value) {
+	public 
+	String setProperty(String name, String value) {
 		return (String) properties.setProperty(name, value);
 	}
 	
@@ -77,7 +81,7 @@ public class Track extends AbstractPage {
 		dataPatterns.put("artist", Pattern.compile(".*artist\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
 		dataPatterns.put("album", Pattern.compile(".*album_title\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
 		dataPatterns.put("title", Pattern.compile(".*title\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
-// track number is set by parent album or not set at all - may be this behavior should be changed  		
+// XXX: track number is set by parent album or not set at all - may be this behavior should be changed  		
 //		dataPatterns.put("track", Pattern.compile(".*numtracks\\s*:\\s*([\\d]*).*", Pattern.DOTALL));
 		dataPatterns.put("comment", Pattern.compile(".*trackinfo:.*\"has_info\":\"([^\"]*)\".*", Pattern.DOTALL));				
 	}
@@ -96,7 +100,7 @@ public class Track extends AbstractPage {
 				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
 		
 		String statusReport = "skipped";
-		if (tagAudioFile(p.toString()))
+		if (tagAudioFile(p.toString(), Main.forceTagging))
 			statusReport = "updated";
 		if (wasDownloaded)
 			statusReport = "downloaded";
@@ -142,10 +146,13 @@ public class Track extends AbstractPage {
 	 * @return true if actual write operation happened
 	 * @throws IOException - file read/write problems
 	 */
-	boolean tagAudioFile(String file) throws IOException {
+	public
+	boolean tagAudioFile(String file, boolean force) throws IOException {
 		try {
 			AudioFile theFile = AudioFileIO.read(Paths.get(file).toFile());
 			entagged.audioformats.Tag fileTag = theFile.getTag();
+			// XXX: check API if this is needed at all
+			if (fileTag == null) throw new IOException();
 			
 			// when ID3 tag is saved empty value for track is saved as "0" - ID3 bug 
 			if (fileTag.getFirstTrack().equals("0")) 
@@ -157,6 +164,7 @@ public class Track extends AbstractPage {
 			Map<String, String> propertyToFrame = getTextFieldIds(fileTag); 
 			
 			// copy this Track's data into fileTag
+
 			for (Map.Entry<String, String> entry: propertyToFrame.entrySet()) {
 				
 				String newFieldValue = getProperty(entry.getKey());
@@ -177,16 +185,14 @@ public class Track extends AbstractPage {
 						}
 					}
 					// rewrite only absent fields or 
-					// existing if Main.forceTagging is set and no such value in this field
-					// FIXME: this must be fixed to reference Main no more
-					if ((Main.forceTagging && !fieldValueAlreadyExists) || idFieldSet.size()==0) {
+					// existing if 'force' is true and no such value in this field
+					if ((force && !fieldValueAlreadyExists) || idFieldSet.size()==0) {
 						// rewrite with new value
 						fileTag.set(idNewField); 
 						updateMP3Tag = true;
 					}
 				}
-			} 
-			
+			}
 			
 			if (updateMP3Tag) {
 				theFile.commit();
@@ -282,16 +288,40 @@ public class Track extends AbstractPage {
 
 	@Override
 	public boolean isSavingNotRequired() {
-		// this is commented out because even if file exists it might be 
-		// needing some tagging
-		// TODO: implement proper check for tags present (honor the "ForceRetag" flag)
-//		try {
-//			Path p = Paths.get(saveTo, getFSSafeName(getTitle()) + ".mp3");
-//		if (Files.isRegularFile(p) && Files.size(p) > 0)
-//			return true;
-//		} catch (IOException e) {
-//			PageProcessor.log(Level.WARNING,null,e);
-//		}
+		try {
+			Path p = Paths.get(getTrackFileName());
+			if (Files.isRegularFile(p) && Files.size(p) > 0)
+				return true;
+			// TODO: implement proper check for tags present (honor the "ForceRetag" flag)
+			// also file integrity (???) 
+		} catch (IOException e) {
+			PageProcessor.log(Level.WARNING,null,e);
+		}
 		return false;
 	}
+
+	@Override
+	public Collection<String> getThisPageFiles() {
+		Collection <String> fileset = new LinkedList<String>();
+		fileset.add( getTrackFileName() );
+		return fileset;
+	}
+	
+	
+	/** 
+	 * Get the file name of (future) mp3 file.
+	 * @return null on error, String with the full path to track's mp3 file
+	 */
+	public 
+	String getTrackFileName() {
+		String title = getTitle();
+		if ((title == null) || (title.isEmpty())) return null;
+		
+		try {
+			return Paths.get(saveTo, getFSSafeName(title) + ".mp3").toString();
+		} catch (IOException e) {
+			return null;
+		}
+	}
+	
 }
