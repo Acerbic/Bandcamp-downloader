@@ -262,10 +262,10 @@ public class Track extends AbstractPage {
 			// fix track number
 			if (album==null || album.isEmpty())
 //				setProperty("album",getParent().getTitle());
-				setProperty("album",parent.getTitle());
+				setProperty("album",getParent().getTitle());
 			if (artist==null || artist.isEmpty())
 //				setProperty("artist",getParent().getParent().getTitle());
-				setProperty("artist",parent.parent.getTitle());
+				setProperty("artist",getParent().getParent().getTitle());
 		} catch (NullPointerException e) {
 			// skip if not enough parents in a line;
 		}

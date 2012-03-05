@@ -123,7 +123,7 @@ public class AbstractPageTest {
 		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
 		assertEquals(true, pNoChildren.loadFromCache(cache.doc));
 		assertEquals("Black Rose / Green Sun", pNoChildren.getTitle());
-		assertNull(pNoChildren.parent);
+		assertNull(pNoChildren.getParent());
 		assertEquals(0, pNoChildren.childPages.size());
 	}
 	

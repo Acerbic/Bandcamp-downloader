@@ -26,12 +26,12 @@ GUI.
    LoadFromCache
   		-> success: Loaded += RepeatForEveryChild [tree walk recursive], Loaded += this
   		-> fail: "5.2"(this) [new job]
-  	return Loaded
+  	return {Loaded}
  5.2) Обновление данных о страницах из сети - может использоваться без предварительной загрузки из кэша.
-   LoadFromCache, DownloadPage (temp)
-   ComparePageData(this-temp)
-   				 	-> no diff: this-"5.1" [new job], return {}
-   					-> any diff: UpdateThisPage(temp), RepeatForEveryChild [new jobs recursive], return {this}
+   LoadFromCache, 
+   UpdateFromNet
+   		-> no diff: this-"5.1" [new job], return {}
+   		-> updated: RepeatForEveryChild [new jobs recursive], return {this}
  5.3) Поиск лишних файлов.
 	FileList := {};
 	FileList += GetThisPageFiles;
@@ -63,9 +63,9 @@ GUI.
   
   6) Так, типовой набор операций над страницей будет:
    6.1) LoadFromCache - done
-   6.2) DownloadPage (temp) - done (this)
-   6.3) ComparePageData (this-temp) - done 
-   6.4) UpdateThisPage(temp)
+//   6.2) DownloadPage (temp) - done (this)
+//   6.3) ComparePageData (this-temp) - done 
+   6.4) UpdateFromNet(this) - done
    6.5) GetThisPageFiles
    6.6) GetParentalFiles
    6.7) CheckSaveValidness

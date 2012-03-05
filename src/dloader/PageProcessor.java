@@ -191,7 +191,7 @@ class PageProcessor {
 	/**
 	 * Detects page type by its URL address (String)
 	 * @param baseURL - String representation of URL
-	 * @return new PageParser descendant fitting for the page
+	 * @return new AbstractPage descendant fitting for the page
 	 * @throws IllegalArgumentException - when baseURL is bad or null
 	 */
 	static final public
@@ -298,9 +298,9 @@ class PageProcessor {
 					page.url.toString(),
 					(childPagesNum > 0)?
 						String.format(" [%s] children", childPagesNum): "");
-			while (page.parent != null) {
+			while (page.getParent() != null) {
 				log_message = "\t"+log_message;
-				page = page.parent;
+				page = page.getParent();
 			}
 		}
 		logger.info(log_message);
@@ -320,9 +320,9 @@ class PageProcessor {
 				page.getTitle().toString(),
 				result
 				);
-		while (page.parent != null) {
+		while (page.getParent() != null) {
 			log_message = "\t"+log_message;
-			page = page.parent;
+			page = page.getParent();
 		}
 		logger.info(log_message);
 	}

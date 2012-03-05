@@ -79,8 +79,12 @@ public abstract class AbstractPage {
 	/**
 	 * reference to a parent item (may be null)
 	 */
-	public final AbstractPage parent;
-	
+	private AbstractPage parent;
+	// synchronization is not required because 'parent' field is not 
+	//  changed after objects are published
+	public AbstractPage getParent() {return parent;}
+
+
 	/**
 	 * List of a children items to this page (can be of size zero) 
 	 */
@@ -107,7 +111,7 @@ public abstract class AbstractPage {
 		assert (saveTo != null);
 		//FIXME better check of the directory to save to.
 		this.saveTo = saveTo;
-		this.parent = parent;
+//		this.parent = parent;
 	}
 
 	/**
@@ -324,6 +328,40 @@ public abstract class AbstractPage {
 		PageProcessor.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
 	}
 
+	/** 
+	 * Downloads the page, parses it and updates this page with new data.
+	 * If there were child nodes that no longer exist - they are dropped, if there are new
+	 * children, new pages are added to collection.
+	 * @throws ProblemsReadingDocumentException if any error
+	 * @return true if any data was changed, false if this page is unmodified.
+	 */
+	public final 
+	boolean UpdateFromNet(AtomicInteger progressIndicator) throws ProblemsReadingDocumentException {
+		AbstractPage tempPage = PageProcessor.detectPage(url.toString(), saveTo);
+		tempPage.downloadPage(progressIndicator);
+		
+		synchronized (this) {
+			if (this.equals(tempPage)) return false;
+			setTitle(tempPage.getTitle());
+			readCacheSelf(tempPage.getSpecificDataXML()); // somewhat awkward way to copy object data from temp object
+	
+			// following loop is probably not needed, since every child will be rescanned 
+			//  anyway by the enveloping algorithm
+			Collection<AbstractPage> forRemoval = new LinkedList<AbstractPage>();
+			for (AbstractPage child: childPages) {
+				AbstractPage found=tempPage.getChildByURL(child.url);
+				if (tempPage.getChildByURL(child.url) == null) 
+					forRemoval.add(child);
+				else tempPage.childPages.remove(found);
+			}
+			childPages.removeAll(forRemoval);
+			childPages.addAll(tempPage.childPages);
+			
+			for (AbstractPage child: childPages) 
+				child.parent = this;
+		}
+		return true;
+	}	
 	/**
 	 * Saves extracted data to disk, then saves children too. 
 	 * @param saveTo - directory to save info to.
@@ -339,8 +377,7 @@ public abstract class AbstractPage {
 	 * @param doc - JDOM Document holding a cache to save to
 	 */
 	public synchronized
-	void saveToCache (/*org.jdom.Document doc*/) {
-//		assert (doc != null);
+	void saveToCache () {
 		
 		// absolutely required field
 		if (getTitle()==null) return;
@@ -382,7 +419,7 @@ public abstract class AbstractPage {
 	}
 	
 	/**
-	 * Limited comparison: title, url, children urls
+	 * Shallow comparison: title, url, children urls, custom cacheable data
 	 */
 	@Override
 	public synchronized
@@ -391,20 +428,25 @@ public abstract class AbstractPage {
 		AbstractPage ref = (AbstractPage) x;
 		if (! getTitle().equals(ref.getTitle())) return false;
 		if (! url.equals(ref.url)) return false;
+		Element e = ref.getSpecificDataXML();
+		Element e2 = this.getSpecificDataXML();
+		if (!e.equals(e2))
+			return false;
+		
+		
 		if (childPages.size()!=ref.childPages.size()) return false;
 		
-		Collection<AbstractPage> refchildren = new LinkedList<AbstractPage>();
-		refchildren.addAll(ref.childPages);
 		for (AbstractPage child: childPages) {
-			AbstractPage found = null;
-			for (AbstractPage iterator: childPages) 
-				if (iterator.url.equals(child.url)) {
-					found = iterator;
-					break;
-				}
+			AbstractPage found = ref.getChildByURL(child.url);
 			if (found == null) return false;
-			else refchildren.remove(found); // else statement is a little speed optimization 
 		}
-		return false;
+		return true;
+	}
+
+	public synchronized
+	AbstractPage getChildByURL (URL urlRequested) {
+		for (AbstractPage child: childPages) 
+			if (child.url.equals(urlRequested)) return child;
+		return null;
 	}
 }

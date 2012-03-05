@@ -236,17 +236,17 @@ public class GUI extends JFrame {
 					}
 				}
 				//  check if there is a parent node in a tree;
-				DefaultMutableTreeNode parentNode = nodeList.getTreeNodeByPage(pj.page.parent);
+				DefaultMutableTreeNode parentNode = nodeList.getTreeNodeByPage(pj.page.getParent());
 				if (parentNode != null) {
 					// add new leaf element
 					// XXX: Ordering?
 					treeModel.insertNodeInto(node, parentNode, parentNode.getChildCount());
 				} else {
 					// parentNode == null AND 
-					if (pj.page.parent!=null) {
+					if (pj.page.getParent()!=null) {
 						// this page's parent is not in a tree yet. 
 						// add this node as hidden, add this node's parent page to wanted list
-						wantedParents.add(pj.page.parent);
+						wantedParents.add(pj.page.getParent());
 					} else {
 						//add new top element
 						parentNode = (DefaultMutableTreeNode) treeModel.getRoot();
