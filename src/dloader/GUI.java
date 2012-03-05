@@ -53,7 +53,6 @@ public class GUI extends JFrame {
 				
 				return res;
 			} catch (Throwable e) {
-				// FIXME: needs decoupling from Main
 				Main.logger.log(Level.SEVERE, "", e);
 			}
 			return null;

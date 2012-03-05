@@ -17,7 +17,8 @@ import dloader.page.*;
 import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 
 /**
- * This class handles multiple PageJob objects and general algorithm of the program
+ * This class handles multiple PageJob objects and 
+ * general algorithm of the program, as well as execution context
  * @author A.Cerbic
  */
 public final 
@@ -27,6 +28,7 @@ class PageProcessor {
 	 * Dynamically growing list of PageJob objects;  
 	 */
 	static final List<PageJob> jobQ;
+	
 	/**
 	 * Holds reference to a cache, if one is present (null otherwise)
 	 */
@@ -40,9 +42,6 @@ class PageProcessor {
 	 */
 	private static 
 	Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-	public static final 
-	Logger getLogger() {return logger;}
-	
 	public static
 	void log(Level l, String s) {
 		logger.log(l,s);

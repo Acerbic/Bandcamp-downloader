@@ -11,7 +11,6 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.hamcrest.core.IsNull;
 import org.jdom.Document;
 import org.jdom.Element;
 
@@ -52,14 +51,14 @@ public class Track extends AbstractPage {
 	};
 
 	/**
-	 * Ease of use	
+	 * Shortcut	
 	 */
 	public 
 	String getProperty(String name) {
 		return properties.getProperty(name);
 	}
 	/**
-	 * Ease of use	
+	 * Shortcut
 	 */
 	public 
 	String setProperty(String name, String value) {
@@ -267,10 +266,8 @@ public class Track extends AbstractPage {
 			String artist = getProperty("artist");
 			// fix track number
 			if (album==null || album.isEmpty())
-//				setProperty("album",getParent().getTitle());
 				setProperty("album",getParent().getTitle());
 			if (artist==null || artist.isEmpty())
-//				setProperty("artist",getParent().getParent().getTitle());
 				setProperty("artist",getParent().getParent().getTitle());
 		} catch (NullPointerException e) {
 			// skip if not enough parents in a line;
@@ -290,10 +287,12 @@ public class Track extends AbstractPage {
 	public boolean isSavingNotRequired() {
 		try {
 			Path p = Paths.get(getTrackFileName());
-			if (Files.isRegularFile(p) && Files.size(p) > 0)
-				return true;
-			// TODO: implement proper check for tags present (honor the "ForceRetag" flag)
-			// also file integrity (???) 
+			if ( ! (Files.isRegularFile(p) && Files.size(p) > 0))
+				return false;
+			// TODO: implement proper check for tags present 
+			// (honor the "ForceRetag" flag)
+			// also file integrity (???)
+			return true;
 		} catch (IOException e) {
 			PageProcessor.log(Level.WARNING,null,e);
 		}

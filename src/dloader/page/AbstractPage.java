@@ -33,9 +33,7 @@ import dloader.WebDownloader;
  *   Objects of this class are mutable 
  *   	(effectively immutable after initialization with downloadPage() and loadFromCache(),
  *     	but that can be delayed).
- *   Objects of this class are thread-safe without any external locking: 
- *      two mutable fields( title and childPages ) don't form invariant dependency 
- *      and refer to thread-safe objects themselves.
+ *   Objects of this class are thread-safe 
  */
 public abstract class AbstractPage {
 	/**
@@ -95,8 +93,10 @@ public abstract class AbstractPage {
 		catch (MalformedURLException e) {throw new IllegalArgumentException(e);}
 		catch (NullPointerException e) {throw new IllegalArgumentException(e);}
 		if (saveTo == null) throw new IllegalArgumentException();
-		
-		//FIXME better check of the directory to save to.
+
+		Path p = Paths.get(saveTo);
+		if (! (Files.isDirectory(p) && Files.isWritable(p)))
+			throw new IllegalArgumentException();
 		this.saveTo = saveTo;
 		this.parent = parent;
 	}
@@ -409,18 +409,18 @@ public abstract class AbstractPage {
 
 	/**
 	 * Shallow comparison: title, url, children urls, 
-	 * additional cacheable data
-	 * Used currently to check downloaded page against cached
+	 *    additional cacheable data
+	 * Used currently to check downloaded page against cached 
+	 *   (same thread - no sync needed)
 	 * @return true if argument is not different from this page
 	 */
 	private 
 	boolean isSame(AbstractPage ref) {
 		if (! getTitle().equals(ref.getTitle())) return false;
 		if (! url.equals(ref.url)) return false;
-		Element e = ref.getSpecificDataXML();
-		Element e2 = this.getSpecificDataXML();
-		// TODO: check if this actually does what is intended
-		if (!e.equals(e2))
+		String s1 = ref.getSpecificDataXML().getValue();
+		String s2 = this.getSpecificDataXML().getValue();
+		if (!s1.equals(s2))
 			return false;
 		
 		if (childPages.size()!=ref.childPages.size()) return false;
