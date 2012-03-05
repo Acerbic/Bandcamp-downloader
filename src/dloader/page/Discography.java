@@ -58,7 +58,7 @@ public class Discography extends AbstractPage {
 	}
 
 	@Override
-	public synchronized
+	public 
 	String saveResult(AtomicInteger progressIndicator) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
@@ -120,7 +120,10 @@ public class Discography extends AbstractPage {
 	@Override
 	public Collection<String> getThisPageFiles() {
 		Collection <String> fileset = new LinkedList<String>();
-		fileset.add( Paths.get(saveTo).toString() );
+		try {
+			fileset.add( getChildrenSaveTo() );
+		} catch (IOException e) {
+		}
 		return fileset;
 	}
 

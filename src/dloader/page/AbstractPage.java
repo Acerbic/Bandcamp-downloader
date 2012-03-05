@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import java.util.logging.Level;
@@ -38,7 +38,6 @@ import dloader.WebDownloader;
  *      and refer to thread-safe objects themselves.
  */
 public abstract class AbstractPage {
-
 	/**
 	 * Exception generated if data cannot be read from XML cache 
 	 * or downloaded document
@@ -46,52 +45,39 @@ public abstract class AbstractPage {
 	 */
 	@SuppressWarnings("serial")
 	public class ProblemsReadingDocumentException extends Exception {
-		
-		public String problemDocumentURL;
-		public String parentDocumentURL; /** may be null */
-
-		public ProblemsReadingDocumentException() {
-			super();
-			problemDocumentURL = AbstractPage.this.url.toString();
-		}
-		public ProblemsReadingDocumentException(String s) {
-			super(s);
-			problemDocumentURL = AbstractPage.this.url.toString();
-		}
-		public ProblemsReadingDocumentException(Throwable e) {
-			super(e);
-			problemDocumentURL = AbstractPage.this.url.toString();
-		}
+		public ProblemsReadingDocumentException() {super();}
+		public ProblemsReadingDocumentException(String s) {super(s);}
+		public ProblemsReadingDocumentException(Throwable e) {super(e);}
 	}
 	
 	/** 
 	 * title of this item 
 	 */
-	private String title; // guarded by (this). getter/setter are synchronized 
+	private String title;  
+	
+	/**
+	 * reference to a parent item (may be null)
+	 */
+	private AbstractPage parent;
 	
 	/**
 	 * URL of a page referencing this item 
 	 */
 	public final URL url;
 	
+	/**
+	 * Directory where to save this page's data
+	 */
 	public final String saveTo;
 	
-	/**
-	 * reference to a parent item (may be null)
-	 */
-	private AbstractPage parent;
-	// synchronization is not required because 'parent' field is not 
-	//  changed after objects are published
-	public AbstractPage getParent() {return parent;}
-
+	public synchronized 
+	AbstractPage getParent() {return parent;}
 
 	/**
 	 * List of a children items to this page (can be of size zero) 
 	 */
-	//FIXME: more concurrent collection, please
-	// compound operation on Collection should obtain lock to (this), like compound 
-	// operations on AbstractPage object
-	public final Collection<AbstractPage> childPages = new LinkedBlockingQueue<>(); 
+	public final 
+	Collection<AbstractPage> childPages = new ConcurrentLinkedQueue<>(); 
 
 	public synchronized
 	String getTitle() {return title;} 
@@ -108,10 +94,11 @@ public abstract class AbstractPage {
 		try {url = resolveLink(stringURL);}
 		catch (MalformedURLException e) {throw new IllegalArgumentException(e);}
 		catch (NullPointerException e) {throw new IllegalArgumentException(e);}
-		assert (saveTo != null);
+		if (saveTo == null) throw new IllegalArgumentException();
+		
 		//FIXME better check of the directory to save to.
 		this.saveTo = saveTo;
-//		this.parent = parent;
+		this.parent = parent;
 	}
 
 	/**
@@ -175,6 +162,43 @@ public abstract class AbstractPage {
 	protected abstract void parseSelf(Document doc) throws ProblemsReadingDocumentException;
 	
 	/**
+	 * Reads class-specific info from XML cache element.
+	 * @param e - element to read from
+	 * @throws ProblemsReadingDocumentException if reading data from XML fails
+	 */
+	protected abstract void readCacheSelf(Element e) throws ProblemsReadingDocumentException;
+
+	/**
+	 * Saves extracted data to disk, then saves children too. 
+	 * @param saveTo - directory to save info to.
+	 * @param progressIndicator - ref to a variable to output progress of long operations
+	 * @return operation status report string, "" or null if nothing to report (operation skipped)
+	 * @throws IOException if saving was terminated by error - retry might be possible.
+	 */
+	public abstract String saveResult(AtomicInteger progressIndicator) throws IOException;
+
+	/**
+	 * Generate new saving path for the children of this page from its own saveTo and page data
+	 * @return saving path for the children pages or null if no children expected
+	 * @throws IOException if valid filename cannot be created
+	 */
+	abstract public String getChildrenSaveTo() throws IOException;
+	
+	/**
+	 * Checks if call to saveResult can be skipped (especially if it is a long operation)
+	 * @return true if call to saveResult can be skipped (will yield no effect), \t false if it must be performed
+	 */
+	abstract public boolean isSavingNotRequired();
+	
+	/**
+	 * All the files (including directories) this page would create when 'saveResult' 
+	 * is called
+	 * @return Collection of full filenames
+	 */
+	public abstract 
+	Collection<String> getThisPageFiles();
+	
+	/**
 	 * Queries given JDOM document with XPath string
 	 * @param q - XPath string with all nodes in "pre" namespace
 	 * @param doc - JDOM Document or Element
@@ -231,13 +255,6 @@ public abstract class AbstractPage {
 		}
 		return child;
 	}
-	
-	/**
-	 * Reads class-specific info from XML cache element.
-	 * @param e - element to read from
-	 * @throws ProblemsReadingDocumentException if reading data from XML fails
-	 */
-	protected abstract void readCacheSelf(Element e) throws ProblemsReadingDocumentException;
 
 	/**
 	 * Gets an URL to resource referenced from this page. 
@@ -342,7 +359,7 @@ public abstract class AbstractPage {
 		tempPage.downloadPage(progressIndicator);
 		
 		synchronized (this) {
-			if (this.equals(tempPage)) return false;
+			if (isSame(tempPage)) return false;
 			setTitle(tempPage.getTitle());
 			readCacheSelf(tempPage.getSpecificDataXML()); // somewhat awkward way to copy object data from temp object
 	
@@ -362,22 +379,15 @@ public abstract class AbstractPage {
 				child.parent = this;
 		}
 		return true;
-	}	
-	/**
-	 * Saves extracted data to disk, then saves children too. 
-	 * @param saveTo - directory to save info to.
-	 * @param progressIndicator - ref to a variable to output progress of long operations
-	 * @return operation status report string, "" or null if nothing to report (operation skipped)
-	 * @throws IOException if saving was terminated by error - retry might be possible.
-	 */
-	public abstract String saveResult(AtomicInteger progressIndicator) throws IOException;
+	}
 
 	/**
 	 * Saves this page data into XML tree. 
 	 * Only references to child pages are saved, not the pages data.
+	 * If the title is null, nothing is saved
 	 * @param doc - JDOM Document holding a cache to save to
 	 */
-	public synchronized
+	public synchronized final
 	void saveToCache () {
 		
 		// absolutely required field
@@ -398,57 +408,45 @@ public abstract class AbstractPage {
 	}
 
 	/**
-	 * Generate new saving path for the children of this page from its own saveTo and page data
-	 * @return saving path for the children pages or null if no children expected
-	 * @throws IOException if valid filename cannot be created
+	 * Shallow comparison: title, url, children urls, 
+	 * additional cacheable data
+	 * Used currently to check downloaded page against cached
+	 * @return true if argument is not different from this page
 	 */
-	abstract public String getChildrenSaveTo() throws IOException;
-	
-	/**
-	 * Checks if call to saveResult can be skipped (especially if it is a long operation)
-	 * @return true if call to saveResult can be skipped (will yield no effect), \t false if it must be performed
-	 */
-	abstract public boolean isSavingNotRequired();
-	
-	@Override
-	public synchronized
-	String toString() {
-		String className = this.getClass().getSimpleName();
-		return ((getTitle() == null)? url.toString(): getTitle()) + "[" +className+ "]";
-	}
-	
-	/**
-	 * Shallow comparison: title, url, children urls, custom cacheable data
-	 */
-	@Override
-	public synchronized
-	boolean equals(Object x) {
-		if (! (x instanceof AbstractPage) ) return false;
-		AbstractPage ref = (AbstractPage) x;
+	private 
+	boolean isSame(AbstractPage ref) {
 		if (! getTitle().equals(ref.getTitle())) return false;
 		if (! url.equals(ref.url)) return false;
 		Element e = ref.getSpecificDataXML();
 		Element e2 = this.getSpecificDataXML();
+		// TODO: check if this actually does what is intended
 		if (!e.equals(e2))
 			return false;
 		
-		
 		if (childPages.size()!=ref.childPages.size()) return false;
 		
-		for (AbstractPage child: childPages) {
-			AbstractPage found = ref.getChildByURL(child.url);
-			if (found == null) return false;
-		}
+		for (AbstractPage child: childPages) 
+			if (ref.getChildByURL(child.url) == null) 
+				return false;
 		return true;
 	}
 
-	public synchronized
+	/**
+	 * Lookup a child page by its URL
+	 * @param urlRequested
+	 * @return found page or null if not found 
+	 */
+	public final
 	AbstractPage getChildByURL (URL urlRequested) {
 		for (AbstractPage child: childPages) 
 			if (child.url.equals(urlRequested)) return child;
 		return null;
 	}
 	
-	public abstract 
-	Collection<String> getThisPageFiles();
+	@Override
+	public 
+	String toString() {
+		String className = this.getClass().getSimpleName();
+		return ((getTitle() == null)? url.toString(): getTitle()) + "[" +className+ "]";
+	}
 }

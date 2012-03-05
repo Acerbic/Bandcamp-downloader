@@ -28,11 +28,11 @@ public class Album extends AbstractPage {
 	/**
 	 * link to the album cover
 	 */
-	public volatile URL coverUrl; // hope volatile is enough
-	/**
-	 * arbitrary additional info
-	 */
-	public String moreInfo;
+	public volatile URL coverUrl; // volatile is enough for single-field invariant
+//	/**
+//	 * arbitrary additional info
+//	 */
+//	public String moreInfo;
 	/**
 	 * counts parsed child track pages (include fails) 
 	 * to override their "track" number property
@@ -71,14 +71,14 @@ public class Album extends AbstractPage {
 		} catch (MalformedURLException e1) {
 			throw new ProblemsReadingDocumentException(e1);
 		} 
-		moreInfo = e.getAttributeValue("moreInfo");
+//		moreInfo = e.getAttributeValue("moreInfo");
 	}
 
 	@Override
 	protected Element getSpecificDataXML() {
 		Element e = new Element("Album");
 		if (coverUrl != null) e.setAttribute("coverUrl", coverUrl.toString());
-		if (moreInfo != null) e.setAttribute("moreInfo", moreInfo);
+//		if (moreInfo != null) e.setAttribute("moreInfo", moreInfo);
 		return e;
 	}
 
@@ -136,7 +136,7 @@ public class Album extends AbstractPage {
 	}
 
 	@Override
-	public synchronized
+	public 
 	boolean isSavingNotRequired() {
 		Path p;
 		try {
@@ -154,11 +154,10 @@ public class Album extends AbstractPage {
 	@Override
 	public Collection<String> getThisPageFiles() {
 		Collection <String> fileset = new LinkedList<String>();
-		fileset.add( Paths.get(saveTo).toString());
 		try {
-			fileset.add( Paths.get(getCoverSavePath()).toString());
+			fileset.add(getChildrenSaveTo());
+			fileset.add(getCoverSavePath());
 		} catch (IOException e) {
-			//TODO: add handler here
 		} 
 		return fileset;
 	}
