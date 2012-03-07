@@ -31,7 +31,7 @@ GUI.
  5.2) Обновление данных о страницах из сети - может использоваться без предварительной загрузки из кэша.
    LoadFromCache, 
    UpdateFromNet
-   		-> no diff: this-"5.1" [new job], return {}
+   		-> no diff: this-"5.1" [new job], return {} // <-- redundancy there
    		-> updated: RepeatForEveryChild [new jobs recursive], return {this}
  5.3) Поиск лишних файлов. ???
 	FileList := {};

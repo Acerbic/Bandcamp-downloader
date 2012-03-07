@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import dloader.PageJob.JobStatusEnum;
+import dloader.pagejob.PageJob;
 import dloader.page.*;
 import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 
@@ -57,29 +57,7 @@ class PageProcessor {
 	 */
 	static boolean isReadingCache;
 	
-	/**
-	 * priorities system to select next job from the Q
-	 */
-	static final
-	Map<PageJob.JobStatusEnum, Integer> priorities;
-	/**
-	 * value for the top priority
-	 */
-	static final
-	int PRIORITIES_MIN = 0;
-	/**
-	 * minimum priority value for job statuses that don't get executed 
-	 */
-	static final
-	int PRIORITIES_NOWORK = 100;
-	/**
-	 * minimum value for "heavy"-duty priorities (involving long operations)
-	 */
-	static final
-	int PRIORITIES_HEAVY = 4;	
-	
 	static {
-		priorities = new Hashtable<>();
 		jobQ = Collections.synchronizedList(new LinkedList<PageJob>());
 	}
 	
@@ -88,34 +66,6 @@ class PageProcessor {
 		return jobQ;
 	}
 
-	static private
-	void initPriorities(boolean structured) {
-		priorities.clear();
-		if (structured) {
-			/**
-			 * structured job order for console application 
-			 * (1st finish THIS item then touch next)
-			 */
-			priorities.put(JobStatusEnum.RECON_PAGE, 0);
-			priorities.put(JobStatusEnum.DOWNLOAD_PAGE, 1);
-			priorities.put(JobStatusEnum.ADD_CHILDREN_JOBS, 2);
-			priorities.put(JobStatusEnum.PRESAVE_CHECK, 3);
-			priorities.put(JobStatusEnum.SAVE_RESULTS, 4);
-			priorities.put(JobStatusEnum.PAGE_DONE, 100);
-			priorities.put(JobStatusEnum.PAGE_FAILED, 100);		
-		} else {
-			/**
-			 * fast-preview job order for GUI application
-			 */
-			priorities.put(JobStatusEnum.ADD_CHILDREN_JOBS, 0);
-			priorities.put(JobStatusEnum.RECON_PAGE, 1);
-			priorities.put(JobStatusEnum.PRESAVE_CHECK, 2);
-			priorities.put(JobStatusEnum.DOWNLOAD_PAGE, 3);
-			priorities.put(JobStatusEnum.SAVE_RESULTS, 4);
-			priorities.put(JobStatusEnum.PAGE_DONE, 100);
-			priorities.put(JobStatusEnum.PAGE_FAILED, 100);		
-		}
-	}
 	
 	/**
 	 * Called for root page; this page will be added to Q and always downloaded;
@@ -130,8 +80,8 @@ class PageProcessor {
 			boolean isReadingCache, String cacheFilename,
 			boolean isStructuredJobPriorities) {
 		
-		if ((saveTo != null) && (baseURL != null))
-			addJob (saveTo, detectPage(baseURL, saveTo), JobStatusEnum.DOWNLOAD_PAGE);
+//		if ((saveTo != null) && (baseURL != null))
+//			addJob (saveTo, detectPage(baseURL, saveTo), JobStatusEnum.DOWNLOAD_PAGE);
 		
 		logger = l;
 		
@@ -144,7 +94,6 @@ class PageProcessor {
 			// and follow with cache set to null
 		}
 		
-		initPriorities(isStructuredJobPriorities);
 	}
 	
 	static void saveCache () throws IOException {
@@ -155,37 +104,12 @@ class PageProcessor {
 	 * adds job to the shared queue
 	 * @param j - the job
 	 */
-	static void addJob (PageJob j) {
+	public static
+	void addJob (PageJob j) {
 		assert (j != null);
 		getJobQ().add(0,j); 
 	}
 	
-	/**
-	 * creates new job and adds it to the shared queue
-	 * @param saveTo - directory in which this page results will be saved
-	 * @param page - the page bound to this job
-	 * @param status - status of a job
-	 */
-	static void addJob (String saveTo, AbstractPage page, JobStatusEnum status) {
-		assert (saveTo != null);
-		assert (page != null);
-		synchronized (getJobQ()) {
-			PageJob job = getJobForPage(page);
-			if (job == null)
-				job = new PageJob(saveTo,page,status);
-			else if (!job.saveTo.equals(saveTo)) {
-				// this weird situation normally should not happen, but who knows...
-				logger.log(Level.SEVERE, "Adding a job with same page and different 'saveTo': " + job.page.getTitle());
-				getJobQ().remove(job);
-				job = new PageJob(saveTo,page,status); // restart job with new location
-			} else {
-				// Hmmm... this EXACT page item is already in a Q.
-				logger.log(Level.SEVERE, "Adding a job with same page and same 'saveTo': " + job.page.getTitle());
-				synchronized (job) { job.status = status;}
-			}
-			getJobQ().add(0,job);
-		}
-	}
 	
 	/**
 	 * Detects page type by its URL address (String)
@@ -240,17 +164,17 @@ class PageProcessor {
 			try {
 				processOnePage(job); // will re-add this job in a new status
 			} catch (ProblemsReadingDocumentException|IOException e) {
-				synchronized (job) {
-					if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
-						job.status == JobStatusEnum.SAVE_RESULTS) {
-						if ( --job.retryCount <= 0) {
-							if (logger != null)
-								logger.log(Level.WARNING, "[Failed] " + job.toString(), e);
-							job.status = JobStatusEnum.PAGE_FAILED; 
-						}
-						addJob(job);					
-					}
-				}
+//				synchronized (job) {
+//					if (job.status == JobStatusEnum.DOWNLOAD_PAGE ||
+//						job.status == JobStatusEnum.SAVE_RESULTS) {
+//						if ( --job.retryCount <= 0) {
+//							if (logger != null)
+//								logger.log(Level.WARNING, "[Failed] " + job.toString(), e);
+//							job.status = JobStatusEnum.PAGE_FAILED; 
+//						}
+//						addJob(job);					
+//					}
+//				}
 			}
 		}
 		return job;
@@ -262,20 +186,20 @@ class PageProcessor {
 	 */
 	static
 	public PageJob getNextJob(boolean lightWeight) {
-		Integer priority = PRIORITIES_NOWORK; PageJob nextJob = null;
-		synchronized (getJobQ()) {
-			for (PageJob job: getJobQ()) {
-				if (priorities.get(job.status) < priority) {
-					priority = priorities.get(job.status);
-					nextJob = job;
-					if (priority == PRIORITIES_MIN) return nextJob; // cancel search for top priority found;
-				}
-			}
-		}
+//		Integer priority = PRIORITIES_NOWORK; PageJob nextJob = null;
+//		synchronized (getJobQ()) {
+//			for (PageJob job: getJobQ()) {
+//				if (priorities.get(job.status) < priority) {
+//					priority = priorities.get(job.status);
+//					nextJob = job;
+//					if (priority == PRIORITIES_MIN) return nextJob; // cancel search for top priority found;
+//				}
+//			}
+//		}
 		
-		if (lightWeight && priority >= PRIORITIES_HEAVY)
+//		if (lightWeight && priority >= PRIORITIES_HEAVY)
 			return null;
-		else return nextJob;
+//		else return nextJob;
 	}
 
 	/**
@@ -283,26 +207,26 @@ class PageProcessor {
 	 * @param job - the job to report about
 	 */
 	static void logInfoSurvey(PageJob job) {
-		AbstractPage page = job.page;
-		if (logger == null) return;
-		String method = "failed";
-		String log_message = null;
-		synchronized (job) {
-			if (job.isReadFromWeb) method = "web";
-			else if (job.isReadFromCache) method = "cache";
-			int childPagesNum = page.childPages.size();
-			log_message = String.format("%s (%s): <%s>%s%n",
-					page.getClass().getSimpleName(),
-					method,
-					page.url.toString(),
-					(childPagesNum > 0)?
-						String.format(" [%s] children", childPagesNum): "");
-			while (page.getParent() != null) {
-				log_message = "\t"+log_message;
-				page = page.getParent();
-			}
-		}
-		logger.info(log_message);
+//		AbstractPage page = job.page;
+//		if (logger == null) return;
+//		String method = "failed";
+//		String log_message = null;
+//		synchronized (job) {
+//			if (job.isReadFromWeb) method = "web";
+//			else if (job.isReadFromCache) method = "cache";
+//			int childPagesNum = page.childPages.size();
+//			log_message = String.format("%s (%s): <%s>%s%n",
+//					page.getClass().getSimpleName(),
+//					method,
+//					page.url.toString(),
+//					(childPagesNum > 0)?
+//						String.format(" [%s] children", childPagesNum): "");
+//			while (page.getParent() != null) {
+//				log_message = "\t"+log_message;
+//				page = page.getParent();
+//			}
+//		}
+//		logger.info(log_message);
 	}
 	
 	/**
@@ -310,20 +234,20 @@ class PageProcessor {
 	 * @param job - the job that was saved, contains saveResultsReport field
 	 */
 	static void logDataSave(PageJob job) {
-		if (logger == null) return;
-		String result = job.saveResultsReport;
-		AbstractPage page = job.page;
-		if (result == null || result.isEmpty())	return;
-		String log_message = String.format("%s \"%s\" %s%n",
-				page.getClass().getSimpleName(),
-				page.getTitle().toString(),
-				result
-				);
-		while (page.getParent() != null) {
-			log_message = "\t"+log_message;
-			page = page.getParent();
-		}
-		logger.info(log_message);
+//		if (logger == null) return;
+//		String result = job.saveResultsReport;
+//		AbstractPage page = job.page;
+//		if (result == null || result.isEmpty())	return;
+//		String log_message = String.format("%s \"%s\" %s%n",
+//				page.getClass().getSimpleName(),
+//				page.getTitle().toString(),
+//				result
+//				);
+//		while (page.getParent() != null) {
+//			log_message = "\t"+log_message;
+//			page = page.getParent();
+//		}
+//		logger.info(log_message);
 	}
 	
 	/**
@@ -332,61 +256,61 @@ class PageProcessor {
 	 */
 	static
 	void processOnePage(PageJob job) throws ProblemsReadingDocumentException, IOException {
-		AbstractPage page = job.page;
-		switch (job.status) {
-			case RECON_PAGE: 
-				if ((isReadingCache && job.isReadFromCache) || job.isReadFromWeb)
-					// this page (and its children is already processed - stop refresh here) 
-					break;
-				
-				if (isReadingCache && cache != null) 
-//					job.isReadFromCache = page.loadFromCache(cache.doc);
-				if (job.isReadFromCache) {
-					job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
-					logInfoSurvey(job);
-				}
-				else job.status = JobStatusEnum.DOWNLOAD_PAGE;
-				addJob(job); 
-				break;
-			case DOWNLOAD_PAGE:
-				synchronized (page) {
-					page.downloadPage(new AtomicInteger(0));
-					job.isReadFromWeb = true;
-					
-					StatisticGatherer.totalPageDownloadFinished.incrementAndGet();
-					if (cache != null)
-						page.saveToCache();
-				}
-				job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
-				logInfoSurvey(job);
-				addJob (job);
-				break;
-			case ADD_CHILDREN_JOBS: 
-				for (AbstractPage child: page.childPages) {
-					String childrenSaveTo = page.getChildrenSaveTo();
-					addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
-				}
-				job.retryCount = PageJob.MAX_RETRIES; // reset retries for next faulty operation
-				job.status = JobStatusEnum.PRESAVE_CHECK;
-				addJob(job);
-				break;
-			case PRESAVE_CHECK:
-				if (job.page.isSavingNotRequired()) {
-					logDataSave(job); 
-					job.status = JobStatusEnum.PAGE_DONE;
-					addJob(job);					
-				} else {
-					job.status = JobStatusEnum.SAVE_RESULTS;
-					addJob(job);
-				}
-				break;
-			case SAVE_RESULTS:
-				job.saveResultsReport = page.saveResult(new AtomicInteger(0)); 
-				logDataSave(job); 
-				job.status = JobStatusEnum.PAGE_DONE;
-				addJob(job);					
-				break; 
-		}
+//		AbstractPage page = job.page;
+//		switch (job.status) {
+//			case RECON_PAGE: 
+//				if ((isReadingCache && job.isReadFromCache) || job.isReadFromWeb)
+//					// this page (and its children is already processed - stop refresh here) 
+//					break;
+//				
+//				if (isReadingCache && cache != null) 
+////					job.isReadFromCache = page.loadFromCache(cache.doc);
+//				if (job.isReadFromCache) {
+//					job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
+//					logInfoSurvey(job);
+//				}
+//				else job.status = JobStatusEnum.DOWNLOAD_PAGE;
+//				addJob(job); 
+//				break;
+//			case DOWNLOAD_PAGE:
+//				synchronized (page) {
+//					page.downloadPage(new AtomicInteger(0));
+//					job.isReadFromWeb = true;
+//					
+//					StatisticGatherer.totalPageDownloadFinished.incrementAndGet();
+//					if (cache != null)
+//						page.saveToCache();
+//				}
+//				job.status = JobStatusEnum.ADD_CHILDREN_JOBS;
+//				logInfoSurvey(job);
+//				addJob (job);
+//				break;
+//			case ADD_CHILDREN_JOBS: 
+//				for (AbstractPage child: page.childPages) {
+//					String childrenSaveTo = page.getChildrenSaveTo();
+//					addJob(childrenSaveTo, child, JobStatusEnum.RECON_PAGE);
+//				}
+//				job.retryCount = PageJob.MAX_RETRIES; // reset retries for next faulty operation
+//				job.status = JobStatusEnum.PRESAVE_CHECK;
+//				addJob(job);
+//				break;
+//			case PRESAVE_CHECK:
+//				if (job.page.isSavingNotRequired()) {
+//					logDataSave(job); 
+//					job.status = JobStatusEnum.PAGE_DONE;
+//					addJob(job);					
+//				} else {
+//					job.status = JobStatusEnum.SAVE_RESULTS;
+//					addJob(job);
+//				}
+//				break;
+//			case SAVE_RESULTS:
+//				job.saveResultsReport = page.saveResult(new AtomicInteger(0)); 
+//				logDataSave(job); 
+//				job.status = JobStatusEnum.PAGE_DONE;
+//				addJob(job);					
+//				break; 
+//		}
 	}
 
 	/**

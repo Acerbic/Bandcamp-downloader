@@ -1,6 +1,7 @@
 package dloader.pagejob;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -25,7 +26,7 @@ public abstract class PageJob {
 	/**
 	 * job object store this field even if they don't use it themselves - for generated jobs.
 	 */
-	final public String saveTo;
+//	final public String saveTo;
 	
 	/**
 	 * JobStatus is a synchronization feature. Every access to 'status' field requires locking
@@ -46,15 +47,14 @@ public abstract class PageJob {
 	/**
 	 * priority of this job, used when next job is picked for execution.
 	 */
-	final public int priority; 
+//	final public int priority; 
 	
 	/**
 	 *  To report progress of lengthy jobs. Initial value is 0, top value is 100.
 	 *  This value is for indication only and has no restriction to job status or completion.
 	 */
-	//XXX Should the getter be synchronized really?
 	protected AtomicInteger progressIndicator;
-	public synchronized final 
+	public 
 	AtomicInteger getProgressIndicator() {return progressIndicator;}
 
 	public synchronized final
@@ -87,12 +87,13 @@ public abstract class PageJob {
 	}
 	
 	protected
-	PageJob (String saveTo, AbstractPage page, int priority) {
-		assert (saveTo != null);
+//	PageJob (String saveTo, AbstractPage page, int priority) {
+	PageJob (AbstractPage page) {
+//		assert (saveTo != null);
 		assert (page != null);
 		this.page = page; 
-		this.saveTo = saveTo;
-		this.priority = priority;
+//		this.saveTo = saveTo;
+//		this.priority = priority;
 		status = JobStatus.PENDING;
 		owningThread = null;
 		progressIndicator = new AtomicInteger(0);
@@ -103,33 +104,31 @@ public abstract class PageJob {
 	 * and possibly puts new jobs in a queue for further processing.
 	 */
 	protected abstract 
-	void executeJob() throws Exception;
+	Object executeJob() throws Exception;
 	
 	/**
 	 * Switches status and executes the job. May fail during page operation, status 
 	 * is set to DONE or FAILED to indicate outcome.
-	 * @return true if job operation was commenced and status is set to DONE or FAILED, 
-	 * or false if job execution is impossible due to status policy. 
-	 * @throws ProblemsReadingDocumentException
-	 * @throws IOException
+	 * @return 
 	 */
 	public final 
-	boolean doTheJob() {
+	Object doTheJob() {
 		synchronized (this) {
 			// make sure one thread is not trying to start a job SELECTED or EXECUTING
 			// by another thread or a job that is DONE or FAILED already
 			if ((status == JobStatus.EXECUTING) ||
 				(status == JobStatus.DONE) ||
 				(status == JobStatus.FAILED))
-				return false;
+				return null;
 			if ((status == JobStatus.SELECTED) &&
 				(owningThread != Thread.currentThread()))
-				return false;
+				return null;
 			status = JobStatus.EXECUTING;
 		}
 		
+		Object results = null;
 		try {
-			executeJob();
+			results = executeJob();
 			synchronized (this) {
 				status = JobStatus.DONE;
 			}
@@ -142,7 +141,7 @@ public abstract class PageJob {
 					String.format("Exception during execution of %s %n", toString()), e);
 		}
 
-		return true;
+		return results;
 	}
 
 	@Override
