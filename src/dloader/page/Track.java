@@ -94,12 +94,12 @@ public class Track extends AbstractPage {
 	@Override
 	public synchronized 
 	String saveResult(AtomicInteger progressIndicator) throws IOException {
-		Path p = Paths.get(saveTo, getFSSafeName(getTitle()) + ".mp3");
+		Path p = Paths.get(getTrackFileName());
 		boolean wasDownloaded = 
 				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
 		
 		String statusReport = "skipped";
-		if (tagAudioFile(p.toString(), Main.forceTagging))
+		if (tagAudioFile(Main.forceTagging))
 			statusReport = "updated";
 		if (wasDownloaded)
 			statusReport = "downloaded";
@@ -146,9 +146,33 @@ public class Track extends AbstractPage {
 	 * @throws IOException - file read/write problems
 	 */
 	public
-	boolean tagAudioFile(String file, boolean force) throws IOException {
+	boolean tagAudioFile(boolean force) throws IOException {
+			AudioFile theFile = fixTag(force);
+			if (null != theFile) {
+				try {
+					theFile.commit();
+				} catch (CannotWriteException e) {
+					throw new IOException(e);
+				}
+				return true;
+			}
+			return false;
+	}
+
+	/**
+	 * Compares data in properties of this Track page with tags in corresponding
+	 * file on disk. Prepares updates of tags in the file, depending on 'force' argument. 
+	 * @param force - if true, existing tags will be overwritten with data from this Track object,
+	 * if false - only absent tags will be filled.
+	 * @return null if there is nothing to change in file (everything is correct, considering 'force' flag),
+	 * otherwise returns AudioFile with changes applied to file tags. Consequent call to {@link AudioFile.commit} would
+	 * save changes to disk.
+	 * @throws IOException
+	 */
+	public
+	AudioFile fixTag(boolean force) throws IOException {
 		try {
-			AudioFile theFile = AudioFileIO.read(Paths.get(file).toFile());
+			AudioFile theFile = AudioFileIO.read(Paths.get(getTrackFileName()).toFile());
 			entagged.audioformats.Tag fileTag = theFile.getTag();
 			// XXX: check API if this is needed at all
 			if (fileTag == null) throw new IOException();
@@ -193,17 +217,15 @@ public class Track extends AbstractPage {
 				}
 			}
 			
-			if (updateMP3Tag) {
-				theFile.commit();
-				return true;
-			}
-			return false;
+			if (updateMP3Tag) 
+				return theFile;
+			return null;
 			
-		} catch (CannotReadException|CannotWriteException e) {
+		} catch (CannotReadException e) {
 			throw new IOException(e);
 		}
 	}
-
+	
 	@Override
 	protected void readCacheSelf(Element e) throws ProblemsReadingDocumentException {
 		for (String key: Arrays.asList(XMLCacheDataKeys)) {
@@ -289,10 +311,8 @@ public class Track extends AbstractPage {
 			Path p = Paths.get(getTrackFileName());
 			if ( ! (Files.isRegularFile(p) && Files.size(p) > 0))
 				return false;
-			// TODO: implement proper check for tags present 
-			// (honor the "ForceRetag" flag)
-			// also file integrity (???)
-			return true;
+			
+			return (fixTag(Main.forceTagging)==null);
 		} catch (IOException e) {
 			PageProcessor.log(Level.WARNING,null,e);
 		}

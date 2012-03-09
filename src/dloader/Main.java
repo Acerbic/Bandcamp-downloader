@@ -150,13 +150,13 @@ public class Main {
 				SwingUtilities.invokeAndWait(new Runnable() {
 					@Override
 					public void run() {
-						GUI.EventDispatchThread = Thread.currentThread();
-						GUI.showGUIWindow();
+//						GUI.EventDispatchThread = Thread.currentThread();
+//						GUI.showGUIWindow();
 					}
 				});
 				
-				assert (GUI.EventDispatchThread != null); 
-				GUI.EventDispatchThread.join(); // wait till GUI closes
+//				assert (GUI.EventDispatchThread != null); 
+//				GUI.EventDispatchThread.join(); // wait till GUI closes
 			}
 			
 			PageProcessor.saveCache();

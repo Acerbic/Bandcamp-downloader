@@ -1,13 +1,10 @@
 package dloader.pagejob;
 
-import java.io.IOException;
-import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import dloader.PageProcessor;
 import dloader.page.AbstractPage;
-import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 
 /**
  * Abstract class represents a single job in a job queue. 

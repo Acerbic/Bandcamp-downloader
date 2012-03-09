@@ -11,7 +11,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import dloader.PageJob.JobStatusEnum;
 import dloader.page.AbstractPage;
 import dloader.page.Discography;
 import dloader.page.AbstractPage.ProblemsReadingDocumentException;

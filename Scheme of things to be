@@ -71,4 +71,4 @@ GUI.
 //   6.6) GetParentalFiles
    6.7) CheckSaveValidness - done
    6.8) SavePageResults - done???
-   6.9) Track.FixTags - tagAudioFile(...) - done
+   6.9) Track.FixTags - tagAudioFile(...) - done !!! careful confusing function names
