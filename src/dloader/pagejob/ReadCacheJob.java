@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import dloader.PageProcessor;
 import dloader.page.AbstractPage;
 
-public class ReadCacheJob extends PageJob {
+public class ReadCacheJob extends PageJob <Collection<AbstractPage>, ProgressReporter<Object>>{
 
 	protected ReadCacheJob(AbstractPage page) {
 		super(page);
@@ -14,7 +14,7 @@ public class ReadCacheJob extends PageJob {
 
 	@Override
 	protected 
-	Collection<AbstractPage> executeJob() throws Exception {
+	Collection<AbstractPage> executeJob(ProgressReporter<Object> reporter) throws Exception {
 		Collection<AbstractPage> loadedFromCache = new LinkedList<AbstractPage>();
 		treeWalkReadCache(page,loadedFromCache);
 		return loadedFromCache;

@@ -1,26 +1,22 @@
 package dloader.pagejob;
 
-import java.util.Collection;
-import java.util.LinkedList;
-
 import dloader.PageProcessor;
 import dloader.page.AbstractPage;
 
-public class DownloadPageJob extends PageJob {
+public class DownloadPageJob extends PageJob <AbstractPage, ProgressReporter<Integer>>{
 
 	public DownloadPageJob(AbstractPage page) {
 		super(page);
 	}
 
 	@Override
-	protected Collection<AbstractPage> executeJob() throws Exception {
+	protected 
+	AbstractPage executeJob(ProgressReporter<Integer> reporter) throws Exception {
 		page.loadFromCache();
-		if (page.UpdateFromNet(progressIndicator)) {
+		if (page.UpdateFromNet(reporter)) {
 			for (AbstractPage child: page.childPages) 
 				PageProcessor.addJob(new DownloadPageJob(child));
-			Collection<AbstractPage> result = new LinkedList<AbstractPage>();
-			result.add(page);
-			return result;
+			return page;
 		} else 
 			PageProcessor.addJob(new ReadCacheJob(page));
 			

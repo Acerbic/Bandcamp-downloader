@@ -25,6 +25,7 @@ import org.jdom.input.SAXBuilder;
 
 import dloader.PageProcessor;
 import dloader.WebDownloader;
+import dloader.pagejob.ProgressReporter;
 
 
 /**
@@ -312,7 +313,7 @@ public abstract class AbstractPage {
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
 	public final 
-	void downloadPage(AtomicInteger progressIndicator) throws ProblemsReadingDocumentException {
+	void downloadPage(ProgressReporter<Integer> reporter) throws ProblemsReadingDocumentException {
 		PageProcessor.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
 		
 		org.jdom.Document doc = null;
@@ -354,9 +355,9 @@ public abstract class AbstractPage {
 	 * @return true if any data was changed, false if this page is unmodified.
 	 */
 	public final 
-	boolean UpdateFromNet(AtomicInteger progressIndicator) throws ProblemsReadingDocumentException {
+	boolean UpdateFromNet(ProgressReporter<Integer> reporter) throws ProblemsReadingDocumentException {
 		AbstractPage tempPage = PageProcessor.detectPage(url.toString(), saveTo);
-		tempPage.downloadPage(progressIndicator);
+		tempPage.downloadPage(reporter);
 		
 		synchronized (this) {
 			if (isSame(tempPage)) return false;

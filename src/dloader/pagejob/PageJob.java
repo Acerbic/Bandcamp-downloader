@@ -1,6 +1,6 @@
 package dloader.pagejob;
 
-import java.util.concurrent.atomic.AtomicInteger;
+//import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import dloader.PageProcessor;
@@ -14,7 +14,7 @@ import dloader.page.AbstractPage;
  * Compound operations (check-change) on status must be locked to (this)
  * @author A.Cerbic
  */
-public abstract class PageJob {
+public abstract class PageJob <R, PR extends ProgressReporter<?>>{
 
 	/**
 	 *  the job object is BOUND to this page
@@ -50,9 +50,9 @@ public abstract class PageJob {
 	 *  To report progress of lengthy jobs. Initial value is 0, top value is 100.
 	 *  This value is for indication only and has no restriction to job status or completion.
 	 */
-	protected AtomicInteger progressIndicator;
-	public 
-	AtomicInteger getProgressIndicator() {return progressIndicator;}
+//	protected AtomicInteger progressIndicator;
+//	public 
+//	AtomicInteger getProgressIndicator() {return progressIndicator;}
 
 	public synchronized final
 	JobStatus getStatus() {return status;}
@@ -93,15 +93,16 @@ public abstract class PageJob {
 //		this.priority = priority;
 		status = JobStatus.PENDING;
 		owningThread = null;
-		progressIndicator = new AtomicInteger(0);
+//		progressIndicator = new AtomicInteger(0);
 	}
 
 	/**
 	 * Does one operation on a page (may fail) 
 	 * and possibly puts new jobs in a queue for further processing.
+	 * @param reporter TODO
 	 */
 	protected abstract 
-	Object executeJob() throws Exception;
+	R executeJob(PR reporter) throws Exception;
 	
 	/**
 	 * Switches status and executes the job. May fail during page operation, status 
@@ -109,7 +110,7 @@ public abstract class PageJob {
 	 * @return 
 	 */
 	public final 
-	Object doTheJob() {
+	R doTheJob(PR reporter) {
 		synchronized (this) {
 			// make sure one thread is not trying to start a job SELECTED or EXECUTING
 			// by another thread or a job that is DONE or FAILED already
@@ -123,9 +124,9 @@ public abstract class PageJob {
 			status = JobStatus.EXECUTING;
 		}
 		
-		Object results = null;
+		R results = null;
 		try {
-			results = executeJob();
+			results = executeJob(reporter);
 			synchronized (this) {
 				status = JobStatus.DONE;
 			}
