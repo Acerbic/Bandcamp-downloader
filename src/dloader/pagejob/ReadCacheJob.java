@@ -1,31 +1,28 @@
 package dloader.pagejob;
 
-import java.util.Collection;
-import java.util.LinkedList;
-
-import dloader.PageProcessor;
+import dloader.JobMaster;
 import dloader.page.AbstractPage;
 
-public class ReadCacheJob extends PageJob <Collection<AbstractPage>, ProgressReporter<Object>>{
+/**
+ * Job to read page data from cache. Starts same jobs for child nodes. 
+ * @author Acerbic
+ *
+ */
+public class ReadCacheJob extends PageJob {
 
-	protected ReadCacheJob(AbstractPage page) {
-		super(page);
+	public ReadCacheJob(AbstractPage page, JobMaster owner) {
+		super(page, owner);
 	}
 
 	@Override
-	protected 
-	Collection<AbstractPage> executeJob(ProgressReporter<Object> reporter) throws Exception {
-		Collection<AbstractPage> loadedFromCache = new LinkedList<AbstractPage>();
-		treeWalkReadCache(page,loadedFromCache);
-		return loadedFromCache;
-	}
-
-	void treeWalkReadCache(AbstractPage p, Collection<AbstractPage> sum) {
-		if (p.loadFromCache()) {
-			sum.add(p);
-			for (AbstractPage child: p.childPages)
-				treeWalkReadCache(child, sum);
-		} else 
-			PageProcessor.addJob(new DownloadPageJob(p));
+	public void run() {
+		if (page.loadFromCache()) {
+			for (AbstractPage child: page.childPages)
+				jobMaster.submit(new ReadCacheJob(child,jobMaster));
+			report("read from cache",1);
+		}  
+//		} else 
+//			jobMaster.submit(new DownloadPageJob(page,jobMaster, false));
+		
 	}
 }

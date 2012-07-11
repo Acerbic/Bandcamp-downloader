@@ -8,16 +8,16 @@ import dloader.page.AbstractPage;
  * @author Acerbic
  *
  */
-public class FindUnwantedFiles extends PageJob<Void, ProgressReporter<PageToFilesMapping>> {
-	 
-	protected FindUnwantedFiles(AbstractPage page) {
-		super(page);
-	}
-
-	@Override
-	protected Void executeJob(ProgressReporter<PageToFilesMapping> reporter) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-}
+//public class FindUnwantedFiles extends PageJob<Void, ProgressReporter<PageToFilesMapping>> {
+//	 
+//	protected FindUnwantedFiles(AbstractPage page) {
+//		super(page);
+//	}
+//
+//	@Override
+//	protected Void executeJob(ProgressReporter<PageToFilesMapping> reporter) throws Exception {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+//
+//}

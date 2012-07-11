@@ -313,7 +313,7 @@ public abstract class AbstractPage {
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
 	public final 
-	void downloadPage(ProgressReporter<Integer> reporter) throws ProblemsReadingDocumentException {
+	void downloadPage(ProgressReporter reporter) throws ProblemsReadingDocumentException {
 		PageProcessor.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
 		
 		org.jdom.Document doc = null;
@@ -355,7 +355,7 @@ public abstract class AbstractPage {
 	 * @return true if any data was changed, false if this page is unmodified.
 	 */
 	public final 
-	boolean UpdateFromNet(ProgressReporter<Integer> reporter) throws ProblemsReadingDocumentException {
+	boolean UpdateFromNet(ProgressReporter reporter) throws ProblemsReadingDocumentException {
 		AbstractPage tempPage = PageProcessor.detectPage(url.toString(), saveTo);
 		tempPage.downloadPage(reporter);
 		
