@@ -32,11 +32,12 @@ public class AbstractPageTest {
 	class AbstractPageDummy extends AbstractPage {
 		
 		private
-		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
+		XMLCache cache;
 
 		public AbstractPageDummy(String stringURL, String saveTo,
 				AbstractPage parent) throws IllegalArgumentException {
 			super(stringURL, saveTo, parent);
+			cache = new XMLCache("test/pages_scan_cache.xml");
 		}
 
 		@Override 
