@@ -9,7 +9,6 @@ import java.net.URLConnection;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -25,11 +24,13 @@ import org.jdom.input.SAXBuilder;
 import dloader.Main;
 import dloader.PageProcessor;
 import dloader.WebDownloader;
+import dloader.XMLCache;
 import dloader.pagejob.ProgressReporter;
 
 
 /**
- * Basic class to download page, parse it and download elements it references.
+ * Basic class to maintain page-relevant data and procedures, embodies one "download session", i.e. URL-to-files
+ * transfer notion.
  * 
  *   Objects of this class are mutable 
  *   	(effectively immutable after initialization with downloadPage() and loadFromCache(),
@@ -68,15 +69,23 @@ public abstract class AbstractPage {
 	 * Directory where to save this page's data
 	 */
 	public final String saveTo;
-	
-	public synchronized 
-	AbstractPage getParent() {return parent;}
 
 	/**
 	 * List of a children items to this page (can be of size zero) 
 	 */
 	public final 
 	Collection<AbstractPage> childPages = new ConcurrentLinkedQueue<>(); 
+	
+	/**
+	 * Holds reference to a cache, if one is present (null otherwise)
+	 */
+//	private static XMLCache cache;
+	public XMLCache getCache() {
+		return Main.cache;
+	}
+	
+	public synchronized 
+	AbstractPage getParent() {return parent;}
 
 	public synchronized
 	String getTitle() {return title;} 
@@ -86,8 +95,10 @@ public abstract class AbstractPage {
 
 	/**
 	 * Constructs from web address
-	 * @param stringURL - web address
-	 * @throws IllegalArgumentException if stringURL is null or bad 
+	 * @param stringURL - web address (required)
+	 * @param saveTo - where data of this page will be saved to (required)
+	 * @param parent - parent page to this page, may be null 
+	 * @throws IllegalArgumentException  
 	 */
 	public AbstractPage(String stringURL, String saveTo, AbstractPage parent) throws IllegalArgumentException {
 		try {url = resolveLink(stringURL);}
@@ -95,9 +106,10 @@ public abstract class AbstractPage {
 		catch (NullPointerException e) {throw new IllegalArgumentException(e);}
 		if (saveTo == null) throw new IllegalArgumentException();
 
-		Path p = Paths.get(saveTo);
-		if (! (Files.isDirectory(p) && Files.isWritable(p)))
-			throw new IllegalArgumentException();
+		//XXX: path in question may not exist at this point and will be created by parent page later. 
+//		Path p = Paths.get(saveTo);
+//		if (! (Files.isDirectory(p) && Files.isWritable(p)))
+//			throw new IllegalArgumentException();
 		this.saveTo = saveTo;
 		this.parent = parent;
 	}
@@ -170,7 +182,7 @@ public abstract class AbstractPage {
 	protected abstract void readCacheSelf(Element e) throws ProblemsReadingDocumentException;
 
 	/**
-	 * Saves extracted data to disk, then saves children too. 
+	 * Saves extracted data to disk. 
 	 * @param saveTo - directory to save info to.
 	 * @param progressIndicator - to output progress of long operations
 	 * @return operation status report string, "" or null if nothing to report (operation skipped)
@@ -246,12 +258,13 @@ public abstract class AbstractPage {
 		Constructor<? extends AbstractPage> cons;
 		try {
 			cl = (Class<? extends AbstractPage>) Class.forName(packageName+ "." +className);
-			cons = cl.getConstructor(String.class, AbstractPage.class);
-			child = cons.newInstance(u, this);
+			cons = cl.getConstructor(String.class, String.class, AbstractPage.class);
+			child = cons.newInstance(u, getChildrenSaveTo(), this); //XXX: constructor call
 		} catch (NoSuchMethodException | SecurityException | 
 				IllegalArgumentException | InvocationTargetException | 
 				ClassNotFoundException | InstantiationException | 
-				IllegalAccessException| NullPointerException e) {
+				IllegalAccessException| NullPointerException|
+				IOException e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
 		return child;
@@ -284,7 +297,7 @@ public abstract class AbstractPage {
 		
 		Main.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
 		try {
-			Element e = PageProcessor.getCache().getElementForPage(
+			Element e = getCache().getElementForPage(
 					this.getClass().getSimpleName(), url.toString());
 			if (null == e) return false;
 			String t = e.getAttributeValue("title");
@@ -312,6 +325,7 @@ public abstract class AbstractPage {
 	 * Downloads the page, parses it and creates child nodes.
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
+	//FIXME: make this private
 	public final 
 	void downloadPage(ProgressReporter reporter) throws ProblemsReadingDocumentException {
 		Main.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
@@ -322,7 +336,7 @@ public abstract class AbstractPage {
 			URLConnection connection = url.openConnection();
 			if (!WebDownloader.checkHttpResponseOK(connection))		
 				throw new ProblemsReadingDocumentException("Error response from server");
-			//FIXME: need to be replaced with explicit download and parsing call, to make use of progressIndicator
+			//FIXME: need to be replaced with explicit download and parsing call, to make use of ProgressReporter
 			doc = builder.build(connection.getInputStream());
 		} catch (IOException|JDOMException e) {
 			throw new ProblemsReadingDocumentException(e);
@@ -347,37 +361,59 @@ public abstract class AbstractPage {
 		Main.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
 	}
 
+	/**
+	 * Create another object of the same class,
+	 * initiated with the same URL, saveTo and parent.
+	 * @return new object.
+	 * @throws Exception if something went wrong.
+	 */
+	AbstractPage createSamePage() throws Exception {
+		AbstractPage result = null;
+		Class<? extends AbstractPage> cl;
+		Constructor<? extends AbstractPage> cons;
+		try {
+			cl = this.getClass();
+			cons = cl.getConstructor(String.class, String.class, AbstractPage.class);
+			result = cons.newInstance(url.toString(), saveTo, getParent()); //XXX: constructor call
+		} catch (NoSuchMethodException | SecurityException | 
+				IllegalArgumentException | InvocationTargetException | 
+				InstantiationException | 
+				IllegalAccessException| NullPointerException e) {
+			throw new Exception(e);
+		}
+		return result;
+
+	}
+	
 	/** 
 	 * Downloads the page, parses it and updates this page with new data.
-	 * If there were child nodes that no longer exist - they are dropped, if there are new
-	 * children, new pages are added to collection.
+	 * If update is successful (return true), new children pages are created empty and must 
+	 * be refilled from cache or downloaded from  net.
+	 * 
 	 * @throws ProblemsReadingDocumentException if any error
 	 * @return true if any data was changed, false if this page is unmodified.
 	 */
 	public final 
-	boolean UpdateFromNet(ProgressReporter reporter) throws ProblemsReadingDocumentException {
-		AbstractPage tempPage = PageProcessor.detectPage(url.toString(), saveTo);
+	boolean updateFromNet(ProgressReporter reporter) throws ProblemsReadingDocumentException {
+		AbstractPage tempPage;
+		try {
+			tempPage = createSamePage();
+		} catch (Exception e) {
+			throw new ProblemsReadingDocumentException(e);
+		}
 		tempPage.downloadPage(reporter);
 		
 		synchronized (this) {
 			if (isSame(tempPage)) return false;
 			setTitle(tempPage.getTitle());
-			readCacheSelf(tempPage.getSpecificDataXML()); // somewhat awkward way to copy object data from temp object
+			readCacheSelf(tempPage.getSpecificDataXML()); // somewhat awkward way to copy custom object data from temp object
 	
-			// following loop is probably not needed, since every child will be rescanned 
-			//  anyway by the enveloping algorithm
-			Collection<AbstractPage> forRemoval = new LinkedList<AbstractPage>();
-			for (AbstractPage child: childPages) {
-				AbstractPage found=tempPage.getChildByURL(child.url);
-				if (tempPage.getChildByURL(child.url) == null) 
-					forRemoval.add(child);
-				else tempPage.childPages.remove(found);
-			}
-			childPages.removeAll(forRemoval);
+			childPages.clear();
 			childPages.addAll(tempPage.childPages);
 			
-			for (AbstractPage child: childPages) 
-				child.parent = this;
+			//XXX: obsolete atm.
+//			for (AbstractPage child: childPages) 
+//				child.parent = this;
 		}
 		return true;
 	}
@@ -405,7 +441,7 @@ public abstract class AbstractPage {
 				childElement.setAttribute("url",child.url.toString());
 				e.addContent(childElement);
 			}
-		PageProcessor.getCache().addElementWithReplacement(e);
+		getCache().addElementWithReplacement(e);
 	}
 
 	/**

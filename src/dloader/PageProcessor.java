@@ -26,19 +26,19 @@ class PageProcessor {
 	 */
 	static final List<PageJob> jobQ;
 	
-	/**
-	 * Holds reference to a cache, if one is present (null otherwise)
-	 */
-	private static XMLCache cache;
-	public static final XMLCache getCache() {
-		return cache;
-	}
+//	/**
+//	 * Holds reference to a cache, if one is present (null otherwise)
+//	 */
+//	private static XMLCache cache;
+//	public static final XMLCache getCache() {
+//		return cache;
+//	}
 
 	/**
 	 * Holds reference to a logger, if one is present (null otherwise)
 	 */
-	private static 
-	Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+//	private static 
+//	Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 //	public static
 //	void log(Level l, String s) {
 //		logger.log(l,s);
@@ -52,7 +52,7 @@ class PageProcessor {
 	 *  true if PageProcessor reads and writes to cache. 
 	 *  false if only writes (when cache is not null)
 	 */
-	static boolean isReadingCache;
+//	static boolean isReadingCache;
 	
 	static {
 		jobQ = Collections.synchronizedList(new LinkedList<PageJob>());
@@ -80,22 +80,22 @@ class PageProcessor {
 //		if ((saveTo != null) && (baseURL != null))
 //			addJob (saveTo, detectPage(baseURL, saveTo), JobStatusEnum.DOWNLOAD_PAGE);
 		
-		logger = l;
+//		logger = l;
 		
-		PageProcessor.isReadingCache = isReadingCache;
-		try {
-			PageProcessor.cache = new XMLCache(cacheFilename);
-		} catch (IllegalArgumentException e) {
-			if (logger != null) logger.log(Level.WARNING, "", e);
-			PageProcessor.isReadingCache = false;
+//		PageProcessor.isReadingCache = isReadingCache;
+//		try {
+//			PageProcessor.cache = new XMLCache(cacheFilename);
+//		} catch (IllegalArgumentException e) {
+//			if (logger != null) logger.log(Level.WARNING, "", e);
+//			PageProcessor.isReadingCache = false;
 			// and follow with cache set to null
-		}
+//		}
 		
 	}
 	
-	static void saveCache () throws IOException {
-		cache.saveCache();
-	}	
+//	static void saveCache () throws IOException {
+//		cache.saveCache();
+//	}	
 
 	/**
 	 * adds job to the shared queue

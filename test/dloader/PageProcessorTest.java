@@ -1,19 +1,19 @@
 package dloader;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import org.jdom.Document;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import dloader.page.AbstractPage;
-import dloader.page.Discography;
-import dloader.page.AbstractPage.ProblemsReadingDocumentException;
+//import static org.junit.Assert.*;
+//
+//import java.io.IOException;
+//import java.nio.file.Files;
+//import java.nio.file.Paths;
+//
+//import org.jdom.Document;
+//import org.junit.After;
+//import org.junit.Before;
+//import org.junit.Test;
+//
+//import dloader.page.AbstractPage;
+//import dloader.page.Discography;
+//import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 
 public class PageProcessorTest {
 

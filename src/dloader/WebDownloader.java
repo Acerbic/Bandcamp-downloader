@@ -2,6 +2,7 @@ package dloader;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -103,7 +104,11 @@ public class WebDownloader {
 		// exceptional treatment of local files, for testing convenience
 		URL u = connection.getURL();
 		if (u.getProtocol().equals("file"))
-			return Files.isReadable(Paths.get(u.getFile().substring(1)));
+			try {
+				return Files.isReadable(Paths.get(java.net.URLDecoder.decode(u.getFile().substring(1), "UTF-8")));
+			} catch (UnsupportedEncodingException e) {
+				return false;
+			}
 		return false; // unknown connection type
 	}
 }

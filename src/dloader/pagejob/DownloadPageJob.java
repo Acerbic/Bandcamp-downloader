@@ -32,7 +32,7 @@ public class DownloadPageJob extends PageJob {
 	public void run() {
 		if (!forceDownload) page.loadFromCache();
 		try {
-			if (page.UpdateFromNet(this) || forceDownload) {
+			if (page.updateFromNet(this) || forceDownload) {
 				for (AbstractPage child: page.childPages) 
 					jobMaster.submit(new DownloadPageJob(child, jobMaster, forceDownload));
 				report("downloaded", 1);

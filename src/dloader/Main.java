@@ -23,7 +23,9 @@ public class Main {
 	public static String saveTo = Paths.get("").toAbsolutePath().toString(); 
 
 	public static Logger logger;
+	public static XMLCache cache;
 	
+
 	private static void parseCommandLine(String[] args) {
 		for (String s : args) {
 			s = s.trim();
@@ -125,13 +127,14 @@ public class Main {
 			logger.info( String.format(
 					"Starting to download%n from <%s>%n into <%s> %s%n",
 					baseURL, saveTo, forceTagging?"with retagging existing files.":""));
-			PageProcessor.initPageProcessor(
-					saveTo.toString(), baseURL, 
-					logger, 
-					allowFromCache, xmlFileName, 
-					isInConsoleMode);
-			
-			 if (isInConsoleMode) {
+//			PageProcessor.initPageProcessor(
+//					saveTo.toString(), baseURL, 
+//					logger, 
+//					allowFromCache, xmlFileName, 
+//					isInConsoleMode);
+			if (allowFromCache)
+				cache = new XMLCache(xmlFileName);
+			if (isInConsoleMode) {
 					Thread t = new Thread() {
 					@Override
 					public void run() {
@@ -159,7 +162,7 @@ public class Main {
 //				GUI.EventDispatchThread.join(); // wait till GUI closes
 			}
 			
-			PageProcessor.saveCache();
+			cache.saveCache();
 			
 			logger.info( String.format("On total: %d files saved from net (%d bytes) + %d pages viewed%n", 
 					StatisticGatherer.totalFileDownloadFinished.intValue(), 
@@ -169,7 +172,7 @@ public class Main {
 		} catch (Throwable e) {
 			try {
 				// an attempt to salvage metadata at least
-				PageProcessor.saveCache();
+				cache.saveCache();
 			} catch (IOException e1) {
 				logger.log(Level.SEVERE, "", e1);
 			} finally {
@@ -180,10 +183,12 @@ public class Main {
 	
 	public static
 	void log(Level l, String s) {
-		logger.log(l,s);
+		if (logger != null)
+			logger.log(l,s);
 	}
 	public static
 	void log(Level l, String s, Throwable e) {
-		logger.log(l,s,e);
+		if (logger != null)
+			logger.log(l,s,e);
 	}
 }
