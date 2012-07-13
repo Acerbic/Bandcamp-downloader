@@ -39,14 +39,14 @@ class PageProcessor {
 	 */
 	private static 
 	Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-	public static
-	void log(Level l, String s) {
-		logger.log(l,s);
-	}
-	public static
-	void log(Level l, String s, Throwable e) {
-		logger.log(l,s,e);
-	}
+//	public static
+//	void log(Level l, String s) {
+//		logger.log(l,s);
+//	}
+//	public static
+//	void log(Level l, String s, Throwable e) {
+//		logger.log(l,s,e);
+//	}
 
 	/**
 	 *  true if PageProcessor reads and writes to cache. 

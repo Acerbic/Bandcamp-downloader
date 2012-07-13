@@ -13,7 +13,7 @@ import dloader.page.AbstractPage;
 public abstract class PageJob implements Runnable, ProgressReporter {
 
 	/**
-	 *  the job object is BOUND to this page
+	 *  the job object is BOUND to a page
 	 */
 	final public AbstractPage page;
 	final protected JobMaster jobMaster;

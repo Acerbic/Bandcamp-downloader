@@ -178,4 +178,12 @@ public class Main {
 		}
 	}
 	
+	public static
+	void log(Level l, String s) {
+		logger.log(l,s);
+	}
+	public static
+	void log(Level l, String s, Throwable e) {
+		logger.log(l,s,e);
+	}
 }

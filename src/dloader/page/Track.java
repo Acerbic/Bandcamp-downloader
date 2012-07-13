@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,8 +14,8 @@ import org.jdom.Document;
 import org.jdom.Element;
 
 import dloader.Main;
-import dloader.PageProcessor;
 import dloader.WebDownloader;
+import dloader.pagejob.ProgressReporter;
 
 import entagged.audioformats.AudioFile;
 import entagged.audioformats.AudioFileIO;
@@ -93,7 +92,7 @@ public class Track extends AbstractPage {
 	
 	@Override
 	public synchronized 
-	String saveResult(AtomicInteger progressIndicator) throws IOException {
+	String saveResult(ProgressReporter progressIndicator) throws IOException {
 		Path p = Paths.get(getTrackFileName());
 		boolean wasDownloaded = 
 				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
@@ -122,7 +121,7 @@ public class Track extends AbstractPage {
 		try {
 			class_clone = fileTag.getClass().newInstance();
 		} catch (InstantiationException|IllegalAccessException e1) {
-			PageProcessor.log(Level.SEVERE, "Can't clone file metadata tag class", e1);
+			Main.log(Level.SEVERE, "Can't clone file metadata tag class", e1);
 			return null;
 		}
 		class_clone.addAlbum("album");
@@ -314,7 +313,7 @@ public class Track extends AbstractPage {
 			
 			return (fixTag(Main.forceTagging)==null);
 		} catch (IOException e) {
-			PageProcessor.log(Level.WARNING,null,e);
+			Main.log(Level.WARNING,null,e);
 		}
 		return false;
 	}

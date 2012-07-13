@@ -64,6 +64,11 @@ public class JobMaster {
 			// can be ran only once;
 			if (rootPage == null) return;
 			//TODO GENERATE A JOB HERE
+			switch (whatToDo) {
+			case READCACHEPAGES: submit(new ReadCacheJob(rootPage, this)); break;
+			case UPDATEPAGES: submit(new DownloadPageJob(rootPage, this, false)); break;
+			case UPDATEDATA: submit(new ReadCacheJob(rootPage, this)); break;
+			}
 			submit( null );
 			rootPage = null;
 		}

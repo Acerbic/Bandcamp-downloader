@@ -19,6 +19,7 @@ public class DownloadPageJob extends PageJob {
 	boolean forceDownload;
 
 	/**
+	 * Firstly, reads from cache and then updates with network data.
 	 * @param forceDownload makes job to always download, skipping whole cache checks, 
 	 * for this page and all generated jobs.
 	 */

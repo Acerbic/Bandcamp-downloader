@@ -5,17 +5,17 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.jdom.Document;
-import org.jdom.Element;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import dloader.page.AbstractPage;
-import dloader.page.AbstractPage.ProblemsReadingDocumentException;
-import dloader.*;
+//import java.util.concurrent.atomic.AtomicInteger;
+//
+//import org.jdom.Document;
+//import org.jdom.Element;
+//import org.junit.After;
+//import org.junit.Before;
+//import org.junit.Test;
+//
+//import dloader.page.AbstractPage;
+//import dloader.page.AbstractPage.ProblemsReadingDocumentException;
+//import dloader.*;
 
 public class AbstractPageTest {
 	

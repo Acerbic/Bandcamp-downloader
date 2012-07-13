@@ -8,7 +8,6 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,8 +15,9 @@ import java.util.regex.Pattern;
 import org.jdom.Document;
 import org.jdom.Element;
 
-import dloader.PageProcessor;
+import dloader.Main;
 import dloader.WebDownloader;
+import dloader.pagejob.ProgressReporter;
 
 /**
  * Class for album page, references track child pages
@@ -54,7 +54,7 @@ public class Album extends AbstractPage {
 	
 	@Override
 	public synchronized
-	String saveResult(AtomicInteger progressIndicator) throws IOException {
+	String saveResult(ProgressReporter progressIndicator) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 			
@@ -109,7 +109,7 @@ public class Album extends AbstractPage {
 			try {
 				coverUrl = resolveLink((imgList.get(0)).getAttributeValue("src"));
 			} catch (MalformedURLException e) {
-				PageProcessor.log(Level.WARNING, String.format("can't get album art for <%s>", url.toString()), e);
+				Main.log(Level.WARNING, String.format("can't get album art for <%s>", url.toString()), e);
 			}
 		}
 		
@@ -146,7 +146,7 @@ public class Album extends AbstractPage {
 			if (Files.isRegularFile(p) && Files.size(p) > 0)
 				return true;
 		} catch (IOException e) {
-			PageProcessor.log(Level.WARNING,null,e);
+			Main.log(Level.WARNING,null,e);
 		}
 		return false;
 	}

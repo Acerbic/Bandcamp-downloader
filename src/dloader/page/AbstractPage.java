@@ -12,7 +12,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import java.util.logging.Level;
 
@@ -23,6 +22,7 @@ import org.jdom.*;
 import org.jdom.filter.ElementFilter;
 import org.jdom.input.SAXBuilder;
 
+import dloader.Main;
 import dloader.PageProcessor;
 import dloader.WebDownloader;
 import dloader.pagejob.ProgressReporter;
@@ -172,11 +172,11 @@ public abstract class AbstractPage {
 	/**
 	 * Saves extracted data to disk, then saves children too. 
 	 * @param saveTo - directory to save info to.
-	 * @param progressIndicator - ref to a variable to output progress of long operations
+	 * @param progressIndicator - to output progress of long operations
 	 * @return operation status report string, "" or null if nothing to report (operation skipped)
 	 * @throws IOException if saving was terminated by error - retry might be possible.
 	 */
-	public abstract String saveResult(AtomicInteger progressIndicator) throws IOException;
+	public abstract String saveResult(ProgressReporter progressIndicator) throws IOException;
 
 	/**
 	 * Generate new saving path for the children of this page from its own saveTo and page data
@@ -224,7 +224,7 @@ public abstract class AbstractPage {
 			xpath.addNamespace("pre", nsURI);
 			return xpath.selectNodes(doc);
 		} catch (JaxenException e) {
-			PageProcessor.log(Level.SEVERE,"",e);
+			Main.log(Level.SEVERE,"",e);
 			return new ArrayList<Object>(0);
 		} 
 	}
@@ -282,7 +282,7 @@ public abstract class AbstractPage {
 	public synchronized final
 	boolean loadFromCache () {
 		
-		PageProcessor.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
+		Main.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
 		try {
 			Element e = PageProcessor.getCache().getElementForPage(
 					this.getClass().getSimpleName(), url.toString());
@@ -298,7 +298,7 @@ public abstract class AbstractPage {
 			for (Element el: l) 
 				childPages.add( readCacheChild(el) );
 			
-			PageProcessor.log(Level.FINE, String.format("\t...Finished reading %s.%n",url.toString()));
+			Main.log(Level.FINE, String.format("\t...Finished reading %s.%n",url.toString()));
 			return true;
 		} catch (ProblemsReadingDocumentException|NullPointerException e) {
 			// If ANY problem, quit with a fail code
@@ -314,7 +314,7 @@ public abstract class AbstractPage {
 	 */
 	public final 
 	void downloadPage(ProgressReporter reporter) throws ProblemsReadingDocumentException {
-		PageProcessor.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
+		Main.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
 		
 		org.jdom.Document doc = null;
 		try {
@@ -340,11 +340,11 @@ public abstract class AbstractPage {
 				try {
 					childPages.add(parseChild(el));
 				} catch (ProblemsReadingDocumentException e) {
-					PageProcessor.log(Level.WARNING, "unable to parse child data", e);
+					Main.log(Level.WARNING, "unable to parse child data", e);
 				} // skip this child to next one
 			
 		}
-		PageProcessor.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
+		Main.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
 	}
 
 	/** 

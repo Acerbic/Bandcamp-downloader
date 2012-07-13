@@ -29,7 +29,7 @@ public class PageProcessorTest {
 		Files.deleteIfExists(Paths.get("test/download_zone"));
 		PageProcessor.getJobQ().clear();
 		PageProcessor.cache = null;
-		PageProcessor.logger = null;
+		Main.logger = null;
 	}
 
 	@Test

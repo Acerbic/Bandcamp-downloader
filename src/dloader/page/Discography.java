@@ -8,13 +8,13 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import org.jdom.Document;
 import org.jdom.Element;
 
-import dloader.PageProcessor;
+import dloader.Main;
+import dloader.pagejob.ProgressReporter;
 
 
 /**
@@ -59,7 +59,7 @@ public class Discography extends AbstractPage {
 
 	@Override
 	public 
-	String saveResult(AtomicInteger progressIndicator) throws IOException {
+	String saveResult(ProgressReporter progressIndicator) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 		return null;
@@ -112,7 +112,7 @@ public class Discography extends AbstractPage {
 			if (Files.isDirectory(p))
 				return true;
 		} catch (IOException e) {
-			PageProcessor.log(Level.WARNING,null,e);
+			Main.log(Level.WARNING,null,e);
 		}
 		return false;
 	}
