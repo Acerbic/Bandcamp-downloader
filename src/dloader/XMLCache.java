@@ -83,8 +83,8 @@ public class XMLCache {
 	 * @return a CLONE of a cache element
 	 */
 	synchronized public
-	Element getElementForPage(String className, String pageURL) {
-		String searchXPath = String.format("//%s[@url='%s']", className, pageURL);
+	Element getElementForPage(String pageURL) {
+		String searchXPath = String.format("//root/*[@url='%s']", pageURL);
 		List<Element> result = queryXPathList(searchXPath);
 		return result.size()>0?(Element)result.get(0).clone():null; 
 	}
@@ -98,7 +98,7 @@ public class XMLCache {
 		Element root = doc.getRootElement();
 		
 		Collection<Element> oldCachedElements = queryXPathList(
-				String.format("//%s[@url='%s']",e.getName(),e.getAttribute("url")));
+				String.format("/root/*[@url='%s']",e.getAttributeValue("url")));
 		for (Element current: oldCachedElements) 
 			current.detach();
 

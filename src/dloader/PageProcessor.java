@@ -1,6 +1,8 @@
 package dloader;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
@@ -107,31 +109,31 @@ class PageProcessor {
 		getJobQ().add(0,j); 
 	}
 	
-	
-	/**
-	 * Detects page type by its URL address (String)
-	 * @param baseURL - String representation of URL
-	 * @return new AbstractPage descendant fitting for the page
-	 * @throws IllegalArgumentException - when baseURL is bad or null
-	 */
-	static final public
-	AbstractPage detectPage(String baseURL, String saveTo) throws IllegalArgumentException {
-		URL u;
-		try {
-			u = new URL(baseURL);
-		} catch (MalformedURLException e) {
-			throw new IllegalArgumentException(e);
-		}
-		
-		if (baseURL.contains("/track/")) 
-			return new Track(baseURL.toString(), saveTo, null);
-		if (baseURL.contains("/album/")) 
-			return new Album(baseURL.toString(), saveTo, null);
-		if (u.getPath().isEmpty() || u.getPath().equals("/"))
-			return new Discography(baseURL.toString(), saveTo, null);
-		
-		throw new IllegalArgumentException();
-	}
+
+//	/**
+//	 * Detects page type by its URL address (String)
+//	 * @param baseURL - String representation of URL
+//	 * @return new AbstractPage descendant fitting for the page
+//	 * @throws IllegalArgumentException - when baseURL is bad or null
+//	 */
+//	static final public
+//	AbstractPage detectPage(String baseURL, String saveTo) throws IllegalArgumentException {
+//		URL u;
+//		try {
+//			u = new URL(baseURL);
+//		} catch (MalformedURLException e) {
+//			throw new IllegalArgumentException(e);
+//		}
+//		
+//		if (baseURL.contains("/track/")) 
+//			return new Track(baseURL.toString(), saveTo, null);
+//		if (baseURL.contains("/album/")) 
+//			return new Album(baseURL.toString(), saveTo, null);
+//		if (u.getPath().isEmpty() || u.getPath().equals("/"))
+//			return new Discography(baseURL.toString(), saveTo, null);
+//		
+//		throw new IllegalArgumentException();
+//	}
 
 	/**
 	 * Processes all jobs in a Q and all jobs they generate 

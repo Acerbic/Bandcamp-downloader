@@ -28,6 +28,8 @@ import dloader.XMLCache;
 import dloader.pagejob.ProgressReporter;
 
 
+//XXX: 1st download a page, THEN guess its class by content?
+
 /**
  * Basic class to maintain page-relevant data and procedures, embodies one "download session", i.e. URL-to-files
  * transfer notion.
@@ -76,12 +78,14 @@ public abstract class AbstractPage {
 	public final 
 	Collection<AbstractPage> childPages = new ConcurrentLinkedQueue<>(); 
 	
+
 	/**
-	 * Holds reference to a cache, if one is present (null otherwise)
+	 * Cache to operate cache-related functions
+	 * @return
 	 */
-//	private static XMLCache cache;
-	public XMLCache getCache() {
-		return Main.cache;
+	static
+	private XMLCache getCache() {
+		return Main.cache; //default cache location. 
 	}
 	
 	public synchronized 
@@ -96,7 +100,7 @@ public abstract class AbstractPage {
 	/**
 	 * Constructs from web address
 	 * @param stringURL - web address (required)
-	 * @param saveTo - where data of this page will be saved to (required)
+	 * @param saveTo - where data of this page will be saved to (null if no children expected)
 	 * @param parent - parent page to this page, may be null 
 	 * @throws IllegalArgumentException  
 	 */
@@ -104,9 +108,8 @@ public abstract class AbstractPage {
 		try {url = resolveLink(stringURL);}
 		catch (MalformedURLException e) {throw new IllegalArgumentException(e);}
 		catch (NullPointerException e) {throw new IllegalArgumentException(e);}
-		if (saveTo == null) throw new IllegalArgumentException();
 
-		//XXX: path in question may not exist at this point and will be created by parent page later. 
+		//path in question may not exist at this point and will be created by parent page later. 
 //		Path p = Paths.get(saveTo);
 //		if (! (Files.isDirectory(p) && Files.isWritable(p)))
 //			throw new IllegalArgumentException();
@@ -242,29 +245,21 @@ public abstract class AbstractPage {
 	}
 	
 	/**
-	 * Reads child's page title/url data from cache and creates a node.
+	 * Reads child's page url data from cache and creates a node.
 	 * @param childRef - <childref ...> tag describing a child
 	 * @return new PageParser child node.
 	 * @throws ProblemsReadingDocumentException if anything went wrong
 	 */
-	@SuppressWarnings("unchecked")
 	private
 	AbstractPage readCacheChild(Element childRef) throws ProblemsReadingDocumentException {
 		AbstractPage child = null;
 		String u = childRef.getAttributeValue("url");
 		String className = childRef.getAttributeValue("class");
-		String packageName = AbstractPage.class.getPackage().getName();
-		Class<? extends AbstractPage> cl;
-		Constructor<? extends AbstractPage> cons;
+		
 		try {
-			cl = (Class<? extends AbstractPage>) Class.forName(packageName+ "." +className);
-			cons = cl.getConstructor(String.class, String.class, AbstractPage.class);
-			child = cons.newInstance(u, getChildrenSaveTo(), this); //XXX: constructor call
-		} catch (NoSuchMethodException | SecurityException | 
-				IllegalArgumentException | InvocationTargetException | 
-				ClassNotFoundException | InstantiationException | 
-				IllegalAccessException| NullPointerException|
-				IOException e) {
+			child = bakeAPage(className, u, getChildrenSaveTo());
+			child.parent = getParent();
+		} catch (IllegalArgumentException | IOException e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
 		return child;
@@ -278,6 +273,8 @@ public abstract class AbstractPage {
 	 * @throws MalformedURLException 
 	 */
 	protected final URL resolveLink(String link) throws MalformedURLException {
+		if (link.endsWith("/"))
+			link = link.substring(0, link.length()-1); // uniform "...com/" to "...com" address
 		try {
 			return new URL(url, link);
 		} catch (MalformedURLException e) {
@@ -297,8 +294,7 @@ public abstract class AbstractPage {
 		
 		Main.log(Level.FINE, String.format("Reading %s from cache...%n",url.toString()));
 		try {
-			Element e = getCache().getElementForPage(
-					this.getClass().getSimpleName(), url.toString());
+			Element e = getCache().getElementForPage(url.toString());
 			if (null == e) return false;
 			String t = e.getAttributeValue("title");
 			if (t == null) return false;
@@ -358,6 +354,8 @@ public abstract class AbstractPage {
 				} // skip this child to next one
 			
 		}
+		if (reporter != null)
+			reporter.report("download finished", 1);
 		Main.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
 	}
 
@@ -367,20 +365,11 @@ public abstract class AbstractPage {
 	 * @return new object.
 	 * @throws Exception if something went wrong.
 	 */
-	AbstractPage createSamePage() throws Exception {
+	private
+	AbstractPage createSameClassPage() throws Exception {
 		AbstractPage result = null;
-		Class<? extends AbstractPage> cl;
-		Constructor<? extends AbstractPage> cons;
-		try {
-			cl = this.getClass();
-			cons = cl.getConstructor(String.class, String.class, AbstractPage.class);
-			result = cons.newInstance(url.toString(), saveTo, getParent()); //XXX: constructor call
-		} catch (NoSuchMethodException | SecurityException | 
-				IllegalArgumentException | InvocationTargetException | 
-				InstantiationException | 
-				IllegalAccessException| NullPointerException e) {
-			throw new Exception(e);
-		}
+		result = bakeAPage(this.getClass().getSimpleName(), url.toString(), saveTo);
+		result.parent = getParent();
 		return result;
 
 	}
@@ -397,7 +386,7 @@ public abstract class AbstractPage {
 	boolean updateFromNet(ProgressReporter reporter) throws ProblemsReadingDocumentException {
 		AbstractPage tempPage;
 		try {
-			tempPage = createSamePage();
+			tempPage = createSameClassPage();
 		} catch (Exception e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
@@ -411,9 +400,8 @@ public abstract class AbstractPage {
 			childPages.clear();
 			childPages.addAll(tempPage.childPages);
 			
-			//XXX: obsolete atm.
-//			for (AbstractPage child: childPages) 
-//				child.parent = this;
+			for (AbstractPage child: childPages) 
+				child.parent = this;
 		}
 		return true;
 	}
@@ -421,7 +409,9 @@ public abstract class AbstractPage {
 	/**
 	 * Saves this page data into XML tree. 
 	 * Only references to child pages are saved, not the pages data.
-	 * If the title is null, nothing is saved
+	 * Uses (overridden) functions getSpecificDataXML(), getTitle().
+	 * If the title is null or getSpecificDataXML() returns null, nothing is saved.
+	 * 
 	 * @param doc - JDOM Document holding a cache to save to
 	 */
 	public synchronized final
@@ -479,6 +469,54 @@ public abstract class AbstractPage {
 			if (child.url.equals(urlRequested)) return child;
 		return null;
 	}
+	
+	/**
+	 * A page factory method. Tries 2 different approaches to create an AbstractPage object according to specifications.
+	 * First tries to create it by class name if provided. If fails, tries to guess appropriate class by parsing the url.
+	 * @param className - a desired class in "dloader.page" package. (can be null)
+	 * @param baseURL - url of the new page. required
+	 * @param saveTo - saveTo path of the new page. can be null.
+	 * @return created page.
+	 * @throws IllegalArgumentException - is thrown when both approaches to create a page failed.
+	 */
+	@SuppressWarnings("unchecked")
+	final public static
+	AbstractPage bakeAPage(String className, String baseURL, String saveTo) throws IllegalArgumentException {
+		AbstractPage result = null;
+		String packageName = AbstractPage.class.getPackage().getName();
+		Class<? extends AbstractPage> cl;
+		Constructor<? extends AbstractPage> cons;
+		try {
+			cl = (Class<? extends AbstractPage>) Class.forName(packageName+ "." +className);
+			cons = cl.getConstructor(String.class, String.class, AbstractPage.class);
+			result = cons.newInstance(baseURL, saveTo, null); 
+		} catch (NoSuchMethodException | SecurityException | 
+				IllegalArgumentException | InvocationTargetException | 
+				ClassNotFoundException | InstantiationException | 
+				IllegalAccessException| NullPointerException e) {
+			// generic creation failed. Going to try and parse URL.
+			URL u;
+			try {
+				if (baseURL.endsWith("/"))
+					baseURL = baseURL.substring(0, baseURL.length()-1); // uniform "...com/" to "...com" address
+				
+				u = new URL(baseURL);
+			} catch (MalformedURLException e2) {
+				throw new IllegalArgumentException(e2);
+			}
+			
+			if (baseURL.contains("/track/")) 
+				return new Track(baseURL.toString(), saveTo, null);
+			if (baseURL.contains("/album/")) 
+				return new Album(baseURL.toString(), saveTo, null);
+			if (u.getPath().isEmpty() || u.getPath().equals("/"))
+				return new Discography(baseURL.toString(), saveTo, null);
+			
+			throw new IllegalArgumentException(e);
+		}
+		return result;
+	}
+	
 	
 	@Override
 	public 

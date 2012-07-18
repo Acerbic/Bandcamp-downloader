@@ -11,14 +11,11 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import org.jdom.Document;
 import org.jdom.Element;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import dloader.page.AbstractPage;
 import dloader.page.AbstractPage.ProblemsReadingDocumentException;
@@ -30,27 +27,18 @@ public class AbstractPageTest {
 	static
 	private
 	class AbstractPageDummy extends AbstractPage {
-		
-		private
-		XMLCache cache;
 
 		public AbstractPageDummy(String stringURL, String saveTo,
 				AbstractPage parent) throws IllegalArgumentException {
 			super(stringURL, saveTo, parent);
-			cache = new XMLCache("test/pages_scan_cache.xml");
 		}
-
-		@Override 
-		public XMLCache getCache() {
-			return cache;
-		}
-		
 		
 		@Override
 		protected String getChildNodesXPath() {return null;}
 
-		@Override
-		protected Element getSpecificDataXML() {return null;}
+		@Override 
+		protected
+		Element getSpecificDataXML() {return null;}
 
 		@Override
 		protected AbstractPage parseChild(Element element)
@@ -87,13 +75,16 @@ public class AbstractPageTest {
 	}
 
 	class DummyProgressReporter implements ProgressReporter {
-
+		String repS;
+		int repI;
+		
 		@Override
 		public void report(String type, int report) {
-			System.out.printf("%s : %d", type, report);
+			repS = type;
+			repI = report;
 		}
-		
 	}
+		
 	Path testDirFilesPath = Paths.get(System.getProperty("user.dir"),"test");
 	
 	
@@ -206,6 +197,7 @@ public class AbstractPageTest {
 	}
 	@Before
 	public void setUp() throws Exception {
+		Main.cache = new XMLCache("test/pages_scan_cache.xml");
 		//FIXME:
 		Files.deleteIfExists(testDirFilesPath.resolve("temp"));
 		Files.createDirectory(testDirFilesPath.resolve("temp"));
@@ -216,6 +208,12 @@ public class AbstractPageTest {
 		Files.deleteIfExists(testDirFilesPath.resolve("temp"));
 	}
 
+//	@BeforeClass
+//	static
+//	public void initiateTestSuit() {
+//		Main.cache = new XMLCache("test/pages_scan_cache.xml");
+//	}
+	
 	@Test (expected = IllegalArgumentException.class)
 	public void testAbstractPageStringWrongArg() {
 		new AbstractPageDummy("fakeprotocol://sodope.com",null,null);
@@ -302,87 +300,134 @@ public class AbstractPageTest {
 	@Test
 	public void testLoadFromCacheFailsIfCantFindElement() {
 		AbstractPageDummy p = new AbstractPageDummy(
-				"http://homestuck.bandcamp.com",
+				"http://homestuck-x.bandcamp.com",
 				testDirFilesPath.resolve("temp").toString(),null);
 		assertEquals(false, p.loadFromCache());
-		
-	}	
-//
-//	@Test
-//	public void testLoadFromCacheSuccessOnLeafPage() {
-//		AbstractPage pNoChildren = PageProcessor.detectPage("http://homestuck.bandcamp.com/track/black-rose-green-sun");
-//		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
-//		assertEquals(true, pNoChildren.loadFromCache(cache.doc));
-//		assertEquals("Black Rose / Green Sun", pNoChildren.getTitle());
-//		assertNull(pNoChildren.parent);
-//		assertEquals(0, pNoChildren.childPages.size());
-//	}
-//	
-//	@Test
-//	public void testLoadFromCacheSuccessOnCustomPage() {
-//		AbstractPage p = PageProcessor.detectPage("http://noctura.bandcamp.com/album/demos");
-//		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
-//		assertEquals(true, p.loadFromCache(cache.doc));
-//		assertEquals("Demos", p.getTitle());
-//		assertEquals(7, p.childPages.size());
-//		boolean found = false;
-//		for (AbstractPage childPage: p.childPages) {
-//			if (childPage.url.toString().equals(
-//				"http://noctura.bandcamp.com/track/dont-save-me-acoustic-for-x103"))
-//				found = true;
-//		}
-//		assertEquals(true, found);
-//	}
-//	
-//	@Test
-//	public void testSaveToCacheFailsOnBadPage() {
-//		AbstractPage p = PageProcessor.detectPage("http://noctura.bandcamp.com/album/demos");
-//		
-//		XMLCache cacheNew = new XMLCache("test/new_cache.xml");
-//		// p.title should be null by now.
-//		assertNull (p.getTitle());
-//		Document old_doc = (Document) cacheNew.doc.clone();
-//		p.saveToCache(cacheNew.doc);
-//		assertEquals(old_doc.getDocType(), cacheNew.doc.getDocType());
-//		assertEquals(old_doc.getRootElement().getText(), cacheNew.doc.getRootElement().getText());
-//		
-//		p.saveToCache(cacheNew.doc); // fails because of null title
-//		assertEquals(old_doc.getDocType(), cacheNew.doc.getDocType());
-//		assertEquals(old_doc.getRootElement().getText(), cacheNew.doc.getRootElement().getText());
-//	}
-//	
-//	@Test
-//	public void testSaveToCacheFailsIfGetSpecificDataXMLReturnsNull() {
-//		AbstractPage p = new AbstractPageDummy("http://noctura.bandcamp.com/album/demos");
-//		XMLCache cacheNew = new XMLCache("test/new_cache.xml");
-//		Document old_doc = (Document) cacheNew.doc.clone();
-//		
-//		p.saveToCache(cacheNew.doc);
-//		assertEquals(old_doc.getDocType(), cacheNew.doc.getDocType());
-//		assertEquals(old_doc.getRootElement().getText(), cacheNew.doc.getRootElement().getText());
-//	}
-//
-//	@Test
-//	public void testSaveToCacheSuccessAtNewFile() {
-//		AbstractPage p = PageProcessor.detectPage("http://noctura.bandcamp.com/album/demos");
-//		XMLCache cache = new XMLCache("test/pages_scan_cache.xml");
-//		assertEquals(true, p.loadFromCache(cache.doc));
-//		XMLCache cacheNew = new XMLCache("test/new_cache.xml");
-//		p.saveToCache(cacheNew.doc);
-//		
-//		Element r = cacheNew.doc.getRootElement();
-//		assertEquals(1, r.getContentSize());
-//		Element e = (Element) r.getContent(0);
-//		assertEquals("Album",e.getName());
-//		assertEquals(7, e.getContentSize());
-//		r.addContent((Element)e.clone());
-//		r.addContent((Element)e.clone());
-//		p.saveToCache(cacheNew.doc);
-//		
-//		assertEquals(1, r.getContentSize());
-//		e = (Element) r.getContent(0);
-//		assertEquals("Album",e.getName());
-//		assertEquals(7, e.getContentSize());
-//	}
+	}
+
+	@Test
+	public void testLoadFromCacheSuccessOnLeafPage() {
+		AbstractPage pNoChildren = AbstractPage.bakeAPage(null,"http://homestuck.bandcamp.com/track/black-rose-green-sun", null);
+		assertEquals(true, pNoChildren.loadFromCache());
+		assertEquals("Black Rose / Green Sun", pNoChildren.getTitle());
+		assertNull(pNoChildren.getParent());
+		assertEquals(0, pNoChildren.childPages.size());
+	}
 	
+	@Test
+	public void testLoadFromCacheSuccessOnCustomPage() {
+		AbstractPage p = AbstractPage.bakeAPage(null,"http://noctura.bandcamp.com/album/demos",null);
+		assertEquals(true, p.loadFromCache());
+		assertEquals("Demos", p.getTitle());
+		assertEquals(7, p.childPages.size());
+		boolean found = false;
+		for (AbstractPage childPage: p.childPages) {
+			if (childPage.url.toString().equals(
+				"http://noctura.bandcamp.com/track/dont-save-me-acoustic-for-x103"))
+				found = true;
+		}
+		assertEquals(true, found);
+	}
+	
+	
+	@Test
+	public void testSaveToCacheFailsIfGetSpecificDataXMLReturnsNull() {
+		AbstractPageDummy p = new AbstractPageDummy(
+				"http://homestuck-x.bandcamp.com",
+				testDirFilesPath.resolve("temp").toString(),null);
+		assertEquals(false, p.loadFromCache());
+		p.saveToCache();
+		assertEquals(false, p.loadFromCache());
+		
+		p.setTitle("SomeTitle");
+		p.saveToCache();
+		assertEquals(false, p.loadFromCache());
+	}
+	@Test
+	public void testSaveToCacheFailsIfTitleIsNull() {
+		// inline class with getSpecificDataXML()  overridden
+		AbstractPageDummy p = new AbstractPageDummy( 
+				"http://homestuck-x.bandcamp.com",
+				testDirFilesPath.resolve("temp").toString(),null) {
+				
+			@Override
+			protected
+			Element getSpecificDataXML() {return new Element("TestDummy");}
+		};
+		
+		assertEquals(false, p.loadFromCache());
+		p.saveToCache();
+		assertEquals(false, p.loadFromCache());
+		
+		p.setTitle("SomeTitle");
+		p.saveToCache();
+		assertEquals(true, p.loadFromCache());
+	}
+
+	@Test
+	public void testSaveToCacheSuccessAtNewFileAndOnUpdating() {
+		// inline class with getSpecificDataXML()  overridden
+		AbstractPageDummy p = new AbstractPageDummy( 
+				"http://homestuck-x.bandcamp.com",
+				testDirFilesPath.resolve("temp").toString(),null) {
+				
+			@Override
+			protected
+			Element getSpecificDataXML() {return new Element("TestDummy");}
+		};
+		assertFalse(p.loadFromCache());
+		p.setTitle("SomeTitle");
+		p.saveToCache();
+		assertTrue(p.loadFromCache());
+		assertEquals(0, p.childPages.size());
+		p.childPages.add(new Discography("http://noctura.bandcamp.com",null,null)); 
+		assertEquals(1, p.childPages.size());
+		p.saveToCache();
+		assertTrue(p.loadFromCache());
+		assertEquals(1, p.childPages.size());
+		
+	}
+	
+	@Test
+	public void testDownloadPageFromLocal() throws ProblemsReadingDocumentException {
+		AbstractPage p = new DiscographyLocal(
+				testDirFilesPath.resolve("Homestuck.htm").toUri().toString(),
+				null,null);
+		DummyProgressReporter pr = new DummyProgressReporter();
+		
+		p.downloadPage(pr);
+		assertEquals("download finished", pr.repS);
+		assertEquals(1, pr.repI);
+		assertEquals("Homestuck", p.getTitle());
+		assertEquals(20, p.childPages.size());
+	}
+	
+	@Test
+	public void testDownloadPageFromNet() throws ProblemsReadingDocumentException {
+		AbstractPage p = new DiscographyLocal("http://homestuck.bandcamp.com/",null,null);
+		DummyProgressReporter pr = new DummyProgressReporter();
+		
+		p.downloadPage(pr);
+		assertEquals("download finished", pr.repS);
+		assertEquals(1, pr.repI);
+		assertEquals("Homestuck", p.getTitle());
+		assertEquals(20, p.childPages.size());
+	}
+	
+	@Test (expected = ProblemsReadingDocumentException.class)
+	public void testDownloadPageFromNetFailsOnBadURL() throws ProblemsReadingDocumentException {
+		AbstractPage p = new DiscographyLocal("http://homestuck-x.bandcamp.com/",null,null);
+		DummyProgressReporter pr = new DummyProgressReporter();
+		
+		p.downloadPage(pr);
+	}	
+	
+	@Test
+	public void testUpdateFromNet() throws ProblemsReadingDocumentException {
+		AbstractPage p = new DiscographyLocal("http://homestuck.bandcamp.com/",null,null);
+		DummyProgressReporter pr = new DummyProgressReporter();
+		p.loadFromCache();
+		assertTrue(p.updateFromNet(pr));
+		assertFalse(p.updateFromNet(pr));
+	}
 }
