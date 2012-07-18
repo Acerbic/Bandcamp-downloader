@@ -139,7 +139,7 @@ public class Main {
 					@Override
 					public void run() {
 						try {
-							PageProcessor.acquireData();
+//							PageProcessor.acquireData();
 						} catch (Throwable e) {
 							// clean-up
 							Main.logger.log(Level.SEVERE, "", e);

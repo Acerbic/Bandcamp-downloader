@@ -93,6 +93,11 @@ public class WebDownloader {
 		throw new IOException("Java fucked up and lost your file!");
 	}
 	
+	/**
+	 * Check whether resource is accessible.
+	 * @param connection
+	 * @return true if everything is OK. False otherwise.
+	 */
 	public static boolean checkHttpResponseOK (URLConnection connection) {
 		if (connection instanceof HttpURLConnection)
 			try {

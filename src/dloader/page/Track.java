@@ -10,8 +10,8 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jdom.Document;
-import org.jdom.Element;
+import org.jdom2.Document;
+import org.jdom2.Element;
 
 import dloader.Main;
 import dloader.WebDownloader;
@@ -46,6 +46,7 @@ public class Track extends AbstractPage {
 	@Override
 	public 
 	void setTitle(String title) {
+		if (title == null) title = "";
 		properties.setProperty("title", title);
 	};
 

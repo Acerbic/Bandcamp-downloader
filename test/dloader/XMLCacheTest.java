@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 
-import org.jdom.*;
+import org.jdom2.*;
 import org.junit.*;
 
 /**

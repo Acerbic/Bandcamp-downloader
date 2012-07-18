@@ -14,15 +14,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import java.util.logging.Level;
 
-import org.jaxen.JaxenException;
-import org.jaxen.XPath;
-import org.jaxen.jdom.JDOMXPath;
-import org.jdom.*;
-import org.jdom.filter.ElementFilter;
-import org.jdom.input.SAXBuilder;
+import org.jdom2.*;
+import org.jdom2.filter.ElementFilter;
+import org.jdom2.filter.Filters;
+import org.jdom2.input.SAXBuilder;
+import org.jdom2.input.sax.XMLReaderSAX2Factory;
+import org.jdom2.xpath.XPathBuilder;
+import org.jdom2.xpath.XPathExpression;
+import org.jdom2.xpath.XPathFactory;
 
 import dloader.Main;
-import dloader.PageProcessor;
 import dloader.WebDownloader;
 import dloader.XMLCache;
 import dloader.pagejob.ProgressReporter;
@@ -224,24 +225,27 @@ public abstract class AbstractPage {
 		return queryXPathList (q, doc.getRootElement());
 	}
 	
+	//the very same as in XMLCache class. duplication problem?
 	/**
 	 * Queries given JDOM document with XPath string
-	 * @param q - XPath string with all nodes in "pre" namespace for parsed HTML files 
+	 * @param query - XPath string with all nodes in "pre" namespace for parsed HTML files 
 	 * (no prefix for XML cache files with no namespace definition)
 	 * @param doc - JDOM Document or Element
 	 * @return List of found matches, may be of zero size if nothing is found
 	 */
-	protected final List<?> queryXPathList(String q, Element doc) {
-		if (q == null) return new ArrayList<Object>(0);
+	protected final List<?> queryXPathList(String query, Element doc) {
+		if (query == null) return new ArrayList<Object>(0);
 		try {
 			String nsURI = doc.getNamespaceURI();
-			XPath xpath = new JDOMXPath(q);
-			xpath.addNamespace("pre", nsURI);
-			return xpath.selectNodes(doc);
-		} catch (JaxenException e) {
-			Main.log(Level.SEVERE,"",e);
-			return new ArrayList<Object>(0);
-		} 
+			XPathBuilder<Element> xpb = new XPathBuilder<Element>(query,Filters.element()); // null filter
+			xpb.setNamespace("pre", nsURI);
+			XPathExpression<Element> xpe = xpb.compileWith(XPathFactory.instance()); // default factory
+//			XPathExpression<?> xpe = XPathFactory.instance().compile(query);// default factory
+			return xpe.evaluate(doc);
+		} catch (NullPointerException|IllegalStateException|IllegalArgumentException  e) {
+			Main.logger.log(Level.SEVERE,"",e);
+			return new ArrayList<Element>(0);
+		} 		
 	}
 	
 	/**
@@ -302,7 +306,6 @@ public abstract class AbstractPage {
 			readCacheSelf(e);
 			
 			childPages.clear(); // discard previous data if any.
-			@SuppressWarnings("unchecked")
 			Collection<Element> l = e.getContent(new ElementFilter("childref"));
 			for (Element el: l) 
 				childPages.add( readCacheChild(el) );
@@ -326,15 +329,21 @@ public abstract class AbstractPage {
 	void downloadPage(ProgressReporter reporter) throws ProblemsReadingDocumentException {
 		Main.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
 		
-		org.jdom.Document doc = null;
+		org.jdom2.Document doc = null;
 		try {
-			SAXBuilder builder = new SAXBuilder("org.ccil.cowan.tagsoup.Parser");
+			//FIXME
+//			@SuppressWarnings("deprecation")
+//			SAXBuilder builder = new SAXBuilder("org.ccil.cowan.tagsoup.Parser");
+			
+			XMLReaderSAX2Factory saxConverter = new XMLReaderSAX2Factory(false, "org.ccil.cowan.tagsoup.Parser");
+			SAXBuilder builder = new SAXBuilder(saxConverter);
 			URLConnection connection = url.openConnection();
 			if (!WebDownloader.checkHttpResponseOK(connection))		
 				throw new ProblemsReadingDocumentException("Error response from server");
 			//FIXME: need to be replaced with explicit download and parsing call, to make use of ProgressReporter
 			doc = builder.build(connection.getInputStream());
-		} catch (IOException|JDOMException e) {
+//		} catch (IOException|JDOMException e) {
+		} catch (Exception e) {//XXX: some glitch in JDOM2 lets other random exceptions bubble up. So need to catch 'em all.
 			throw new ProblemsReadingDocumentException(e);
 		}
 	

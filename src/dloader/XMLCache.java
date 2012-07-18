@@ -6,14 +6,15 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.jaxen.JaxenException;
-import org.jaxen.XPath;
-import org.jaxen.jdom.JDOMXPath;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.filter.Filters;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
+import org.jdom2.xpath.XPathBuilder;
+import org.jdom2.xpath.XPathExpression;
+import org.jdom2.xpath.XPathFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,7 +40,7 @@ public class XMLCache {
 	private final Document doc;
 	
 	/**
-	 * Loads file and parses it into org.jdom.Document
+	 * Loads file and parses it into org.jdom2.Document
 	 * If document cannot be read for any reason, new empty valid one is created 
 	 * (the file will be created when saveCache() is called next time).
 	 * @param xmlFileName - cache file name
@@ -50,11 +51,10 @@ public class XMLCache {
 		Document doc = null;
 		
 		if (xmlFileName!=null && !xmlFileName.isEmpty()) 
-//			throw new IllegalArgumentException("Cache file name cannot be empty or null");
 		try {
 			xmlFile = Paths.get(xmlFileName);
 			if (Files.exists(xmlFile)) {
-				org.jdom.input.SAXBuilder builder = new org.jdom.input.SAXBuilder();
+				org.jdom2.input.SAXBuilder builder = new org.jdom2.input.SAXBuilder();
 				builder.setIgnoringBoundaryWhitespace(true);
 				builder.setIgnoringElementContentWhitespace(true);
 				doc = builder.build(Files.newInputStream(xmlFile));
@@ -107,22 +107,19 @@ public class XMLCache {
 	
 	/**
 	 * Queries given JDOM document with XPath string
-	 * @param query - XPath string with all nodes in "pre" namespace for parsed HTML files 
-	 * (no prefix for XML cache files with no namespace definition)
+	 * @param query - XPath string 
 	 * @param doc - JDOM Document or Element
 	 * @return List of found matches, may be of zero size if nothing is found
 	 */
-	@SuppressWarnings("unchecked")
 	private
 	List<Element> queryXPathList(String query) {
 		if (query == null) return new ArrayList<Element>(0);
 		try {
 			Element root = doc.getRootElement();
-//			String nsURI = root.getNamespaceURI();
-			XPath xpath = new JDOMXPath(query);
-//			xpath.addNamespace("pre", nsURI);
-			return xpath.selectNodes(root);
-		} catch (JaxenException e) {
+			XPathBuilder<Element> xpb = new XPathBuilder<Element>(query,Filters.element()); 
+			XPathExpression<Element> xpe = xpb.compileWith(XPathFactory.instance()); // default factory
+			return xpe.evaluate(root);
+		} catch (NullPointerException|IllegalStateException|IllegalArgumentException  e) {
 			Main.logger.log(Level.SEVERE,"",e);
 			return new ArrayList<Element>(0);
 		} 
