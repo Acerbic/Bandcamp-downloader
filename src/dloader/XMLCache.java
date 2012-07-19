@@ -43,14 +43,15 @@ public class XMLCache {
 	 * Loads file and parses it into org.jdom2.Document
 	 * If document cannot be read for any reason, new empty valid one is created 
 	 * (the file will be created when saveCache() is called next time).
-	 * @param xmlFileName - cache file name
-	 * @throws IllegalArgumentException if file name is not valid
+	 * @param xmlFileName - cache file name, can't be null or empty. 
+	 * @throws IllegalArgumentException if file name null or empty.
 	 */
 	public XMLCache(String xmlFileName) {
 		Logger l = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 		Document doc = null;
 		
-		if (xmlFileName!=null && !xmlFileName.isEmpty()) 
+		if (xmlFileName==null || xmlFileName.isEmpty())
+			throw new IllegalArgumentException();
 		try {
 			xmlFile = Paths.get(xmlFileName);
 			if (Files.exists(xmlFile)) {
@@ -77,10 +78,9 @@ public class XMLCache {
 	}
 	
 	/**
-	 * Scans cache for the page by its URL and class
-	 * @param className - name of a class this page belongs to
+	 * Scans cache for the page by its URL 
 	 * @param pageURL - URL of a page cached
-	 * @return a CLONE of a cache element
+	 * @return a CLONE of a cache element (save for modification)
 	 */
 	synchronized public
 	Element getElementForPage(String pageURL) {

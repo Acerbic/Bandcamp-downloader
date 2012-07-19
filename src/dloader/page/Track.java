@@ -141,7 +141,8 @@ public class Track extends AbstractPage {
 	
 	/**
 	 * Checks the file and tags it if appropriate 
-	 * @param file - name of an audio file to tag
+	 * @param force - if true, existing tags will be overwritten with data from this Track object,
+	 * if false - only absent tags will be filled.
 	 * @return true if actual write operation happened
 	 * @throws IOException - file read/write problems
 	 */
@@ -169,7 +170,7 @@ public class Track extends AbstractPage {
 	 * save changes to disk.
 	 * @throws IOException
 	 */
-	public
+	private
 	AudioFile fixTag(boolean force) throws IOException {
 		try {
 			AudioFile theFile = AudioFileIO.read(Paths.get(getTrackFileName()).toFile());

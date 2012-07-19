@@ -127,7 +127,6 @@ public abstract class AbstractPage {
 	 */
 	public static final
 	String getFSSafeName(String name) throws IOException   {
-		assert (name != null);
 		for (char c : ":/\\*?\"<>|\t\n\r".toCharArray())
 			name = name.replace(String.valueOf(c), "");
 		name = name.trim(); // only trailing spaces are forbidden
@@ -331,10 +330,6 @@ public abstract class AbstractPage {
 		
 		org.jdom2.Document doc = null;
 		try {
-			//FIXME
-//			@SuppressWarnings("deprecation")
-//			SAXBuilder builder = new SAXBuilder("org.ccil.cowan.tagsoup.Parser");
-			
 			XMLReaderSAX2Factory saxConverter = new XMLReaderSAX2Factory(false, "org.ccil.cowan.tagsoup.Parser");
 			SAXBuilder builder = new SAXBuilder(saxConverter);
 			URLConnection connection = url.openConnection();
