@@ -23,6 +23,12 @@ import dloader.pagejob.ProgressReporter;
  */
 public class Discography extends AbstractPage {
 	
+	private static final String INDEX_CHILD_REF = "//pre:div[@id='indexpage']//pre:h1/pre:a";
+	private static final String SIDEBAR_CHILD_LINK = "//pre:div[@id='discography']//pre:div[@class='trackTitle']/pre:a";
+	private static final String INDEX_DIV_XPATH = "//pre:div[@id='indexpage']";
+	private static final String SIDEBAR_DIV_XPATH = "//pre:div[@id='discography']";
+	private static final String TITLE_XPATH = "//pre:title";
+	
 	private enum DiscographyListVariant { SIDEBAR, CENTRAL_INDEX };
 	/**
 	 * detected on parseSelf() call and dictates 
@@ -36,20 +42,20 @@ public class Discography extends AbstractPage {
 	
 	@Override
 	protected void parseSelf(Document doc) throws ProblemsReadingDocumentException  {
-		List<?> result = queryXPathList("//pre:title", doc);
+		List<?> result = queryXPathList(TITLE_XPATH, doc);
 		if ((result != null) && (result.size()>0))
 			setTitle(((Element) result.get(0)).getText());
 		else
 			throw new ProblemsReadingDocumentException("Can't read discography title");
 
 		// now detect type of Discography
-		result = queryXPathList("//pre:div[@id='discography']", doc);
+		result = queryXPathList(SIDEBAR_DIV_XPATH, doc);
 		if (result.size()>0) {
 			variant = DiscographyListVariant.SIDEBAR;
 			return;
 		}
 		
-		result = queryXPathList("//pre:div[@id='indexpage']", doc);
+		result = queryXPathList(INDEX_DIV_XPATH, doc);
 		if (result.size()>0) {
 			variant = DiscographyListVariant.CENTRAL_INDEX;
 			return;
@@ -79,9 +85,9 @@ public class Discography extends AbstractPage {
 	protected String getChildNodesXPath() {
 		switch (variant) {
 			case SIDEBAR:
-				return "//pre:div[@id='discography']//pre:div[@class='trackTitle']/pre:a";
+				return SIDEBAR_CHILD_LINK;
 			case CENTRAL_INDEX:
-				return "//pre:div[@id='indexpage']//pre:h1/pre:a";
+				return INDEX_CHILD_REF;
 		}
 		return null;
 	}

@@ -25,11 +25,17 @@ import entagged.audioformats.exceptions.CannotWriteException;
 import entagged.audioformats.generic.TagTextField;
 import entagged.audioformats.mp3.util.id3frames.TextId3Frame;
 
+//TODO: get and cache mp3-file byte length to detect if file in the net is changed and must be re-downloaded.
+
+//TODO: calculate and cache mp3-stream (only audio part of the file) byte length of the file, so corrupt mp3 files can be detected. ???
+
 /**
  * Class represents track web page, has no children pages 
  * @author A.Cerbic
  */
 public class Track extends AbstractPage {
+
+	private static final String SCRIPT_DESC_XPATH = "//pre:div[@id='pgBd']/pre:script";
 
 	/**
 	 * Set of custom properties read from page, saved to cache and 
@@ -46,8 +52,10 @@ public class Track extends AbstractPage {
 	@Override
 	public 
 	void setTitle(String title) {
-		if (title == null) title = "";
-		properties.setProperty("title", title);
+		if (title == null) 
+			properties.remove("title");
+		else
+			properties.setProperty("title", title);
 	};
 
 	/**
@@ -85,11 +93,10 @@ public class Track extends AbstractPage {
 		dataPatterns.put("comment", Pattern.compile(".*trackinfo:.*\"has_info\":\"([^\"]*)\".*", Pattern.DOTALL));				
 	}
 	
-	{
-		properties = new Properties();
+	public Track(String url, String saveTo, AbstractPage parent) throws IllegalArgumentException {
+		super(url, saveTo, parent);
+		properties = new Properties(); // created AFTER construction since getTitle() and setTitle() are not used in AbstractPage constructor
 	}
-	public Track(String url, String saveTo, AbstractPage parent) throws IllegalArgumentException 
-		{super(url, saveTo, parent);}
 	
 	@Override
 	public synchronized 
@@ -259,7 +266,7 @@ public class Track extends AbstractPage {
 	protected void parseSelf(Document doc)  
 			throws ProblemsReadingDocumentException {
 		@SuppressWarnings("unchecked")
-		List<Element> scriptList = (List<Element>) queryXPathList("//pre:div[@id='pgBd']/pre:script", doc);
+		List<Element> scriptList = (List<Element>) queryXPathList(SCRIPT_DESC_XPATH, doc);
 		for (Element el: scriptList) {
 			String rawData = el.getText();
 			// clear JavaScript escaping: "\/" --> "/", etc.

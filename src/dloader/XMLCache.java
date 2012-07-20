@@ -106,7 +106,7 @@ public class XMLCache {
 	}
 	
 	/**
-	 * Queries given JDOM document with XPath string
+	 * Queries given JDOM (XML) document with XPath string
 	 * @param query - XPath string 
 	 * @param doc - JDOM Document or Element
 	 * @return List of found matches, may be of zero size if nothing is found

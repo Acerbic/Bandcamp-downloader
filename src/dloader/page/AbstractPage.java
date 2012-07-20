@@ -75,6 +75,9 @@ public abstract class AbstractPage {
 
 	/**
 	 * List of a children items to this page (can be of size zero) 
+	 * It is important this variable is concurrent, since many different threads may iterate
+	 * through children at any given moment.
+	 * This list is empty on construction and filled with elements by loadFromCache() and updateFromNet() calls.
 	 */
 	public final 
 	Collection<AbstractPage> childPages = new ConcurrentLinkedQueue<>(); 
@@ -215,8 +218,8 @@ public abstract class AbstractPage {
 	Collection<String> getThisPageFiles();
 	
 	/**
-	 * Queries given JDOM document with XPath string
-	 * @param q - XPath string with all nodes in "pre" namespace
+	 * Queries given JDOM (html) document with XPath string
+	 * @param q - XPath string with all nodes with "pre" prefixes
 	 * @param doc - JDOM Document or Element
 	 * @return List of found matches, may be of zero size if nothing is found
 	 */
@@ -224,11 +227,10 @@ public abstract class AbstractPage {
 		return queryXPathList (q, doc.getRootElement());
 	}
 	
-	//the very same as in XMLCache class. duplication problem?
+	//this is similar to one in XMLCache class. duplication problem?
 	/**
 	 * Queries given JDOM document with XPath string
-	 * @param query - XPath string with all nodes in "pre" namespace for parsed HTML files 
-	 * (no prefix for XML cache files with no namespace definition)
+	 * @param query - XPath string with all nodes with "pre" prefixes for parsed HTML files 
 	 * @param doc - JDOM Document or Element
 	 * @return List of found matches, may be of zero size if nothing is found
 	 */
@@ -237,9 +239,9 @@ public abstract class AbstractPage {
 		try {
 			String nsURI = doc.getNamespaceURI();
 			XPathBuilder<Element> xpb = new XPathBuilder<Element>(query,Filters.element()); // null filter
+			// binding prefix to existing namespace as per XML standard requirement
 			xpb.setNamespace("pre", nsURI);
 			XPathExpression<Element> xpe = xpb.compileWith(XPathFactory.instance()); // default factory
-//			XPathExpression<?> xpe = XPathFactory.instance().compile(query);// default factory
 			return xpe.evaluate(doc);
 		} catch (NullPointerException|IllegalStateException|IllegalArgumentException  e) {
 			Main.logger.log(Level.SEVERE,"",e);
@@ -323,7 +325,7 @@ public abstract class AbstractPage {
 	 * Downloads the page, parses it and creates child nodes.
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
-	//FIXME: make this private
+	//FIXME: make this private (public for testing purposes)
 	public final 
 	void downloadPage(ProgressReporter reporter) throws ProblemsReadingDocumentException {
 		Main.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));

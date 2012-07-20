@@ -198,22 +198,16 @@ public class AbstractPageTest {
 	@Before
 	public void setUp() throws Exception {
 		Main.cache = new XMLCache("test/pages_scan_cache.xml");
-		//FIXME:
+/*		//FIX ME:
 		Files.deleteIfExists(testDirFilesPath.resolve("temp"));
-		Files.createDirectory(testDirFilesPath.resolve("temp"));
+		Files.createDirectory(testDirFilesPath.resolve("temp"));*/
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		Files.deleteIfExists(testDirFilesPath.resolve("temp"));
+		/*Files.deleteIfExists(testDirFilesPath.resolve("temp"));*/
 	}
 
-//	@BeforeClass
-//	static
-//	public void initiateTestSuit() {
-//		Main.cache = new XMLCache("test/pages_scan_cache.xml");
-//	}
-	
 	@Test (expected = IllegalArgumentException.class)
 	public void testAbstractPageStringWrongArg() {
 		new AbstractPageDummy("fakeprotocol://sodope.com",null,null);
