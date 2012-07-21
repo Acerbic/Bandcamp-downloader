@@ -19,6 +19,7 @@ import org.jdom2.filter.ElementFilter;
 import org.jdom2.filter.Filters;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.input.sax.XMLReaderSAX2Factory;
+import org.jdom2.output.XMLOutputter;
 import org.jdom2.xpath.XPathBuilder;
 import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
@@ -31,6 +32,8 @@ import dloader.pagejob.ProgressReporter;
 
 //XXX: 1st download a page, THEN guess its class by content?
 
+
+//XXX: sad day. bandcamp sometimes breaks hierarchy and puts "track" right into "discography"
 /**
  * Basic class to maintain page-relevant data and procedures, embodies one "download session", i.e. URL-to-files
  * transfer notion.
@@ -92,13 +95,13 @@ public abstract class AbstractPage {
 		return Main.cache; //default cache location. 
 	}
 	
-	public synchronized 
+	public synchronized final
 	AbstractPage getParent() {return parent;}
 
-	public synchronized
+	public synchronized final
 	String getTitle() {return title;} 
 	
-	public synchronized 
+	public synchronized final
 	void setTitle(String title) {this.title = title;}
 
 	/**
@@ -262,8 +265,7 @@ public abstract class AbstractPage {
 		String className = childRef.getAttributeValue("class");
 		
 		try {
-			child = bakeAPage(className, u, getChildrenSaveTo());
-			child.parent = getParent();
+			child = bakeAPage(className, u, getChildrenSaveTo(),this);
 		} catch (IllegalArgumentException | IOException e) {
 			throw new ProblemsReadingDocumentException(e);
 		}
@@ -278,17 +280,22 @@ public abstract class AbstractPage {
 	 * @throws MalformedURLException 
 	 */
 	protected final URL resolveLink(String link) throws MalformedURLException {
-		if (link.endsWith("/"))
-			link = link.substring(0, link.length()-1); // uniform "...com/" to "...com" address
-		try {
-			return new URL(url, link);
-		} catch (MalformedURLException e) {
-			if (!link.contains("://"))
-				link = "http://"+link; // default protocol 
-			return new URL(url, link);
-		}
+		return new URL(url, fixURLString(link));
 	}
 
+	private final static 
+	String fixURLString(String u) {
+		if (u == null) return null;
+		if (u.endsWith("/"))
+			u = u.substring(0, u.length()-1); // uniform "...com/" to "...com" address
+		try {
+			new URL(u);
+		} catch (MalformedURLException e) {
+			u = "http://"+u; // default protocol
+		}		
+		return u;
+		
+	}
 	/**
 	 * Gets data about this page from cache (JDOM tree) and creates child nodes.
 	 * @param doc - JDOM Document to load from 
@@ -337,7 +344,7 @@ public abstract class AbstractPage {
 			URLConnection connection = url.openConnection();
 			if (!WebDownloader.checkHttpResponseOK(connection))		
 				throw new ProblemsReadingDocumentException("Error response from server");
-			//FIXME: need to be replaced with explicit download and parsing call, to make use of ProgressReporter
+			//FIXME: need to be replaced with explicit download and parsing call, to make use of ProgressReporter. Actually, probably not.
 			doc = builder.build(connection.getInputStream());
 //		} catch (IOException|JDOMException e) {
 		} catch (Exception e) {//XXX: some glitch in JDOM2 lets other random exceptions bubble up. So need to catch 'em all.
@@ -374,8 +381,7 @@ public abstract class AbstractPage {
 	private
 	AbstractPage createSameClassPage() throws Exception {
 		AbstractPage result = null;
-		result = bakeAPage(this.getClass().getSimpleName(), url.toString(), saveTo);
-		result.parent = getParent();
+		result = bakeAPage(this.getClass().getName(), url.toString(), saveTo, getParent());
 		return result;
 
 	}
@@ -406,7 +412,7 @@ public abstract class AbstractPage {
 			childPages.clear();
 			childPages.addAll(tempPage.childPages);
 			
-			for (AbstractPage child: childPages) 
+			for (AbstractPage child: childPages)
 				child.parent = this;
 		}
 		return true;
@@ -449,10 +455,14 @@ public abstract class AbstractPage {
 	 */
 	private 
 	boolean isSame(AbstractPage ref) {
-		if (! getTitle().equals(ref.getTitle())) return false;
+		if (getTitle()==null && ref.getTitle()!=null) return false;
+		
+		if (getTitle()!=null && !getTitle().equals(ref.getTitle())) return false;
 		if (! url.equals(ref.url)) return false;
-		String s1 = ref.getSpecificDataXML().getValue();
-		String s2 = this.getSpecificDataXML().getValue();
+		Element x = ref.getSpecificDataXML();
+		String s1 = (x == null ? "": new XMLOutputter().outputString(x));
+		x = this.getSpecificDataXML();
+		String s2 = (x == null ? "": new XMLOutputter().outputString(x));
 		if (!s1.equals(s2))
 			return false;
 		
@@ -486,48 +496,65 @@ public abstract class AbstractPage {
 	 * @throws IllegalArgumentException - is thrown when both approaches to create a page failed.
 	 */
 	@SuppressWarnings("unchecked")
-	final public static
-	AbstractPage bakeAPage(String className, String baseURL, String saveTo) throws IllegalArgumentException {
+	public static
+	AbstractPage bakeAPage(String className, String baseURL, String saveTo, AbstractPage parent) throws IllegalArgumentException {
 		AbstractPage result = null;
 		String packageName = AbstractPage.class.getPackage().getName();
-		Class<? extends AbstractPage> cl;
+		Class<? extends AbstractPage> cl = null;
 		Constructor<? extends AbstractPage> cons;
+		
+		baseURL = fixURLString(baseURL);
+		
 		try {
-			cl = (Class<? extends AbstractPage>) Class.forName(packageName+ "." +className);
-			cons = cl.getConstructor(String.class, String.class, AbstractPage.class);
-			result = cons.newInstance(baseURL, saveTo, null); 
-		} catch (NoSuchMethodException | SecurityException | 
-				IllegalArgumentException | InvocationTargetException | 
-				ClassNotFoundException | InstantiationException | 
-				IllegalAccessException| NullPointerException e) {
-			// generic creation failed. Going to try and parse URL.
-			URL u;
 			try {
-				if (baseURL.endsWith("/"))
-					baseURL = baseURL.substring(0, baseURL.length()-1); // uniform "...com/" to "...com" address
-				
-				u = new URL(baseURL);
-			} catch (MalformedURLException e2) {
-				throw new IllegalArgumentException(e2);
+				cl = (Class<? extends AbstractPage>) Class.forName(className);
+			} catch (ClassNotFoundException e) {
+				className = packageName+ "." +className; // default package in case being omitted
+				cl = (Class<? extends AbstractPage>) Class.forName(className);
 			}
-			
-			if (baseURL.contains("/track/")) 
-				return new Track(baseURL.toString(), saveTo, null);
-			if (baseURL.contains("/album/")) 
-				return new Album(baseURL.toString(), saveTo, null);
-			if (u.getPath().isEmpty() || u.getPath().equals("/"))
-				return new Discography(baseURL.toString(), saveTo, null);
-			
-			throw new IllegalArgumentException(e);
-		}
+			cons = cl.getConstructor(String.class, String.class, AbstractPage.class);
+			result = cons.newInstance(baseURL, saveTo, parent);
+		} catch (NoSuchMethodException | SecurityException | 
+					IllegalArgumentException | InvocationTargetException | 
+					ClassNotFoundException | InstantiationException | 
+					IllegalAccessException| NullPointerException e1) {
+				// generic creation failed. Going to try and parse URL.
+				URL u;
+				try {
+					u = new URL(baseURL);
+				} catch (MalformedURLException e2) {
+					throw new IllegalArgumentException(e2);
+				}
+				
+				if (baseURL.contains("/track/")) 
+					return new Track(baseURL.toString(), saveTo, null);
+				if (baseURL.contains("/album/")) 
+					return new Album(baseURL.toString(), saveTo, null);
+				if (u.getPath().isEmpty())
+					return new Discography(baseURL.toString(), saveTo, null);
+				
+				throw new IllegalArgumentException(e1);
+			}
+		
 		return result;
 	}
 	
+	/**
+	 * Integrity check.
+	 * Check if page data is complete - otherwise page must be read from cache/net
+	 * @return true if check passed, false otherwise.
+	 */
+	public 
+	boolean isPageOK() {
+		if (getTitle()==null || getTitle().isEmpty())
+			return false;
+		return true;
+	}
 	
 	@Override
 	public 
 	String toString() {
 		String className = this.getClass().getSimpleName();
-		return ((getTitle() == null)? url.toString(): getTitle()) + "[" +className+ "]";
+		return ((getTitle() == null || getTitle().isEmpty())? url.toString(): getTitle()) + "[" +className+ "]";
 	}
 }

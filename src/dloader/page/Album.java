@@ -28,11 +28,10 @@ public class Album extends AbstractPage {
 	/**
 	 * link to the album cover
 	 */
-	public volatile URL coverUrl; // volatile is enough for single-field invariant
-//	/**
-//	 * arbitrary additional info
-//	 */
-//	public String moreInfo;
+	private URL coverUrl; 
+	public synchronized final 
+	URL getCoverUrl() {return coverUrl;}
+
 	/**
 	 * counts parsed child track pages (include fails) 
 	 * to override their "track" number property
@@ -90,7 +89,7 @@ public class Album extends AbstractPage {
 			URL u = resolveLink(element.getAttributeValue("href"));
 			Track t;
 			t = new Track(u.toString(), getChildrenSaveTo(), this);
-			t.setTitle(element.getText());
+			t.setTitle(element.getValue());
 			// may be set default property instead?
 			t.setProperty("track", String.valueOf(trackCounter));
 			return t;
@@ -104,7 +103,7 @@ public class Album extends AbstractPage {
 	protected 
 	void parseSelf(Document doc) throws ProblemsReadingDocumentException {
 		@SuppressWarnings("unchecked")
-		List<Element> imgList = (List<Element>) queryXPathList("//pre:div[@id='tralbumArt']/pre:img", doc);
+		List<Element> imgList = (List<Element>) queryXPathList("//pre:div[@id='tralbumArt']//pre:img", doc);
 		if (imgList.size() > 0) {
 			try {
 				coverUrl = resolveLink((imgList.get(0)).getAttributeValue("src"));
@@ -127,7 +126,7 @@ public class Album extends AbstractPage {
 
 	@Override
 	protected String getChildNodesXPath() {
-		return "//pre:tr[@class='track_row_view']//pre:td/pre:div[@class='title']//pre:a";
+		return "//pre:td//pre:div[@class='title']//pre:a";
 	}
 
 	@Override

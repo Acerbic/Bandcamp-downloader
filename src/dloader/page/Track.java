@@ -39,25 +39,11 @@ public class Track extends AbstractPage {
 
 	/**
 	 * Set of custom properties read from page, saved to cache and 
-	 * resulting audio file metadata tags
+	 * resulting audio file metadata tags. Before iterating through properties,
+	 * they might be required to be update with "title" field from getTitle().
 	 */	
 	private Properties properties; // thread-safe class
 	
-	@Override
-	public 
-	String getTitle() {
-		return properties.getProperty("title");
-	};
-
-	@Override
-	public 
-	void setTitle(String title) {
-		if (title == null) 
-			properties.remove("title");
-		else
-			properties.setProperty("title", title);
-	};
-
 	/**
 	 * Shortcut	
 	 */
@@ -70,7 +56,10 @@ public class Track extends AbstractPage {
 	 */
 	public 
 	String setProperty(String name, String value) {
-		return (String) properties.setProperty(name, value);
+		if (value != null)
+			return (String) properties.setProperty(name, value);
+		else 
+			return (String) properties.remove(name);
 	}
 	
 	/**
@@ -196,6 +185,7 @@ public class Track extends AbstractPage {
 			
 			// copy this Track's data into fileTag
 
+			setProperty("title", getTitle());
 			for (Map.Entry<String, String> entry: propertyToFrame.entrySet()) {
 				
 				String newFieldValue = getProperty(entry.getKey());
@@ -248,6 +238,7 @@ public class Track extends AbstractPage {
 		if (getProperty("mediaLink") == null) return null; //no saving track data if no track present
 
 		Element e = new Element("Track");
+		setProperty("title", getTitle());
 		for (String key: Arrays.asList(XMLCacheDataKeys)) {
 			String value = getProperty(key);
 			if (value==null) value = "";
@@ -278,6 +269,7 @@ public class Track extends AbstractPage {
 				if (m.matches()) 
 					setProperty(entry.getKey(), m.group(1));
 			}
+			setTitle(getProperty("title"));
 		
 		}
 		// fix url 

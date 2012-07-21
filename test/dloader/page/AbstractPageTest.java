@@ -195,6 +195,7 @@ public class AbstractPageTest {
 			return fileset;
 		}
 	}
+	
 	@Before
 	public void setUp() throws Exception {
 		Main.cache = new XMLCache("test/pages_scan_cache.xml");
@@ -301,7 +302,7 @@ public class AbstractPageTest {
 
 	@Test
 	public void testLoadFromCacheSuccessOnLeafPage() {
-		AbstractPage pNoChildren = AbstractPage.bakeAPage(null,"http://homestuck.bandcamp.com/track/black-rose-green-sun", null);
+		AbstractPage pNoChildren = AbstractPage.bakeAPage(null,"http://homestuck.bandcamp.com/track/black-rose-green-sun", null, null);
 		assertEquals(true, pNoChildren.loadFromCache());
 		assertEquals("Black Rose / Green Sun", pNoChildren.getTitle());
 		assertNull(pNoChildren.getParent());
@@ -310,7 +311,7 @@ public class AbstractPageTest {
 	
 	@Test
 	public void testLoadFromCacheSuccessOnCustomPage() {
-		AbstractPage p = AbstractPage.bakeAPage(null,"http://noctura.bandcamp.com/album/demos",null);
+		AbstractPage p = AbstractPage.bakeAPage(null,"http://noctura.bandcamp.com/album/demos", null, null);
 		assertEquals(true, p.loadFromCache());
 		assertEquals("Demos", p.getTitle());
 		assertEquals(7, p.childPages.size());

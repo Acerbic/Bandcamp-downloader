@@ -616,15 +616,30 @@
   <Track mediaLink="http://popplers5.bandcamp.com/download/track?enc=mp3-128&amp;fsig=fb63259a869f20147e072202b8874fd3&amp;id=3449436372&amp;stream=1&amp;ts=1308167428.0" artist="Hera" track="14" album="rattle my bones" title="it's a funeral thing" url="http://herasings.bandcamp.com/track/its-a-funeral-thing" />
   <Track mediaLink="http://popplers5.bandcamp.com/download/track?enc=mp3-128&amp;fsig=da6564ad0f572d763835952c4d6e15d5&amp;id=4246928543&amp;stream=1&amp;ts=1308002330.0" artist="RX Bandits" track="" album="Progress" title="Anyone But You" url="http://rxmusic.bandcamp.com/track/anyone-but-you" />
   <Track mediaLink="http://popplers5.bandcamp.com/download/track?enc=mp3-128&amp;fsig=4833b174f183a2027c60f41b1c0526bd&amp;id=3881049666&amp;stream=1&amp;ts=1308170653.0" artist="RX Bandits" track="" album="Progress" title="Analog Boy" url="http://rxmusic.bandcamp.com/track/analog-boy" />
-  <Album coverUrl="http://f.bandcamp.com/z/17/92/1792496746-1.jpg" title="Remixes" url="http://emancipator.bandcamp.com/album/remixes-2" />
-  <Album coverUrl="http://f.bandcamp.com/z/29/36/2936937824-1.jpg" title="soon it will be cold enough" url="http://emancipator.bandcamp.com/album/soon-it-will-be-cold-enough" />
-  <Album coverUrl="http://f.bandcamp.com/z/41/14/4114101861-1.jpg" title="safe in the steep cliffs" url="http://emancipator.bandcamp.com/album/safe-in-the-steep-cliffs" />
-  <Album coverUrl="http://f.bandcamp.com/z/23/99/2399004206-1.jpg" title="Free Downloads" url="http://emancipator.bandcamp.com/album/free-downloads" />
-  <Discography title="emancipator" url="http://emancipator.bandcamp.com/">
-    <childref class="Album" url="http://emancipator.bandcamp.com/album/remixes-2" />
-    <childref class="Album" url="http://emancipator.bandcamp.com/album/soon-it-will-be-cold-enough" />
-    <childref class="Album" url="http://emancipator.bandcamp.com/album/safe-in-the-steep-cliffs" />
-    <childref class="Album" url="http://emancipator.bandcamp.com/album/free-downloads" />
+  <Discography title="emancipator" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator.htm">
+    <childref class="Album" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator-children/remixes-2.htm" />
+    <childref class="Album" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator-children/soon-it-will-be-cold-enough.htm" />
+    <childref class="Album" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator-children/safe-in-the-steep-cliffs.htm" />
+    <childref class="Album" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator-children/free-downloads.htm" />
   </Discography>
+  <Album coverUrl="http://f0.bcbits.com/z/23/99/2399004206-1.jpg" title="Free Downloads" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator-children/free-downloads.htm" />
+  <Album coverUrl="http://f0.bcbits.com/z/29/36/2936937824-1.jpg" title="soon it will be cold enough" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator-children/soon-it-will-be-cold-enough.htm" />
+  <Album coverUrl="http://f0.bcbits.com/z/17/92/1792496746-1.jpg" title="Remixes" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator-children/remixes-2.htm">
+    <childref class="Track" url="http:/track/anthem-nym-remix" />
+    <childref class="Track" url="http:/track/ares-big-gigantic-remix" />
+    <childref class="Track" url="http:/track/bury-them-bones-marley-carroll-remix" />
+    <childref class="Track" url="http:/track/nevergreen-blockhead-remix" />
+    <childref class="Track" url="http:/track/when-i-go-michal-menert-remix" />
+    <childref class="Track" url="http:/track/first-snow-ooah-remix-2" />
+    <childref class="Track" url="http:/track/jet-stream-d-v-s-remix" />
+    <childref class="Track" url="http:/track/old-devil-kept-blue-remix" />
+    <childref class="Track" url="http:/track/rattlesnakes-saqi-remix" />
+    <childref class="Track" url="http:/track/black-lake-emancipator-remix" />
+    <childref class="Track" url="http:/track/safe-in-the-steep-cliffs-erothyme-remix" />
+    <childref class="Track" url="http:/track/siren-tor-remix" />
+    <childref class="Track" url="http:/track/soon-it-will-be-cold-enough-to-build-fires-aligning-minds-remix" />
+    <childref class="Track" url="http:/track/vines-the-great-mundane-remix" />
+  </Album>
+
 </root>
 

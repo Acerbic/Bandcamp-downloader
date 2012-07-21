@@ -30,6 +30,9 @@ import java.util.logging.Logger;
  * @author A.Cerbic
  */
 public class XMLCache {
+	//TODO: revert this to "/root/%NODENAME[@url='%s']" and fix testing cases to overload bakeAPage()
+	private static final String ELEMENT_BY_URL_XPATH = "/root/*[@url='%s']";
+
 	/**
 	 * handles formatting for saving as a file
 	 */
@@ -73,7 +76,8 @@ public class XMLCache {
 		Format xmlOutputFormat = outputter.getFormat();
 		xmlOutputFormat.setIndent("  ");
 		xmlOutputFormat.setLineSeparator(System.getProperty("line.separator"));
-		outputter.setFormat(xmlOutputFormat);
+//		outputter.setFormat(xmlOutputFormat);
+		outputter.setFormat(Format.getPrettyFormat());
 		this.doc = doc;
 	}
 	
@@ -84,7 +88,7 @@ public class XMLCache {
 	 */
 	synchronized public
 	Element getElementForPage(String pageURL) {
-		String searchXPath = String.format("//root/*[@url='%s']", pageURL);
+		String searchXPath = String.format(ELEMENT_BY_URL_XPATH, pageURL);
 		List<Element> result = queryXPathList(searchXPath);
 		return result.size()>0?(Element)result.get(0).clone():null; 
 	}
@@ -98,7 +102,7 @@ public class XMLCache {
 		Element root = doc.getRootElement();
 		
 		Collection<Element> oldCachedElements = queryXPathList(
-				String.format("/root/*[@url='%s']",e.getAttributeValue("url")));
+				String.format(ELEMENT_BY_URL_XPATH,e.getAttributeValue("url")));
 		for (Element current: oldCachedElements) 
 			current.detach();
 

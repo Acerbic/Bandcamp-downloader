@@ -35,18 +35,20 @@ public class DownloadPageJob extends PageJob {
 		if (!forceDownload) page.loadFromCache();
 		try {
 			if (page.updateFromNet(this) || forceDownload) {
+				page.saveToCache();
 				//note: this iterator does not require locking because of ConcurrentLinkedQueue implementation
 				for (AbstractPage child: page.childPages) 
 					jobMaster.submit(new DownloadPageJob(child, jobMaster, forceDownload));
 				report("downloaded", 1);
-			} else 
+			} else {
+				report("up to date", 1);
 				for (AbstractPage child: page.childPages) 
 					jobMaster.submit(new GetPageJob(child, jobMaster));
+			}
 		} catch (ProblemsReadingDocumentException e) {
 			report("download failed", 1);
 			
 			// TODO: incur more error handling, job resubmitting and such
-			e.printStackTrace();
 		}
 			
 	}
