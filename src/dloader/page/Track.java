@@ -48,9 +48,7 @@ public class Track extends AbstractPage {
 	 * Shortcut	
 	 */
 	public 
-	String getProperty(String name) {
-		return properties.getProperty(name);
-	}
+	String getProperty(String name) { return properties.getProperty(name); }
 	/**
 	 * Shortcut
 	 */
@@ -297,13 +295,10 @@ public class Track extends AbstractPage {
 	}
 	
 	@Override
-	protected String getChildNodesXPath() {
-		return null;
-	}
+	protected String getChildNodesXPath() {return null;}
+	
 	@Override
-	public String getChildrenSaveTo() {
-		return null;
-	}
+	public String getChildrenSaveTo() {return null;}
 
 	@Override
 	public boolean isSavingNotRequired() {
@@ -341,6 +336,16 @@ public class Track extends AbstractPage {
 		} catch (IOException e) {
 			return null;
 		}
+	}
+	
+	@Override
+	public boolean isPageOK() {
+		if (! super.isPageOK() ) return false;
+		
+		for (String p: XMLCacheDataKeys) 
+			if (getProperty(p) == null) 
+				return false;
+		return true;
 	}
 	
 }

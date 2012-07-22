@@ -625,21 +625,76 @@
   <Album coverUrl="http://f0.bcbits.com/z/23/99/2399004206-1.jpg" title="Free Downloads" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator-children/free-downloads.htm" />
   <Album coverUrl="http://f0.bcbits.com/z/29/36/2936937824-1.jpg" title="soon it will be cold enough" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator-children/soon-it-will-be-cold-enough.htm" />
   <Album coverUrl="http://f0.bcbits.com/z/17/92/1792496746-1.jpg" title="Remixes" url="file:/D:/Gleb/Eclipse%20Workspaces/Dloader/Dloader/test/emancipator-children/remixes-2.htm">
-    <childref class="Track" url="http:/track/anthem-nym-remix" />
-    <childref class="Track" url="http:/track/ares-big-gigantic-remix" />
-    <childref class="Track" url="http:/track/bury-them-bones-marley-carroll-remix" />
-    <childref class="Track" url="http:/track/nevergreen-blockhead-remix" />
-    <childref class="Track" url="http:/track/when-i-go-michal-menert-remix" />
-    <childref class="Track" url="http:/track/first-snow-ooah-remix-2" />
-    <childref class="Track" url="http:/track/jet-stream-d-v-s-remix" />
-    <childref class="Track" url="http:/track/old-devil-kept-blue-remix" />
-    <childref class="Track" url="http:/track/rattlesnakes-saqi-remix" />
-    <childref class="Track" url="http:/track/black-lake-emancipator-remix" />
-    <childref class="Track" url="http:/track/safe-in-the-steep-cliffs-erothyme-remix" />
-    <childref class="Track" url="http:/track/siren-tor-remix" />
-    <childref class="Track" url="http:/track/soon-it-will-be-cold-enough-to-build-fires-aligning-minds-remix" />
-    <childref class="Track" url="http:/track/vines-the-great-mundane-remix" />
+    <childref class="Track" url="file:/track/anthem-nym-remix" />
+    <childref class="Track" url="file:/track/ares-big-gigantic-remix" />
+    <childref class="Track" url="file:/track/bury-them-bones-marley-carroll-remix" />
+    <childref class="Track" url="file:/track/nevergreen-blockhead-remix" />
+    <childref class="Track" url="file:/track/when-i-go-michal-menert-remix" />
+    <childref class="Track" url="file:/track/first-snow-ooah-remix-2" />
+    <childref class="Track" url="file:/track/jet-stream-d-v-s-remix" />
+    <childref class="Track" url="file:/track/old-devil-kept-blue-remix" />
+    <childref class="Track" url="file:/track/rattlesnakes-saqi-remix" />
+    <childref class="Track" url="file:/track/black-lake-emancipator-remix" />
+    <childref class="Track" url="file:/track/safe-in-the-steep-cliffs-erothyme-remix" />
+    <childref class="Track" url="file:/track/siren-tor-remix" />
+    <childref class="Track" url="file:/track/soon-it-will-be-cold-enough-to-build-fires-aligning-minds-remix" />
+    <childref class="Track" url="file:/track/vines-the-great-mundane-remix" />
   </Album>
+
+  <Discography title="emancipator" url="http://emancipator.bandcamp.com">
+    <childref class="Album" url="http://emancipator.bandcamp.com/album/remixes-2" />
+    <childref class="Album" url="http://emancipator.bandcamp.com/album/soon-it-will-be-cold-enough" />
+    <childref class="Album" url="http://emancipator.bandcamp.com/album/safe-in-the-steep-cliffs" />
+    <childref class="Album" url="http://emancipator.bandcamp.com/album/free-downloads" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/elephant-survival" />
+  </Discography>
+  <Album coverUrl="http://f0.bcbits.com/z/17/92/1792496746-1.jpg" title="Remixes" url="http://emancipator.bandcamp.com/album/remixes-2">
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/anthem-nym-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/ares-big-gigantic-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/bury-them-bones-marley-carroll-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/nevergreen-blockhead-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/when-i-go-michal-menert-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/first-snow-ooah-remix-2" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/jet-stream-d-v-s-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/old-devil-kept-blue-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/rattlesnakes-saqi-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/black-lake-emancipator-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/safe-in-the-steep-cliffs-erothyme-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/siren-tor-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/soon-it-will-be-cold-enough-to-build-fires-aligning-minds-remix" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/vines-the-great-mundane-remix" />
+  </Album>
+  <Album coverUrl="http://f0.bcbits.com/z/29/36/2936937824-1.jpg" title="soon it will be cold enough" url="http://emancipator.bandcamp.com/album/soon-it-will-be-cold-enough">
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/lionheart" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/wolf-drawn" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/when-i-go-featuring-thao-nguyen" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/with-rainy-eyes" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/the-darkest-evening-of-the-year" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/smoke-signals" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/eve" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/periscope-up" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/first-snow" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/good-knight" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/soon-it-will-be-cold-enough-to-build-fires" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/anthem" />
+  </Album>
+  <Album coverUrl="http://f0.bcbits.com/z/41/14/4114101861-1.jpg" title="safe in the steep cliffs" url="http://emancipator.bandcamp.com/album/safe-in-the-steep-cliffs">
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/greenland" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/black-lake" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/jet-stream" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/kamakura" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/all-through-the-night" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/old-devil" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/nevergreen-3" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/ares" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/rattlesnakes" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/bury-them-bones" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/vines" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/hill-sighed" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/siren" />
+    <childref class="Track" url="http://emancipator.bandcamp.com/track/safe-in-the-steep-cliffs" />
+  </Album>
+  <Track mediaLink="http://popplers5.bandcamp.com/download/track?enc=mp3-128&amp;fsig=71ff3ceceb47528819db7786df02e219&amp;id=1170432438&amp;stream=1&amp;ts=1342982428.0" artist="emancipator" track="" album="emancipator" title="Elephant Survival" url="http://emancipator.bandcamp.com/track/elephant-survival" />
 
 </root>
 

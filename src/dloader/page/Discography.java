@@ -34,7 +34,7 @@ public class Discography extends AbstractPage {
 	 * detected on parseSelf() call and dictates 
 	 * what getChildNodesXPath() returns. 
 	 */
-	private DiscographyListVariant variant = DiscographyListVariant.SIDEBAR; 
+	private DiscographyListVariant variant; 
 
 
 	public Discography(String url, String saveTo, AbstractPage parent) throws IllegalArgumentException

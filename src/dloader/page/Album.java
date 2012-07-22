@@ -160,5 +160,9 @@ public class Album extends AbstractPage {
 		} 
 		return fileset;
 	}
-
+	
+	@Override
+	public boolean isPageOK() {
+		return super.isPageOK() && (coverUrl != null);
+	}
 }

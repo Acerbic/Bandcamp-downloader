@@ -118,7 +118,7 @@ public class JobMasterTest {
 		assertTrue(results.contains("http://emancipator.bandcamp.com/album/free-downloads[Album]read cache failed1"));
 		
 		assertEquals(5, p.childPages.size());
-		assertEquals("http://f.bandcamp.com/z/17/92/1792496746-1.jpg", ((Album) p.getChildByURL(new URL("http://emancipator.bandcamp.com/album/remixes-2"))).getCoverUrl().toString());
+		assertEquals("http://f0.bcbits.com/z/17/92/1792496746-1.jpg", ((Album) p.getChildByURL(new URL("http://emancipator.bandcamp.com/album/remixes-2"))).getCoverUrl().toString());
 	}
 	
 	@Test
@@ -136,4 +136,5 @@ public class JobMasterTest {
 		
 		assertEquals(5, px.childPages.size());
 	}
+	
 }

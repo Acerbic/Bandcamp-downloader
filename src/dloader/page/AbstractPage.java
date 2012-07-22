@@ -32,8 +32,10 @@ import dloader.pagejob.ProgressReporter;
 
 //XXX: 1st download a page, THEN guess its class by content?
 
+//XXX: sad day. bandcamp allows to break hierarchy and put "track" right into "discography"
 
-//XXX: sad day. bandcamp sometimes breaks hierarchy and puts "track" right into "discography"
+//XXX: switch url from URL to URI and support both "http" and "file" protocols natively (without nasty tricks for JUnit)
+
 /**
  * Basic class to maintain page-relevant data and procedures, embodies one "download session", i.e. URL-to-files
  * transfer notion.
@@ -279,26 +281,21 @@ public abstract class AbstractPage {
 	 * @return proper URL with absolute path
 	 * @throws MalformedURLException 
 	 */
-	protected final URL resolveLink(String link) throws MalformedURLException {
-		return new URL(url, fixURLString(link));
+	protected URL resolveLink(String link) throws MalformedURLException {
+		return new URL(url, fixURLString(url, link));
 	}
 
 	private final static 
-	String fixURLString(String u) {
+	String fixURLString(URL base, String u) {
 		if (u == null) return null;
 		if (u.endsWith("/"))
 			u = u.substring(0, u.length()-1); // uniform "...com/" to "...com" address
-		try {
-			new URL(u);
-		} catch (MalformedURLException e) {
+		if (base == null && !u.contains(":/"))
 			u = "http://"+u; // default protocol
-		}		
 		return u;
-		
 	}
 	/**
 	 * Gets data about this page from cache (JDOM tree) and creates child nodes.
-	 * @param doc - JDOM Document to load from 
 	 * @return true if data acquired successfully, false otherwise
 	 */
 	public synchronized final
@@ -503,7 +500,7 @@ public abstract class AbstractPage {
 		Class<? extends AbstractPage> cl = null;
 		Constructor<? extends AbstractPage> cons;
 		
-		baseURL = fixURLString(baseURL);
+		baseURL = fixURLString(null, baseURL);
 		
 		try {
 			try {
@@ -538,12 +535,24 @@ public abstract class AbstractPage {
 		
 		return result;
 	}
+
+	public AbstractPage getChildByURLString(String string) {
+		try {
+			return getChildByURL(resolveLink(string));
+		} catch (MalformedURLException e) {
+			return null;
+		}
+	}
 	
 	/**
 	 * Integrity check.
 	 * Check if page data is complete - otherwise page must be read from cache/net
+	 * This is an "advisory" check, certain pages can MISS certain elements (say, album covers). 
+	 * It this is the case, this check will fail anyway.
+	 *
 	 * @return true if check passed, false otherwise.
 	 */
+	//XXX: may be should be complemented with "lastUpdated" time stamp.
 	public 
 	boolean isPageOK() {
 		if (getTitle()==null || getTitle().isEmpty())
