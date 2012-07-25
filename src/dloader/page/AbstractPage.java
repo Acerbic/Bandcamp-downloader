@@ -187,6 +187,8 @@ public abstract class AbstractPage {
 	
 	/**
 	 * Reads class-specific info from XML cache element.
+	 * Note: this is used two-fold. First, as intended it is reading data cached to XML; 
+	 * second, it is involved in a trick to copy page's data in "updateFromNet()"
 	 * @param e - element to read from
 	 * @throws ProblemsReadingDocumentException if reading data from XML fails
 	 */
@@ -228,7 +230,7 @@ public abstract class AbstractPage {
 	 * @param doc - JDOM Document or Element
 	 * @return List of found matches, may be of zero size if nothing is found
 	 */
-	protected final List<?> queryXPathList(String q, Document doc) {
+	protected final List<Element> queryXPathList(String q, Document doc) {
 		return queryXPathList (q, doc.getRootElement());
 	}
 	
@@ -239,8 +241,8 @@ public abstract class AbstractPage {
 	 * @param doc - JDOM Document or Element
 	 * @return List of found matches, may be of zero size if nothing is found
 	 */
-	protected final List<?> queryXPathList(String query, Element doc) {
-		if (query == null) return new ArrayList<Object>(0);
+	protected final List<Element> queryXPathList(String query, Element doc) {
+		if (query == null) return new ArrayList<Element>(0);
 		try {
 			String nsURI = doc.getNamespaceURI();
 			XPathBuilder<Element> xpb = new XPathBuilder<Element>(query,Filters.element()); // null filter
@@ -294,6 +296,7 @@ public abstract class AbstractPage {
 			u = "http://"+u; // default protocol
 		return u;
 	}
+	
 	/**
 	 * Gets data about this page from cache (JDOM tree) and creates child nodes.
 	 * @return true if data acquired successfully, false otherwise
@@ -354,8 +357,7 @@ public abstract class AbstractPage {
 				
 			// discover info about children pages
 			childPages.clear();
-			@SuppressWarnings("unchecked")
-			Collection<Element> result = (Collection<Element>) queryXPathList(getChildNodesXPath(), doc);
+			Collection<Element> result = queryXPathList(getChildNodesXPath(), doc);
 			for (Element el: result) 
 				try {
 					childPages.add(parseChild(el));
@@ -404,7 +406,8 @@ public abstract class AbstractPage {
 		synchronized (this) {
 			if (isSame(tempPage)) return false;
 			setTitle(tempPage.getTitle());
-			readCacheSelf(tempPage.getSpecificDataXML()); // somewhat awkward way to copy custom object data from temp object
+			// somewhat awkward way to copy custom object data from temp object
+			readCacheSelf(tempPage.getSpecificDataXML()); 
 	
 			childPages.clear();
 			childPages.addAll(tempPage.childPages);
@@ -425,7 +428,8 @@ public abstract class AbstractPage {
 	 */
 	public synchronized final
 	void saveToCache () {
-		
+		if (getCache() == null)
+			return;
 		// absolutely required field
 		if (getTitle()==null) return;
 		//1. Compose this one and childrefs
@@ -547,9 +551,9 @@ public abstract class AbstractPage {
 	/**
 	 * Integrity check.
 	 * Check if page data is complete - otherwise page must be read from cache/net
-	 * This is an "advisory" check, certain pages can MISS certain elements (say, album covers). 
-	 * It this is the case, this check will fail anyway.
 	 *
+	 * isPageOK() can return false even after being updated from net - if downloaded page is missing
+	 * some elements. Sometimes this is crucial, sometimes it is not.
 	 * @return true if check passed, false otherwise.
 	 */
 	//XXX: may be should be complemented with "lastUpdated" time stamp.

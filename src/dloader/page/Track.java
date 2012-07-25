@@ -49,15 +49,21 @@ public class Track extends AbstractPage {
 	 */
 	public 
 	String getProperty(String name) { return properties.getProperty(name); }
+	
 	/**
-	 * Shortcut
+	 * Use null value to delete property. Empty string ("") value cannot replace non-empty value.
 	 */
 	public 
 	String setProperty(String name, String value) {
-		if (value != null)
-			return (String) properties.setProperty(name, value);
-		else 
+		String oldValue = getProperty(name);
+		if (value == null)
 			return (String) properties.remove(name);
+		else if (oldValue == null)
+			return (String) properties.setProperty(name, value);
+		else if (value.isEmpty() && !oldValue.isEmpty())
+			return null;
+		else return (String) properties.setProperty(name, value);
+		
 	}
 	
 	/**
@@ -89,14 +95,15 @@ public class Track extends AbstractPage {
 	public synchronized 
 	String saveResult(ProgressReporter progressIndicator) throws IOException {
 		Path p = Paths.get(getTrackFileName());
+		// TODO: progress reporting in HERE
 		boolean wasDownloaded = 
-				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString()) != 0;
+				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString(), progressIndicator) != 0;
 		
-		String statusReport = "skipped";
+		String statusReport = null; // defaults to "skipped"
 		if (tagAudioFile(Main.forceTagging))
-			statusReport = "updated";
+			statusReport = "file updated";
 		if (wasDownloaded)
-			statusReport = "downloaded";
+			statusReport = "file downloaded";
 		
 		return statusReport;
 	}
@@ -226,7 +233,8 @@ public class Track extends AbstractPage {
 	protected void readCacheSelf(Element e) throws ProblemsReadingDocumentException {
 		for (String key: Arrays.asList(XMLCacheDataKeys)) {
 			String value = e.getAttributeValue(key);
-			if (value==null) throw new ProblemsReadingDocumentException();
+			if (value==null) 
+				value = ""; // keep existing value of same name if possible
 			setProperty(key,value);
 		}
 	}
@@ -254,8 +262,7 @@ public class Track extends AbstractPage {
 	@Override
 	protected void parseSelf(Document doc)  
 			throws ProblemsReadingDocumentException {
-		@SuppressWarnings("unchecked")
-		List<Element> scriptList = (List<Element>) queryXPathList(SCRIPT_DESC_XPATH, doc);
+		List<Element> scriptList = queryXPathList(SCRIPT_DESC_XPATH, doc);
 		for (Element el: scriptList) {
 			String rawData = el.getText();
 			// clear JavaScript escaping: "\/" --> "/", etc.

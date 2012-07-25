@@ -6,5 +6,5 @@ package dloader.pagejob;
  *
  */
 public interface ProgressReporter  {
-	void report(String type, int report);
+	void report(String type, long report);
 }

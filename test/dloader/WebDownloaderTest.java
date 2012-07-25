@@ -26,7 +26,7 @@ public class WebDownloaderTest {
 		Path p = Paths.get("test/classicplus.png");
 		Files.deleteIfExists(p);
 		WebDownloader.fetchWebFile("http://www.google.com/logos/classicplus.png", 
-				p.toString());
+				p.toString(), null);
 		assertEquals(true, Files.exists(p));
 		assertEquals(11508,Files.size(p)); 
 		Files.deleteIfExists(p);

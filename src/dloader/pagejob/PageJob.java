@@ -47,7 +47,7 @@ public abstract class PageJob implements Runnable, ProgressReporter {
 	 */
 	@Override
 	public  
-	void report (String s, int i) {
+	void report (String s, long i) {
 		jobMaster.report(page, s, i);
 	}
 }

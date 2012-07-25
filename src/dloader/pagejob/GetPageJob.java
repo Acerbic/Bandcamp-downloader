@@ -19,13 +19,16 @@ class GetPageJob extends PageJob {
 
 	@Override
 	public void run() {
+		report ("checking cache", 1);
 		if (page.loadFromCache()) {
 			//note: this iterator does not require locking because of ConcurrentLinkedQueue implementation
 			for (AbstractPage child: page.childPages)
 				jobMaster.submit(new GetPageJob(child,jobMaster));
 			report("read from cache",1);
-		} else 
+		} else  {
+			report("cache reading failed, submitting download job",1);
 			jobMaster.submit(new DownloadPageJob(page,jobMaster, false));
+		}
 		
 	}
 }

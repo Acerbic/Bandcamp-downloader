@@ -18,7 +18,7 @@ public class JobMaster {
 	/**
 	 * number of threads running in parallel
 	 */
-	static int CORETHREADS_NUMBER = 4; 
+	static final int CORETHREADS_NUMBER = 4; 
 	
 	/**
 	 * Associated job executor
@@ -54,10 +54,13 @@ public class JobMaster {
 	 * Initiate JobMaster with rootJob (one which can generate and submit other jobs)
 	 * @param whatToDo - job type
 	 * @param rootPage - page to process 
+	 * @param threadsNumber TODO
 	 */
 	public
-	JobMaster (JobType whatToDo, AbstractPage rootPage) {
-		executor = Executors.newFixedThreadPool(CORETHREADS_NUMBER);
+	JobMaster (JobType whatToDo, AbstractPage rootPage, int threadsNumber) {
+		if (threadsNumber <= 0)
+			threadsNumber = CORETHREADS_NUMBER;
+		executor = Executors.newFixedThreadPool(threadsNumber);
 		assert (executor instanceof ThreadPoolExecutor);
 		results = new ConcurrentLinkedQueue<Future<?>>();
 		
@@ -71,14 +74,13 @@ public class JobMaster {
 	 */
 	public
 	void goGoGo() {
-		
 		synchronized (this) {
 			// can be ran only once;
 			if (rootPage == null) return;
 
 			switch (whatToDo) {
 			case READCACHEPAGES: submit(new ReadCacheJob(rootPage, this)); break;
-			case UPDATEPAGES: submit(new DownloadPageJob(rootPage, this, false)); break;
+			case UPDATEPAGES: submit(new DownloadPageJob(rootPage, this, !Main.allowFromCache)); break;
 			case UPDATEDATA: submit(new SaveDataJob(rootPage, this)); break;
 			}
 		}
@@ -111,9 +113,9 @@ public class JobMaster {
 	 * This job master reports to GUI, but the method can be overloaded to support console or network, for example
 	 * @param page - page is being (been) worked on.
 	 * @param type - custom string argument
-	 * @param report - custom integer argument
+	 * @param i - custom integer argument
 	 */
-	public void report(AbstractPage page, String type, int report) {
+	public void report(AbstractPage page, String type, long i) {
 		// TODO SEND message to GUI thread
 		
 	}

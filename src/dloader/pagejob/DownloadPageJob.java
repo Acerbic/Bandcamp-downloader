@@ -14,6 +14,7 @@ import dloader.page.AbstractPage.ProblemsReadingDocumentException;
  * for this page and all generated jobs.
  * @author Acerbic
  *
+ * reports "download job started", "downloaded", "up to date", "download failed"
  */
 public class DownloadPageJob extends PageJob {
 	
@@ -32,6 +33,7 @@ public class DownloadPageJob extends PageJob {
 
 	@Override
 	public void run() {
+		report ("download job started", 1);
 		if (!forceDownload) page.loadFromCache();
 		try {
 			if (page.updateFromNet(this) || forceDownload) {
@@ -42,8 +44,11 @@ public class DownloadPageJob extends PageJob {
 				report("downloaded", 1);
 			} else {
 				report("up to date", 1);
+				// even if all children are "up to date" too, still need to run the jobs - for the grand-children and etc.
+				// since cache checks are cheap, better err on a cautious side.
 				for (AbstractPage child: page.childPages) 
 					jobMaster.submit(new GetPageJob(child, jobMaster));
+				
 			}
 		} catch (ProblemsReadingDocumentException e) {
 			report("download failed", 1);

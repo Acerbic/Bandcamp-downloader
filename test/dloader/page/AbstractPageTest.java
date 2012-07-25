@@ -76,10 +76,10 @@ public class AbstractPageTest {
 
 	class DummyProgressReporter implements ProgressReporter {
 		String repS;
-		int repI;
+		long repI;
 		
 		@Override
-		public void report(String type, int report) {
+		public void report(String type, long report) {
 			repS = type;
 			repI = report;
 		}

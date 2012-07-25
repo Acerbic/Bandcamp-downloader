@@ -132,22 +132,11 @@ public class Main {
 //					logger, 
 //					allowFromCache, xmlFileName, 
 //					isInConsoleMode);
-			if (allowFromCache)
+//			if (allowFromCache)
 				cache = new XMLCache(xmlFileName);
 			if (isInConsoleMode) {
-					Thread t = new Thread() {
-					@Override
-					public void run() {
-						try {
-//							PageProcessor.acquireData();
-						} catch (Throwable e) {
-							// clean-up
-							Main.logger.log(Level.SEVERE, "", e);
-						}
-					}
-				};
-				t.start();
-				t.join(); // wait till thread ends
+				SoloThreadConsoleDloader stcd = new SoloThreadConsoleDloader();
+				stcd.getThingsMoving();
 			} else {
 				// GUI section startup 
 				SwingUtilities.invokeAndWait(new Runnable() {

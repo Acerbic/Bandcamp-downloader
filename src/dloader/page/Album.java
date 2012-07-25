@@ -57,7 +57,7 @@ public class Album extends AbstractPage {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 			
-		if (WebDownloader.fetchWebFile(coverUrl, getCoverSavePath()) != 0) 
+		if (WebDownloader.fetchWebFile(coverUrl, getCoverSavePath(), progressIndicator) != 0) 
 			return "cover image downloaded";
 		else return null;
 	}
@@ -102,8 +102,8 @@ public class Album extends AbstractPage {
 	@Override
 	protected 
 	void parseSelf(Document doc) throws ProblemsReadingDocumentException {
-		@SuppressWarnings("unchecked")
-		List<Element> imgList = (List<Element>) queryXPathList("//pre:div[@id='tralbumArt']//pre:img", doc);
+		trackCounter = 0;
+		List<Element> imgList =  queryXPathList("//pre:div[@id='tralbumArt']//pre:img", doc);
 		if (imgList.size() > 0) {
 			try {
 				coverUrl = resolveLink((imgList.get(0)).getAttributeValue("src"));
@@ -112,8 +112,7 @@ public class Album extends AbstractPage {
 			}
 		}
 		
-		@SuppressWarnings("unchecked")
-		List<Element> scriptList = (List<Element>) queryXPathList("//pre:script", doc);
+		List<Element> scriptList = queryXPathList("//pre:script", doc);
 		for (int i = 0; i<scriptList.size(); i++) {
 			Pattern x = Pattern.compile(".*album_title : \"([^\"]*)\".*", Pattern.DOTALL);
 			Matcher m = x.matcher(scriptList.get(i).getText());

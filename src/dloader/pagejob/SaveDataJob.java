@@ -18,15 +18,17 @@ public class SaveDataJob extends PageJob {
 
 	@Override
 	public void run() {
+		report ("saving started",1);
 		try {
 			String operationResult = page.saveResult(this);
 			if (operationResult == null)
-				report("saving skipped", 1);
+				report("save skipped", 1);
 			else 
 				report(operationResult, 1);
 		} catch (IOException e) {
 			report("saving caused exception",1);
-			e.printStackTrace();
+			//TODO: job reschedule and error handling
+//			e.printStackTrace();
 		}
 		
 		//note: this iterator does not require locking because of ConcurrentLinkedQueue implementation

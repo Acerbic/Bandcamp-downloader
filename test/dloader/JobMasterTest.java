@@ -31,13 +31,13 @@ public class JobMasterTest {
 	class LocalReportJobMaser extends JobMaster {
 		final private List<String> reports;
 		public LocalReportJobMaser(List<String> reports, JobType whatToDo, AbstractPage rootPage) {
-			super(whatToDo, rootPage);
+			super(whatToDo, rootPage, 0);
 			this.reports = reports;
 		}
 		
 		@Override
-		public void report(AbstractPage page, String type, int report) {
-			reports.add(page.toString() + type + new Integer(report).toString());
+		public void report(AbstractPage page, String type, long report) {
+			reports.add(page.toString() + type + new Long(report).toString());
 		}
 	}
 

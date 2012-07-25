@@ -13,6 +13,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
+import dloader.pagejob.ProgressReporter;
+
 /**
  * Helps downloading resources from the net
  * @author A.Cerbic
@@ -22,14 +24,15 @@ public class WebDownloader {
 /**
 	 * Downloads and saves a resource by given string address (URL) .
 	 * @param from - resource URL string
-	 * @param to - file to save to.
+ * @param to - file to save to.
+ * @param reporter TODO
 	 * @return size of the downloaded file in bytes, 
 	 * 0 if download was skipped (file exists and not zero length)
 	 * @throws IOException on stream problems or server has responded bad
 	 */
-	public static long fetchWebFile(String from, String to) throws IOException {
+	public static long fetchWebFile(String from, String to, ProgressReporter reporter) throws IOException {
 		URL u = new URL(from);
-		return fetchWebFile(u,to);
+		return fetchWebFile(u,to, reporter);
 	}
 	
 	/**
@@ -40,7 +43,7 @@ public class WebDownloader {
 	 * 0 if download was skipped (file exists and not zero-length or server has responded badly)
 	 * @throws IOException on stream problems AND on server errors/timeouts
 	 */
-	public static long fetchWebFile(URL from, String to) throws IOException {
+	public static long fetchWebFile(URL from, String to, ProgressReporter reporter) throws IOException {
 		StatisticGatherer.totalFileDownloadAttempts.incrementAndGet();
 		
 		Path dstPath = Paths.get(to);
@@ -58,7 +61,9 @@ public class WebDownloader {
 
 		URLConnection connection = from.openConnection();
 		if (!checkHttpResponseOK(connection))
-			throw new IOException("failed to get OK response from server"); 
+			throw new IOException("failed to get OK response from server");
+		reporter.report("file size", connection.getContentLengthLong());
+		long totalRead = 0;
 		try (InputStream is = connection.getInputStream();
 				SeekableByteChannel boch = Files.newByteChannel(dstPath, 
 						StandardOpenOption.WRITE,
@@ -73,6 +78,8 @@ public class WebDownloader {
 				while (buff2.remaining() > 0) 
 					boch.write(buff2); // IOException on insufficient disk space 
 				buff2.rewind(); 
+				totalRead += numRead;
+				reporter.report("downloaded bytes", totalRead);
 			}
 			
 			boch.close();
