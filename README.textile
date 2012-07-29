@@ -1,0 +1,7 @@
+Bandcamp Downloader.
+
+A free opensource project by Anthony Cerbic.
+
+Purpose: it is a handy application to extract mp3 files from http://bandcamp.com, tag 'em and bag 'em on local drive.
+
+Status: work in progress. Console mode is working pending open testing, GUI is on route.
