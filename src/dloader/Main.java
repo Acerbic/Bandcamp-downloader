@@ -145,6 +145,7 @@ public class Main {
 //						GUI.EventDispatchThread = Thread.currentThread();
 						assert (SwingUtilities.isEventDispatchThread());
 						GUI g = new GUI();
+						g.init();
 						g.pack();
 						g.setVisible(true);
 					}

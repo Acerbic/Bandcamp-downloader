@@ -18,6 +18,8 @@ import java.awt.Font;
 import javax.swing.border.BevelBorder;
 import javax.swing.JCheckBox;
 
+import dloader.page.AbstractPage;
+
 public class GUI extends JFrame {
 
 	/**
@@ -26,6 +28,12 @@ public class GUI extends JFrame {
 	private static final long serialVersionUID = 3871202126171183930L;
 	private JTextField textFieldURL;
 	private JTextField textFieldDirectory;
+	private JTree tree;
+	
+	AbstractPage rootPage;
+	private JLabel lblStatus;
+	private JCheckBox chckbxUseCache;
+	private JCheckBox chckbxLog;
 
 	public GUI() throws HeadlessException {
 		setTitle("Bandcamp dloader");
@@ -48,11 +56,10 @@ public class GUI extends JFrame {
 		
 		JButton btnNewButton = new JButton("Prefetch");
 		
-		JTree tree = new JTree();
+		tree = new JTree();
 		tree.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
-		tree.setRootVisible(false);
 		
-		JLabel lblStatus = new JLabel("kkkk");
+		lblStatus = new JLabel("kkkk");
 		lblStatus.setHorizontalAlignment(SwingConstants.CENTER);
 		lblStatus.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		
@@ -64,9 +71,9 @@ public class GUI extends JFrame {
 		
 		JButton btnNewButton_4 = new JButton("Retag");
 		
-		JCheckBox chckbxNewCheckBox = new JCheckBox("cache");
+		chckbxUseCache = new JCheckBox("cache");
 		
-		JCheckBox chckbxNewCheckBox_1 = new JCheckBox("log");
+		chckbxLog = new JCheckBox("log");
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
 			gl_panel.createParallelGroup(Alignment.TRAILING)
@@ -100,9 +107,9 @@ public class GUI extends JFrame {
 							.addGap(28)
 							.addComponent(btnNewButton_4)
 							.addPreferredGap(ComponentPlacement.RELATED, 538, Short.MAX_VALUE)
-							.addComponent(chckbxNewCheckBox_1)
+							.addComponent(chckbxLog)
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(chckbxNewCheckBox)))
+							.addComponent(chckbxUseCache)))
 					.addContainerGap())
 		);
 		gl_panel.setVerticalGroup(
@@ -119,8 +126,8 @@ public class GUI extends JFrame {
 					.addPreferredGap(ComponentPlacement.UNRELATED)
 					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
 						.addComponent(btnNewButton_4)
-						.addComponent(chckbxNewCheckBox)
-						.addComponent(chckbxNewCheckBox_1))
+						.addComponent(chckbxUseCache)
+						.addComponent(chckbxLog))
 					.addGap(44)
 					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
 						.addComponent(btnNewButton)
@@ -149,5 +156,14 @@ public class GUI extends JFrame {
 	public GUI(String title, GraphicsConfiguration gc) {
 		super(title, gc);
 		// TODO Auto-generated constructor stub
+	}
+	
+	public void init() {
+		textFieldDirectory.setText(Main.saveTo);
+		textFieldURL.setText(Main.baseURL);
+		rootPage = AbstractPage.bakeAPage(null, Main.baseURL, Main.saveTo, null);
+		lblStatus.setText("Preparing");
+		chckbxLog.setSelected( Main.logger != null);
+		chckbxUseCache.setSelected(Main.allowFromCache);
 	}
 }

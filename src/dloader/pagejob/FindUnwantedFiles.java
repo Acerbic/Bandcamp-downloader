@@ -1,6 +1,6 @@
 package dloader.pagejob;
 
-import dloader.page.AbstractPage;
+//import dloader.page.AbstractPage;
 
 /**
  * This job operates under presumption that any page create files in "saveTo" folder or 
