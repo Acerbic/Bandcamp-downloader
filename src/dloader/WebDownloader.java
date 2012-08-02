@@ -62,7 +62,7 @@ public class WebDownloader {
 		URLConnection connection = from.openConnection();
 		if (!checkHttpResponseOK(connection))
 			throw new IOException("failed to get OK response from server");
-		reporter.report("file size", connection.getContentLengthLong());
+		if (reporter != null) reporter.report("file size", connection.getContentLengthLong());
 		long totalRead = 0;
 		try (InputStream is = connection.getInputStream();
 				SeekableByteChannel boch = Files.newByteChannel(dstPath, 
@@ -79,7 +79,7 @@ public class WebDownloader {
 					boch.write(buff2); // IOException on insufficient disk space 
 				buff2.rewind(); 
 				totalRead += numRead;
-				reporter.report("downloaded bytes", totalRead);
+				if (reporter != null) reporter.report("downloaded bytes", totalRead);
 			}
 			
 			boch.close();

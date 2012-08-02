@@ -102,7 +102,7 @@ public class TrackTest {
 
 	@Test
 	public void testTagMp3FileUpdatePartialTag() throws CannotReadException, IOException {
-		t.setProperty("album", "");
+		t.setProperty("album", null);
 		t.tagAudioFile(false);
 		AudioFile mp3File = AudioFileIO.read(workingCopyPath.toFile());
 		entagged.audioformats.Tag mp3Tag = mp3File.getTag();
@@ -126,7 +126,7 @@ public class TrackTest {
 	@Test
 	public void testTagMp3FileUpdatePartialTagWithRewrite() throws CannotReadException, IOException {
 		Main.forceTagging = true;
-		t.setProperty("album", "");
+		t.setProperty("album", null);
 		t.tagAudioFile(true);
 		AudioFile mp3File = AudioFileIO.read(workingCopyPath.toFile());
 		entagged.audioformats.Tag mp3Tag = mp3File.getTag();

@@ -143,7 +143,10 @@ public class Main {
 					@Override
 					public void run() {
 //						GUI.EventDispatchThread = Thread.currentThread();
-//						GUI.showGUIWindow();
+						assert (SwingUtilities.isEventDispatchThread());
+						GUI g = new GUI();
+						g.pack();
+						g.setVisible(true);
 					}
 				});
 				
