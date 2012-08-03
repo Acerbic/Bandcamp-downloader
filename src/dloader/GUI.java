@@ -11,14 +11,29 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.JButton;
 import javax.swing.JTree;
 import java.awt.Font;
+import java.util.Deque;
+import java.util.Enumeration;
+import java.util.LinkedList;
+
 import javax.swing.border.BevelBorder;
 import javax.swing.JCheckBox;
 
+import dloader.JobMaster.JobType;
 import dloader.page.AbstractPage;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
+
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class GUI extends JFrame {
 
@@ -34,8 +49,20 @@ public class GUI extends JFrame {
 	private JLabel lblStatus;
 	private JCheckBox chckbxUseCache;
 	private JCheckBox chckbxLog;
+	private Thread eventDispatchThread;
+	private JButton btnNewButton;
 
+	public Thread getEventDispatchThread() {
+		return eventDispatchThread;
+	}
+
+
+	@SuppressWarnings("serial")
 	public GUI() throws HeadlessException {
+		assert (SwingUtilities.isEventDispatchThread());
+		eventDispatchThread = Thread.currentThread();
+		
+		
 		setTitle("Bandcamp dloader");
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		
@@ -54,9 +81,43 @@ public class GUI extends JFrame {
 		JLabel lblNewLabel_1 = new JLabel("Target directory:");
 		lblNewLabel_1.setLabelFor(textFieldDirectory);
 		
-		JButton btnNewButton = new JButton("Prefetch");
+		btnNewButton = new JButton("Prefetch");
+		btnNewButton.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				MyWorker newWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
+				newWorker.execute();
+				btnNewButton.setEnabled(false);
+			}
+		});
 		
 		tree = new JTree();
+		tree.setRootVisible(false);
+		tree.setShowsRootHandles(true);
+		tree.setEditable(true);
+		tree.setModel(new DefaultTreeModel(
+			new DefaultMutableTreeNode("JTree") {
+				{
+//					DefaultMutableTreeNode node_1;
+//					node_1 = new DefaultMutableTreeNode("colors");
+//						node_1.add(new DefaultMutableTreeNode("blue"));
+//						node_1.add(new DefaultMutableTreeNode("violet"));
+//						node_1.add(new DefaultMutableTreeNode("red"));
+//						node_1.add(new DefaultMutableTreeNode("yellow"));
+//					add(node_1);
+//					node_1 = new DefaultMutableTreeNode("sports");
+//						node_1.add(new DefaultMutableTreeNode("basketball"));
+//						node_1.add(new DefaultMutableTreeNode("soccer"));
+//						node_1.add(new DefaultMutableTreeNode("football"));
+//						node_1.add(new DefaultMutableTreeNode("hockey"));
+//					add(node_1);
+//					node_1 = new DefaultMutableTreeNode("food");
+//						node_1.add(new DefaultMutableTreeNode("pizza"));
+//						node_1.add(new DefaultMutableTreeNode("ravioli"));
+//					add(node_1);
+				}
+			}
+		));
 		tree.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
 		lblStatus = new JLabel("kkkk");
@@ -165,5 +226,37 @@ public class GUI extends JFrame {
 		lblStatus.setText("Preparing");
 		chckbxLog.setSelected( Main.logger != null);
 		chckbxUseCache.setSelected(Main.allowFromCache);
+	}
+	
+	public void updateTree (AbstractPage p, String message, long value) {
+		Deque<AbstractPage> pathToPage = new LinkedList<AbstractPage>();
+		while (p != null) {
+			pathToPage.push(p);
+			p = p.getParent();
+		}
+		
+		TreeModel model = tree.getModel();
+		DefaultMutableTreeNode parent = (DefaultMutableTreeNode) model.getRoot();
+		for (AbstractPage x: pathToPage) {
+			DefaultMutableTreeNode child = null; 
+			boolean found = false;
+			for (@SuppressWarnings("unchecked")
+			Enumeration<DefaultMutableTreeNode> children = parent.children(); children.hasMoreElements();) {
+				child = children.nextElement();
+				if (child.getUserObject().equals(x)) {
+					found = true;
+					break;
+				}
+			}
+			if (! found) {
+				// add new item under this parent
+				child = new DefaultMutableTreeNode(x);
+				parent.add(child);
+				tree.expandPath(new TreePath(parent.getPath()));
+			}
+			parent = child;
+		}
+		tree.repaint();
+		tree.updateUI();
 	}
 }

@@ -13,7 +13,7 @@ import dloader.pagejob.*;
  * After constructing, call goGoGo() to start actual working
  * @author Acerbic
  */
-public class JobMaster {
+public abstract class JobMaster {
 	
 	/**
 	 * number of threads running in parallel
@@ -50,6 +50,7 @@ public class JobMaster {
 	private AbstractPage rootPage; 
 	private JobType whatToDo; 
 	
+
 	/**
 	 * Initiate JobMaster with rootJob (one which can generate and submit other jobs)
 	 * @param whatToDo - job type
@@ -115,11 +116,7 @@ public class JobMaster {
 	 * @param type - custom string argument
 	 * @param i - custom integer argument
 	 */
-	public void report(AbstractPage page, String type, long i) {
-		// TODO SEND message to GUI thread
-		
-	}
-	
-	
+	abstract
+	public void report(AbstractPage page, String type, long i) ;
 
 }

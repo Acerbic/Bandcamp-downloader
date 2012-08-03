@@ -24,6 +24,7 @@ public class Main {
 
 	public static Logger logger;
 	public static XMLCache cache;
+	public static GUI gui;
 	
 
 	private static void parseCommandLine(String[] args) {
@@ -127,13 +128,7 @@ public class Main {
 			logger.info( String.format(
 					"Starting to download%n from <%s>%n into <%s> %s%n",
 					baseURL, saveTo, forceTagging?"with retagging existing files.":""));
-//			PageProcessor.initPageProcessor(
-//					saveTo.toString(), baseURL, 
-//					logger, 
-//					allowFromCache, xmlFileName, 
-//					isInConsoleMode);
-//			if (allowFromCache)
-				cache = new XMLCache(xmlFileName);
+			cache = new XMLCache(xmlFileName);
 			if (isInConsoleMode) {
 				SoloThreadConsoleDloader stcd = new SoloThreadConsoleDloader();
 				stcd.getThingsMoving();
@@ -142,17 +137,14 @@ public class Main {
 				SwingUtilities.invokeAndWait(new Runnable() {
 					@Override
 					public void run() {
-//						GUI.EventDispatchThread = Thread.currentThread();
-						assert (SwingUtilities.isEventDispatchThread());
-						GUI g = new GUI();
-						g.init();
-						g.pack();
-						g.setVisible(true);
+						gui = new GUI();
+						gui.init();
+						gui.pack();
+						gui.setVisible(true);
 					}
 				});
 				
-//				assert (GUI.EventDispatchThread != null); 
-//				GUI.EventDispatchThread.join(); // wait till GUI closes
+				gui.getEventDispatchThread().join(); // wait till GUI closes
 			}
 			
 			cache.saveCache();
