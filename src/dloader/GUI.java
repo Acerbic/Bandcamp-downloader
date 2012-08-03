@@ -30,10 +30,9 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import javax.swing.JScrollPane;
 
 public class GUI extends JFrame {
 
@@ -135,14 +134,14 @@ public class GUI extends JFrame {
 		chckbxUseCache = new JCheckBox("cache");
 		
 		chckbxLog = new JCheckBox("log");
+		
+		JScrollPane scrollPane = new JScrollPane();
+		
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
 			gl_panel.createParallelGroup(Alignment.TRAILING)
 				.addGroup(gl_panel.createSequentialGroup()
 					.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
-						.addGroup(gl_panel.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(tree, GroupLayout.DEFAULT_SIZE, 709, Short.MAX_VALUE))
 						.addGroup(gl_panel.createSequentialGroup()
 							.addContainerGap()
 							.addGroup(gl_panel.createParallelGroup(Alignment.TRAILING)
@@ -152,8 +151,8 @@ public class GUI extends JFrame {
 										.addComponent(lblNewLabel_1, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
 									.addPreferredGap(ComponentPlacement.UNRELATED)
 									.addGroup(gl_panel.createParallelGroup(Alignment.TRAILING)
-										.addComponent(textFieldDirectory, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)
-										.addComponent(textFieldURL, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)))
+										.addComponent(textFieldDirectory, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 627, Short.MAX_VALUE)
+										.addComponent(textFieldURL, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 627, Short.MAX_VALUE)))
 								.addGroup(gl_panel.createSequentialGroup()
 									.addComponent(btnNewButton)
 									.addGap(7)
@@ -163,14 +162,17 @@ public class GUI extends JFrame {
 									.addPreferredGap(ComponentPlacement.RELATED)
 									.addComponent(btnNewButton_3)
 									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(lblStatus, GroupLayout.DEFAULT_SIZE, 419, Short.MAX_VALUE))))
+									.addComponent(lblStatus, GroupLayout.DEFAULT_SIZE, 429, Short.MAX_VALUE))))
 						.addGroup(gl_panel.createSequentialGroup()
 							.addGap(28)
 							.addComponent(btnNewButton_4)
-							.addPreferredGap(ComponentPlacement.RELATED, 538, Short.MAX_VALUE)
+							.addPreferredGap(ComponentPlacement.RELATED, 548, Short.MAX_VALUE)
 							.addComponent(chckbxLog)
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(chckbxUseCache)))
+							.addComponent(chckbxUseCache))
+						.addGroup(gl_panel.createSequentialGroup()
+							.addContainerGap()
+							.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 709, Short.MAX_VALUE)))
 					.addContainerGap())
 		);
 		gl_panel.setVerticalGroup(
@@ -197,26 +199,24 @@ public class GUI extends JFrame {
 						.addComponent(btnNewButton_2)
 						.addComponent(btnNewButton_3))
 					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(tree, GroupLayout.DEFAULT_SIZE, 729, Short.MAX_VALUE)
+					.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 732, Short.MAX_VALUE)
 					.addContainerGap())
 		);
+		
+		scrollPane.setViewportView(tree);
 		panel.setLayout(gl_panel);
-		// TODO Auto-generated constructor stub
 	}
 
 	public GUI(GraphicsConfiguration gc) {
 		super(gc);
-		// TODO Auto-generated constructor stub
 	}
 
 	public GUI(String title) throws HeadlessException {
 		super(title);
-		// TODO Auto-generated constructor stub
 	}
 
 	public GUI(String title, GraphicsConfiguration gc) {
 		super(title, gc);
-		// TODO Auto-generated constructor stub
 	}
 	
 	public void init() {
@@ -256,7 +256,6 @@ public class GUI extends JFrame {
 			}
 			parent = child;
 		}
-		tree.repaint();
 		tree.updateUI();
 	}
 }
