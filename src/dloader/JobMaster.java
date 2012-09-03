@@ -16,7 +16,7 @@ import dloader.pagejob.*;
 public abstract class JobMaster {
 	
 	/**
-	 * number of threads running in parallel
+	 * number of threads running in parallel by default
 	 */
 	static final int CORETHREADS_NUMBER = 4; 
 	
@@ -55,7 +55,7 @@ public abstract class JobMaster {
 	 * Initiate JobMaster with rootJob (one which can generate and submit other jobs)
 	 * @param whatToDo - job type
 	 * @param rootPage - page to process 
-	 * @param threadsNumber TODO
+	 * @param threadsNumber - desired number of threads, if 0 then default number will be used: JobMaster.CORETHREADS_NUMBER (4)
 	 */
 	public
 	JobMaster (JobType whatToDo, AbstractPage rootPage, int threadsNumber) {

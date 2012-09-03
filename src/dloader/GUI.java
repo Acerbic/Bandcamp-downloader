@@ -1,5 +1,6 @@
 package dloader;
 
+import java.awt.Component;
 import java.awt.GraphicsConfiguration;
 import java.awt.HeadlessException;
 
@@ -24,7 +25,10 @@ import javax.swing.border.BevelBorder;
 import javax.swing.JCheckBox;
 
 import dloader.JobMaster.JobType;
+import dloader.gui.MyWorker;
 import dloader.page.AbstractPage;
+
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
@@ -33,6 +37,7 @@ import javax.swing.tree.TreePath;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.JScrollPane;
+import javax.swing.ImageIcon;
 
 public class GUI extends JFrame {
 
@@ -50,11 +55,32 @@ public class GUI extends JFrame {
 	private JCheckBox chckbxLog;
 	private Thread eventDispatchThread;
 	private JButton btnNewButton;
+	
+	
+	@SuppressWarnings("serial")
+	class MyRenderer extends DefaultTreeCellRenderer {
+
+	    public Component getTreeCellRendererComponent(
+	                        JTree tree,
+	                        Object value,
+	                        boolean sel,
+	                        boolean expanded,
+	                        boolean leaf,
+	                        int row,
+	                        boolean hasFocus) {
+
+	        super.getTreeCellRendererComponent(
+	                        tree, value, sel,
+	                        expanded, leaf, row,
+	                        hasFocus);
+	        return this;
+	    }
+
+	}	
 
 	public Thread getEventDispatchThread() {
 		return eventDispatchThread;
 	}
-
 
 	@SuppressWarnings("serial")
 	public GUI() throws HeadlessException {
@@ -71,10 +97,12 @@ public class GUI extends JFrame {
 		JLabel lblNewLabel = new JLabel("Source URL:");
 		
 		textFieldURL = new JTextField();
+		textFieldURL.setEditable(false);
 		lblNewLabel.setLabelFor(textFieldURL);
 		textFieldURL.setColumns(10);
 		
 		textFieldDirectory = new JTextField();
+		textFieldDirectory.setEditable(false);
 		textFieldDirectory.setColumns(10);
 		
 		JLabel lblNewLabel_1 = new JLabel("Target directory:");
@@ -96,27 +124,10 @@ public class GUI extends JFrame {
 		tree.setEditable(true);
 		tree.setModel(new DefaultTreeModel(
 			new DefaultMutableTreeNode("JTree") {
-				{
-//					DefaultMutableTreeNode node_1;
-//					node_1 = new DefaultMutableTreeNode("colors");
-//						node_1.add(new DefaultMutableTreeNode("blue"));
-//						node_1.add(new DefaultMutableTreeNode("violet"));
-//						node_1.add(new DefaultMutableTreeNode("red"));
-//						node_1.add(new DefaultMutableTreeNode("yellow"));
-//					add(node_1);
-//					node_1 = new DefaultMutableTreeNode("sports");
-//						node_1.add(new DefaultMutableTreeNode("basketball"));
-//						node_1.add(new DefaultMutableTreeNode("soccer"));
-//						node_1.add(new DefaultMutableTreeNode("football"));
-//						node_1.add(new DefaultMutableTreeNode("hockey"));
-//					add(node_1);
-//					node_1 = new DefaultMutableTreeNode("food");
-//						node_1.add(new DefaultMutableTreeNode("pizza"));
-//						node_1.add(new DefaultMutableTreeNode("ravioli"));
-//					add(node_1);
-				}
+				{}
 			}
 		));
+		tree.setCellRenderer(new MyRenderer());		
 		tree.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
 		lblStatus = new JLabel("kkkk");
@@ -132,16 +143,24 @@ public class GUI extends JFrame {
 		JButton btnNewButton_4 = new JButton("Retag");
 		
 		chckbxUseCache = new JCheckBox("cache");
+		chckbxUseCache.setEnabled(false);
 		
 		chckbxLog = new JCheckBox("log");
+		chckbxLog.setEnabled(false);
 		
 		JScrollPane scrollPane = new JScrollPane();
+		
+		JLabel lblNewLabel_2 = new JLabel("sdf");
+		lblNewLabel_2.setIcon(new ImageIcon("D:\\Pics & Photos\\\u0421\u0435\u043C\u044C\u044F\\\u0420\u0430\u0437\u043D\u043E\u0435\\Photo-0041.jpg"));
 		
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
 			gl_panel.createParallelGroup(Alignment.TRAILING)
 				.addGroup(gl_panel.createSequentialGroup()
 					.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
+						.addGroup(gl_panel.createSequentialGroup()
+							.addContainerGap()
+							.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 709, Short.MAX_VALUE))
 						.addGroup(gl_panel.createSequentialGroup()
 							.addContainerGap()
 							.addGroup(gl_panel.createParallelGroup(Alignment.TRAILING)
@@ -151,8 +170,8 @@ public class GUI extends JFrame {
 										.addComponent(lblNewLabel_1, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
 									.addPreferredGap(ComponentPlacement.UNRELATED)
 									.addGroup(gl_panel.createParallelGroup(Alignment.TRAILING)
-										.addComponent(textFieldDirectory, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 627, Short.MAX_VALUE)
-										.addComponent(textFieldURL, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 627, Short.MAX_VALUE)))
+										.addComponent(textFieldDirectory, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)
+										.addComponent(textFieldURL, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)))
 								.addGroup(gl_panel.createSequentialGroup()
 									.addComponent(btnNewButton)
 									.addGap(7)
@@ -162,17 +181,17 @@ public class GUI extends JFrame {
 									.addPreferredGap(ComponentPlacement.RELATED)
 									.addComponent(btnNewButton_3)
 									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(lblStatus, GroupLayout.DEFAULT_SIZE, 429, Short.MAX_VALUE))))
+									.addComponent(lblStatus, GroupLayout.DEFAULT_SIZE, 419, Short.MAX_VALUE))))
 						.addGroup(gl_panel.createSequentialGroup()
 							.addGap(28)
 							.addComponent(btnNewButton_4)
-							.addPreferredGap(ComponentPlacement.RELATED, 548, Short.MAX_VALUE)
+							.addPreferredGap(ComponentPlacement.RELATED, 538, Short.MAX_VALUE)
 							.addComponent(chckbxLog)
 							.addPreferredGap(ComponentPlacement.RELATED)
 							.addComponent(chckbxUseCache))
 						.addGroup(gl_panel.createSequentialGroup()
 							.addContainerGap()
-							.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 709, Short.MAX_VALUE)))
+							.addComponent(lblNewLabel_2, GroupLayout.PREFERRED_SIZE, 180, GroupLayout.PREFERRED_SIZE)))
 					.addContainerGap())
 		);
 		gl_panel.setVerticalGroup(
@@ -199,7 +218,9 @@ public class GUI extends JFrame {
 						.addComponent(btnNewButton_2)
 						.addComponent(btnNewButton_3))
 					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 732, Short.MAX_VALUE)
+					.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 535, GroupLayout.PREFERRED_SIZE)
+					.addGap(18)
+					.addComponent(lblNewLabel_2, GroupLayout.PREFERRED_SIZE, 179, Short.MAX_VALUE)
 					.addContainerGap())
 		);
 		
@@ -235,7 +256,7 @@ public class GUI extends JFrame {
 			p = p.getParent();
 		}
 		
-		TreeModel model = tree.getModel();
+		DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
 		DefaultMutableTreeNode parent = (DefaultMutableTreeNode) model.getRoot();
 		for (AbstractPage x: pathToPage) {
 			DefaultMutableTreeNode child = null; 
@@ -252,10 +273,12 @@ public class GUI extends JFrame {
 				// add new item under this parent
 				child = new DefaultMutableTreeNode(x);
 				parent.add(child);
+				int[] indices = new int[1];
+				indices[0] = parent.getIndex(child);
+				model.nodesWereInserted(parent, indices);
 				tree.expandPath(new TreePath(parent.getPath()));
 			}
 			parent = child;
 		}
-		tree.updateUI();
 	}
 }

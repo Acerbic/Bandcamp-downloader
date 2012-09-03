@@ -1,9 +1,12 @@
-package dloader;
+package dloader.gui;
 
 import java.util.List;
 
 import javax.swing.SwingWorker;
 
+import dloader.JobMaster;
+import dloader.Main;
+import dloader.JobMaster.JobType;
 import dloader.page.AbstractPage;
 
 public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct> {
@@ -29,7 +32,7 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	
 	private JobMaster jm;
 
-	public MyWorker(AbstractPage rootPage, JobMaster.JobType whatToDo) {
+	public MyWorker(AbstractPage rootPage, JobType whatToDo) {
 		jm = new JobMaster(whatToDo, rootPage, 0) {
 			
 			// bridge to SwingWorker progress reporting
