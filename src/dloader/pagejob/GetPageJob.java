@@ -17,6 +17,12 @@ class GetPageJob extends PageJob {
 		super(page, owner);
 	}
 
+	/**
+	 * summary of the messages reported by GetPageJob:
+	 * "checking cache", 1
+	 * "read from cache", 1
+	 * "cache reading failed, submitting download job", 1
+	 */
 	@Override
 	public void run() {
 		report ("checking cache", 1);
@@ -24,9 +30,9 @@ class GetPageJob extends PageJob {
 			//note: this iterator does not require locking because of ConcurrentLinkedQueue implementation
 			for (AbstractPage child: page.childPages)
 				jobMaster.submit(new GetPageJob(child,jobMaster));
-			report("read from cache",1);
+			report("read from cache", 1);
 		} else  {
-			report("cache reading failed, submitting download job",1);
+			report("cache reading failed, submitting download job", 1);
 			jobMaster.submit(new DownloadPageJob(page,jobMaster, false));
 		}
 		

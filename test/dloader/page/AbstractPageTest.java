@@ -53,9 +53,9 @@ public class AbstractPageTest {
 				throws ProblemsReadingDocumentException {}
 
 		@Override
-		public String saveResult(ProgressReporter progressIndicator)
+		public boolean saveResult(ProgressReporter progressIndicator)
 				throws IOException {
-			return null;
+			return false;
 		}
 
 		@Override
@@ -127,10 +127,10 @@ public class AbstractPageTest {
 
 		@Override
 		public 
-		String saveResult(ProgressReporter progressIndicator) throws IOException {
+		boolean saveResult(ProgressReporter progressIndicator) throws IOException {
 			Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 			Files.createDirectories(p);
-			return null;
+			return true;
 		}
 
 		@Override
@@ -391,22 +391,19 @@ public class AbstractPageTest {
 		DummyProgressReporter pr = new DummyProgressReporter();
 		
 		p.downloadPage(pr);
-		assertEquals("download finished", pr.repS);
-		assertEquals(1, pr.repI);
 		assertEquals("Homestuck", p.getTitle());
 		assertEquals(20, p.childPages.size());
 	}
 	
 	@Test
 	public void testDownloadPageFromNet() throws ProblemsReadingDocumentException {
-		AbstractPage p = new DiscographyLocal("http://homestuck.bandcamp.com/",null,null);
+		AbstractPage p2 = new Album("http://homestuck.bandcamp.com/album/one-year-older/", null, null);
+//		AbstractPage p = new DiscographyLocal("http://homestuck.bandcamp.com/",null,null);
 		DummyProgressReporter pr = new DummyProgressReporter();
 		
-		p.downloadPage(pr);
-		assertEquals("download finished", pr.repS);
-		assertEquals(1, pr.repI);
-		assertEquals("Homestuck", p.getTitle());
-		assertEquals(20, p.childPages.size());
+		p2.downloadPage(pr);
+		assertEquals("One Year Older", p2.getTitle());
+		assertEquals(17, p2.childPages.size());
 	}
 	
 	@Test (expected = ProblemsReadingDocumentException.class)

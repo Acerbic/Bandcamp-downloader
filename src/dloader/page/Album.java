@@ -53,13 +53,15 @@ public class Album extends AbstractPage {
 	
 	@Override
 	public synchronized
-	String saveResult(ProgressReporter progressIndicator) throws IOException {
+	boolean saveResult(ProgressReporter reporter) throws IOException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 			
-		if (WebDownloader.fetchWebFile(coverUrl, getCoverSavePath(), progressIndicator) != 0) 
-			return "cover image downloaded";
-		else return null;
+		if (WebDownloader.fetchWebFile(coverUrl, getCoverSavePath(), reporter) != 0) { 
+			reporter.report("cover image downloaded", 1);
+			return true;
+		} else 
+			return false; 
 	}
 
 	@Override

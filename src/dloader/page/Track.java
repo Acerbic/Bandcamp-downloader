@@ -93,11 +93,11 @@ public class Track extends AbstractPage {
 	
 	@Override
 	public synchronized 
-	String saveResult(ProgressReporter progressIndicator) throws IOException {
+	boolean saveResult(ProgressReporter reporter) throws IOException {
 		Path p = Paths.get(getTrackFileName());
 		// TODO: progress reporting in HERE
 		boolean wasDownloaded = 
-				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString(), progressIndicator) != 0;
+				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString(), reporter) != 0;
 		
 		String statusReport = null; // defaults to "skipped"
 		if (tagAudioFile(Main.forceTagging))
@@ -105,7 +105,13 @@ public class Track extends AbstractPage {
 		if (wasDownloaded)
 			statusReport = "file downloaded";
 		
-		return statusReport;
+		if (statusReport != null) {
+			reporter.report(statusReport, 1);
+			return true;
+		} else {
+			return false;
+		}
+		
 	}
 	
 	/**

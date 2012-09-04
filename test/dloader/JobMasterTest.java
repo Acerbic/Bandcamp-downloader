@@ -127,10 +127,10 @@ public class JobMasterTest {
 				null, null) ;
 		LocalReportJobMaser jm = new LocalReportJobMaser(results, JobMaster.JobType.UPDATEPAGES, px);
 		jm.goGoGo(); // starts and waits for other threads...
-		assertTrue(results.contains("emancipator[DiscographyForDownloadPageTest]downloaded1"));
+		assertTrue(results.contains("emancipator[DiscographyForDownloadPageTest]download finished1"));
 		assertTrue(results.contains("Remixes[Album]up to date1"));
-		assertTrue(results.contains("Elephant Survival[Track]downloaded1"));
-		assertTrue(results.contains("soon it will be cold enough[Album]downloaded1"));
+		assertTrue(results.contains("Elephant Survival[Track]download finished1"));
+		assertTrue(results.contains("soon it will be cold enough[Album]download finished1"));
 		assertTrue(results.contains("safe in the steep cliffs[Album]download failed1"));
 		assertTrue(results.contains("Shook (Sigur Ros X Mobb Deep)[Track]download failed1"));
 		

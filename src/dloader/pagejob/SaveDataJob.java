@@ -8,7 +8,6 @@ import dloader.page.AbstractPage;
 /**
  * Saves relevant page's data to disk as files, repeat for children.
  * @author Acerbic
- *
  */
 public class SaveDataJob extends PageJob {
 
@@ -16,18 +15,28 @@ public class SaveDataJob extends PageJob {
 		super(page, owner);
 	}
 
+	/**
+	 * summary of the messages reported by SaveDataJob:
+	 * "saving started", 1
+	 *     "cover image downloaded", 1 (Album)
+	 *     "file size", X (Track)
+	 *     "downloaded bytes", X (Track)    
+	 *     "file updated", 1 (Track)
+	 *     "file downloaded", 1 (Track)
+	 * "save skipped", 1
+	 * "saved", 1
+	 * "saving caused exception", 1
+	 */
 	@Override
 	public void run() {
-		report ("saving started",1);
+		report ("saving started", 1);
 		try {
-			String operationResult = page.saveResult(this);
-			if (operationResult == null)
+			if (!page.saveResult(this))
 				report("save skipped", 1);
-			else 
-				report(operationResult, 1);
+			else report("saved", 1);
 		} catch (IOException e) {
-			report("saving caused exception",1);
-			//TODO: job reschedule and error handling
+			report("saving caused exception", 1);
+			//TODO: job rescheduling  and error handling
 //			e.printStackTrace();
 		}
 		

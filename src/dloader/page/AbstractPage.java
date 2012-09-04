@@ -197,11 +197,11 @@ public abstract class AbstractPage {
 	/**
 	 * Saves extracted data to disk. 
 	 * @param saveTo - directory to save info to.
-	 * @param progressIndicator - to output progress of long operations
-	 * @return operation status report string, "" or null if nothing to report (operation skipped)
+	 * @param reporter - to output progress of long operations
+	 * @return operation status report. True on completion, false if skipped (results already saved) 
 	 * @throws IOException if saving was terminated by error - retry might be possible.
 	 */
-	public abstract String saveResult(ProgressReporter progressIndicator) throws IOException;
+	public abstract boolean saveResult(ProgressReporter reporter) throws IOException;
 
 	/**
 	 * Generate new saving path for the children of this page from its own saveTo and page data
@@ -364,10 +364,9 @@ public abstract class AbstractPage {
 				} catch (ProblemsReadingDocumentException e) {
 					Main.log(Level.WARNING, "unable to parse child data", e);
 				} // skip this child to next one
-			
 		}
-		if (reporter != null)
-			reporter.report("download finished", 1);
+//		if (reporter != null)
+//			reporter.report("download finished", 1);
 		Main.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
 	}
 

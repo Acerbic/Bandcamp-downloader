@@ -31,6 +31,13 @@ public class DownloadPageJob extends PageJob {
 		this.forceDownload = forceDownload;
 	}
 
+	/**
+	 * summary of the messages reported by DownloadPageJob:
+	 * "download job started", 1
+	 * "download finished", 1
+	 * "up to date", 1
+	 * "download failed", 1
+	 */
 	@Override
 	public void run() {
 		report ("download job started", 1);
@@ -41,7 +48,7 @@ public class DownloadPageJob extends PageJob {
 				//note: this iterator does not require locking because of ConcurrentLinkedQueue implementation
 				for (AbstractPage child: page.childPages) 
 					jobMaster.submit(new DownloadPageJob(child, jobMaster, forceDownload));
-				report("downloaded", 1);
+				report("download finished", 1);
 			} else {
 				report("up to date", 1);
 				// even if all children are "up to date" too, still need to run the jobs - for the grand-children and etc.

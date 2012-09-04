@@ -1,43 +1,25 @@
 package dloader;
 
-import java.awt.Component;
-import java.awt.GraphicsConfiguration;
-import java.awt.HeadlessException;
-
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
-import javax.swing.GroupLayout;
+import java.awt.*;
+import javax.swing.*;
 import javax.swing.GroupLayout.Alignment;
-import javax.swing.JLabel;
-import javax.swing.SwingConstants;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 import javax.swing.LayoutStyle.ComponentPlacement;
-import javax.swing.JButton;
-import javax.swing.JTree;
 import java.awt.Font;
 import java.util.Deque;
 import java.util.Enumeration;
 import java.util.LinkedList;
 
 import javax.swing.border.BevelBorder;
-import javax.swing.JCheckBox;
 
 import dloader.JobMaster.JobType;
 import dloader.gui.MyWorker;
+import dloader.gui.TreeCell_AbstactPageGUI;
 import dloader.page.AbstractPage;
 
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreePath;
+import javax.swing.tree.*;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import javax.swing.JScrollPane;
-import javax.swing.ImageIcon;
 
 public class GUI extends JFrame {
 
@@ -73,6 +55,8 @@ public class GUI extends JFrame {
 	                        tree, value, sel,
 	                        expanded, leaf, row,
 	                        hasFocus);
+	        if (value instanceof DefaultMutableTreeNode)
+	        	return this;
 	        return this;
 	    }
 
@@ -130,7 +114,7 @@ public class GUI extends JFrame {
 		tree.setCellRenderer(new MyRenderer());		
 		tree.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
-		lblStatus = new JLabel("kkkk");
+		lblStatus = new JLabel("kkkkss");
 		lblStatus.setHorizontalAlignment(SwingConstants.CENTER);
 		lblStatus.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		
@@ -264,14 +248,15 @@ public class GUI extends JFrame {
 			for (@SuppressWarnings("unchecked")
 			Enumeration<DefaultMutableTreeNode> children = parent.children(); children.hasMoreElements();) {
 				child = children.nextElement();
-				if (child.getUserObject().equals(x)) {
+				if (((TreeCell_AbstactPageGUI)child.getUserObject()).page.equals(x)) {
 					found = true;
 					break;
 				}
 			}
 			if (! found) {
+				//TODO: fix elements order in tree.... 
 				// add new item under this parent
-				child = new DefaultMutableTreeNode(x);
+				child = new DefaultMutableTreeNode(new TreeCell_AbstactPageGUI(x));
 				parent.add(child);
 				int[] indices = new int[1];
 				indices[0] = parent.getIndex(child);

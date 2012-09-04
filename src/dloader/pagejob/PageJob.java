@@ -50,4 +50,40 @@ public abstract class PageJob implements Runnable, ProgressReporter {
 	void report (String s, long i) {
 		jobMaster.report(page, s, i);
 	}
+	
+	
+	/**
+	 * summary of the messages reported by ReadCacheJob:
+	 * "checking cache", 1
+	 * "read from cache", 1
+	 * "read cache failed", 1
+	 */
+	
+	/**
+	 * summary of the messages reported by DownloadPageJob:
+	 * "download job started", 1
+	 * "download finished", 1
+	 * "up to date", 1
+	 * "download failed", 1
+	 */
+	
+	/**
+	 * summary of the messages reported by SaveDataJob:
+	 * "saving started", 1
+	 *     "cover image downloaded", 1 (Album)
+	 *     "file size", X (Track)
+	 *     "downloaded bytes", X (Track)    
+	 *     "file updated", 1 (Track)
+	 *     "file downloaded", 1 (Track)
+	 * "save skipped", 1
+	 * "saved", 1
+	 * "saving caused exception", 1
+	 */
+	
+	/**
+	 * summary of the messages reported by GetPageJob:
+	 * "checking cache", 1
+	 * "read from cache", 1
+	 * "cache reading failed, submitting download job", 1
+	 */
 }
