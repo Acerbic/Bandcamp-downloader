@@ -435,7 +435,7 @@ public abstract class AbstractPage {
 			for (AbstractPage current: oldChildren)
 				if (newChild.url.equals(current.url) &&
 					newChild.getClass().equals(current.getClass()) &&
-					newChild.saveTo.equals(current.saveTo)) { // last check is probably excessive
+					((newChild.saveTo == null && current.saveTo==null) || newChild.saveTo.equals(current.saveTo))) { // last check is probably excessive
 					oldChild = current; break;
 				}
 			
@@ -595,8 +595,7 @@ public abstract class AbstractPage {
 	@Override
 	public 
 	String toString() {
-//		String className = this.getClass().getSimpleName();
-//		return ((getTitle() == null || getTitle().isEmpty())? "????" : "[" +className+ "] " + getTitle());
-		return ((getTitle() == null || getTitle().isEmpty())? "????" : getTitle());
+		String className = this.getClass().getSimpleName();
+		return ((getTitle() == null || getTitle().isEmpty())? url.toString() : "[" +className+ "] " + getTitle());
 	}
 }

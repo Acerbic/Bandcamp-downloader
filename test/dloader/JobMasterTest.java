@@ -92,7 +92,7 @@ public class JobMasterTest {
 		AbstractPage p = AbstractPage.bakeAPage("Track", "failaddress", null, null);
 		LocalReportJobMaser jm = new LocalReportJobMaser(results, JobMaster.JobType.READCACHEPAGES, p);
 		jm.goGoGo(); // starts and waits for other threads...
-		assertTrue(results.contains("http://failaddress[Track]read cache failed1"));
+		assertTrue(results.contains("http://failaddressread cache failed1"));
 	}
 
 	@Test
@@ -100,8 +100,8 @@ public class JobMasterTest {
 		AbstractPage p = AbstractPage.bakeAPage(null, "http://homestuck.bandcamp.com/album/alterniabound", null, null);
 		LocalReportJobMaser jm = new LocalReportJobMaser(results, JobMaster.JobType.READCACHEPAGES, p);
 		jm.goGoGo(); // starts and waits for other threads...
-		assertTrue(results.contains("AlterniaBound[Album]read from cache1"));
-		assertTrue(results.contains("Arisen Anew[Track]read from cache1"));
+		assertTrue(results.contains("[Album] AlterniaBoundread from cache1"));
+		assertTrue(results.contains("[Track] Arisen Anewread from cache1"));
 		
 	}
 	
@@ -110,12 +110,12 @@ public class JobMasterTest {
 		AbstractPage p = AbstractPage.bakeAPage(null, "http://emancipator.bandcamp.com", null, null);
 		LocalReportJobMaser jm = new LocalReportJobMaser(results, JobMaster.JobType.READCACHEPAGES, p);
 		jm.goGoGo(); // starts and waits for other threads...
-		assertTrue(results.contains("emancipator[Discography]read from cache1"));
+		assertTrue(results.contains("[Discography] emancipatorread from cache1"));
 		assertEquals("emancipator", p.getTitle());
-		assertTrue(results.contains("Remixes[Album]read from cache1"));
-		assertTrue(results.contains("soon it will be cold enough[Album]read from cache1"));
-		assertTrue(results.contains("safe in the steep cliffs[Album]read from cache1"));
-		assertTrue(results.contains("http://emancipator.bandcamp.com/album/free-downloads[Album]read cache failed1"));
+		assertTrue(results.contains("[Album] Remixesread from cache1"));
+		assertTrue(results.contains("[Album] soon it will be cold enoughread from cache1"));
+		assertTrue(results.contains("[Album] safe in the steep cliffsread from cache1"));
+		assertTrue(results.contains("http://emancipator.bandcamp.com/album/free-downloadsread cache failed1"));
 		
 		assertEquals(5, p.childPages.size());
 		assertEquals("http://f0.bcbits.com/z/17/92/1792496746-1.jpg", ((Album) p.getChildByURL(new URL("http://emancipator.bandcamp.com/album/remixes-2"))).getCoverUrl().toString());
@@ -127,12 +127,14 @@ public class JobMasterTest {
 				null, null) ;
 		LocalReportJobMaser jm = new LocalReportJobMaser(results, JobMaster.JobType.UPDATEPAGES, px);
 		jm.goGoGo(); // starts and waits for other threads...
-		assertTrue(results.contains("emancipator[DiscographyForDownloadPageTest]download finished1"));
-		assertTrue(results.contains("Remixes[Album]up to date1"));
-		assertTrue(results.contains("Elephant Survival[Track]download finished1"));
-		assertTrue(results.contains("soon it will be cold enough[Album]download finished1"));
-		assertTrue(results.contains("safe in the steep cliffs[Album]download failed1"));
-		assertTrue(results.contains("Shook (Sigur Ros X Mobb Deep)[Track]download failed1"));
+		assertTrue(results.contains("[DiscographyForDownloadPageTest] emancipatordownload finished1"));
+		assertTrue(results.contains("[Album] Remixesup to date1"));
+		assertTrue(results.contains("[Track] Elephant Survivaldownload finished1"));
+		assertTrue(results.contains("[Album] soon it will be cold enoughdownload finished1"));
+		String failedUrl = ((AbstractPage)px.childPages.toArray()[2]).url.toString();
+//		assertTrue(results.contains("[Album] safe in the steep cliffsdownload failed1"));
+		assertTrue(results.contains(failedUrl+"download failed1"));
+		assertTrue(results.contains("[Track] Shook (Sigur Ros X Mobb Deep)download failed1"));
 		
 		assertEquals(5, px.childPages.size());
 	}
