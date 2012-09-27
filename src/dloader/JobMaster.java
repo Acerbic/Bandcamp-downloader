@@ -34,12 +34,12 @@ public abstract class JobMaster {
 	 * READCACHEPAGES - get pages tree ONLY from cache (prefetch)
 	 * UPDATEPAGES - updated 1st page from the Internet and others too if needed (otherwise tries reading from cache)
 	 *   			updates cache too
-	 * UPDATEDATA - download missing/corrupt files.
+	 * SAVEDATA - download missing/corrupt files.
 	 * 
 	 * It is vital that different kinds of jobs are not ran on the same page concurrently.
 	 * @author Acerbic
 	 */
-	public enum JobType { READCACHEPAGES, UPDATEPAGES, UPDATEDATA};
+	public enum JobType { READCACHEPAGES, UPDATEPAGES, SAVEDATA};
 
 	/**
 	 *  i'm not sure about this. It is a temporary variable to the rootPage. 
@@ -81,8 +81,8 @@ public abstract class JobMaster {
 
 			switch (whatToDo) {
 			case READCACHEPAGES: submit(new ReadCacheJob(rootPage, this)); break;
-			case UPDATEPAGES: submit(new DownloadPageJob(rootPage, this, !Main.allowFromCache)); break;
-			case UPDATEDATA: submit(new SaveDataJob(rootPage, this)); break;
+			case UPDATEPAGES: submit(new UpdatePageJob(rootPage, this, !Main.allowFromCache)); break;
+			case SAVEDATA: submit(new SaveDataJob(rootPage, this)); break;
 			}
 		}
 		

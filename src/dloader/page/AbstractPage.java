@@ -9,6 +9,7 @@ import java.net.URLConnection;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -299,7 +300,9 @@ public abstract class AbstractPage {
 	
 	/**
 	 * Gets data about this page from cache (JDOM tree) and creates child nodes.
-	 * @return true if data acquired successfully, false otherwise
+	 * Old data on children pages may be discarded (references to child pages are unreliable from now on
+	 * and must be re-checked to ensure they are still included as children).
+	 * @return true if data acquired successfully, false otherwise. 
 	 */
 	public synchronized final
 	boolean loadFromCache () {
@@ -313,10 +316,12 @@ public abstract class AbstractPage {
 			setTitle(t);  
 			readCacheSelf(e);
 			
-			childPages.clear(); // discard previous data if any.
+			Collection<AbstractPage> newChildren = new LinkedList<>();
 			Collection<Element> l = e.getContent(new ElementFilter("childref"));
 			for (Element el: l) 
-				childPages.add( readCacheChild(el) );
+				newChildren.add(readCacheChild(el));
+			
+			mergeNewChildren(new LinkedList<>(childPages), newChildren);
 			
 			Main.log(Level.FINE, String.format("\t...Finished reading %s.%n",url.toString()));
 			return true;
@@ -386,8 +391,8 @@ public abstract class AbstractPage {
 	
 	/** 
 	 * Downloads the page, parses it and updates this page with new data.
-	 * If update is successful (return true), new children pages are created empty and must 
-	 * be refilled from cache or downloaded from  net.
+	 * References to children pages are unreliable. Old pages may be discarded and replaced with
+	 * empty ones.
 	 * 
 	 * @throws ProblemsReadingDocumentException if any error
 	 * @return true if any data was changed, false if this page is unmodified.
@@ -408,8 +413,8 @@ public abstract class AbstractPage {
 			// somewhat awkward way to copy custom object data from temp object
 			readCacheSelf(tempPage.getSpecificDataXML()); 
 	
-			childPages.clear();
-			childPages.addAll(tempPage.childPages);
+			// lets try to save some existing children for performance 
+			mergeNewChildren(new LinkedList<>(childPages), tempPage.childPages);
 			
 			for (AbstractPage child: childPages)
 				child.parent = this;
@@ -417,6 +422,30 @@ public abstract class AbstractPage {
 		return true;
 	}
 
+	/**
+	 * Replaces childPages list with new children, while saving some of the old children for performance
+	 * @param oldChildren
+	 * @param newChildren
+	 */
+	private void mergeNewChildren (Collection<AbstractPage> oldChildren, Collection<AbstractPage> newChildren) {
+		childPages.clear(); // discard previous data if any.
+		for (AbstractPage newChild: newChildren) {
+			// search if exactly that child existed.
+			AbstractPage oldChild = null;
+			for (AbstractPage current: oldChildren)
+				if (newChild.url.equals(current.url) &&
+					newChild.getClass().equals(current.getClass()) &&
+					newChild.saveTo.equals(current.saveTo)) { // last check is probably excessive
+					oldChild = current; break;
+				}
+			
+			if (oldChild != null) {
+				childPages.add(oldChild);
+				oldChildren.remove(oldChild); // very little optimization
+			} else
+				childPages.add(newChild);
+		}
+	}
 	/**
 	 * Saves this page data into XML tree. 
 	 * Only references to child pages are saved, not the pages data.
@@ -566,7 +595,8 @@ public abstract class AbstractPage {
 	@Override
 	public 
 	String toString() {
-		String className = this.getClass().getSimpleName();
-		return ((getTitle() == null || getTitle().isEmpty())? url.toString(): "[" +className+ "] " + getTitle());
+//		String className = this.getClass().getSimpleName();
+//		return ((getTitle() == null || getTitle().isEmpty())? "????" : "[" +className+ "] " + getTitle());
+		return ((getTitle() == null || getTitle().isEmpty())? "????" : getTitle());
 	}
 }

@@ -33,7 +33,7 @@ class GetPageJob extends PageJob {
 			report("read from cache", 1);
 		} else  {
 			report("cache reading failed, submitting download job", 1);
-			jobMaster.submit(new DownloadPageJob(page,jobMaster, false));
+			jobMaster.submit(new UpdatePageJob(page,jobMaster, false));
 		}
 		
 	}

@@ -11,14 +11,14 @@ public class Main {
 //	public static final String nl = System.getProperty ( "line.separator" );
 	
 	/* Default values */
-	public static String baseURL = "http://homestuck.bandcamp.com";
-	public static String xmlFileName = "pages_scan_cache.xml";
+	public static String baseURL = "http://homestuck.bandcamp.com"; //-d
+	public static String xmlFileName = "pages_scan_cache.xml";//-t
 	public static String logFile = "download.log";
-	public static boolean forceTagging = false; // if true - always tag, otherwise only new/missing tag fields
-	public static boolean allowFromCache = true;
-	public static boolean logToCon = true;
-	public static boolean logToFile = false;
-	public static boolean isInConsoleMode = false;
+	public static boolean forceTagging = false; // if true - always tag, otherwise only new/missing tag fields //-f
+	public static boolean allowFromCache = true; //-r
+	public static boolean logToCon = true; //-s
+	public static boolean logToFile = false; //-l
+	public static boolean isInConsoleMode = false; //-c
 	// user current directory
 	public static String saveTo = Paths.get("").toAbsolutePath().toString(); 
 

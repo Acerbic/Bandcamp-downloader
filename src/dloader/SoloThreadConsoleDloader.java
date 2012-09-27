@@ -88,7 +88,7 @@ public class SoloThreadConsoleDloader {
 
 		System.out.println("-------Saving files-------");
 		//3 save page data
-		jm = new STCD_JobMaster(JobMaster.JobType.UPDATEDATA, p);
+		jm = new STCD_JobMaster(JobMaster.JobType.SAVEDATA, p);
 		jm.goGoGo();
 	}
 }

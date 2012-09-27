@@ -16,7 +16,7 @@ import dloader.page.AbstractPage.ProblemsReadingDocumentException;
  *
  * reports "download job started", "downloaded", "up to date", "download failed"
  */
-public class DownloadPageJob extends PageJob {
+public class UpdatePageJob extends PageJob {
 	
 	private	final 
 	boolean forceDownload;
@@ -26,7 +26,7 @@ public class DownloadPageJob extends PageJob {
 	 * @param forceDownload makes job to always download, skipping whole cache checks, 
 	 * for this page and all generated jobs.
 	 */
-	public DownloadPageJob(AbstractPage page, JobMaster owner, boolean forceDownload) {
+	public UpdatePageJob(AbstractPage page, JobMaster owner, boolean forceDownload) {
 		super(page, owner);
 		this.forceDownload = forceDownload;
 	}
@@ -43,11 +43,17 @@ public class DownloadPageJob extends PageJob {
 		report ("download job started", 1);
 		if (!forceDownload) page.loadFromCache();
 		try {
+			try {
+				Thread.sleep(3000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			if (page.updateFromNet(this) || forceDownload) {
 				page.saveToCache();
 				//note: this iterator does not require locking because of ConcurrentLinkedQueue implementation
 				for (AbstractPage child: page.childPages) 
-					jobMaster.submit(new DownloadPageJob(child, jobMaster, forceDownload));
+					jobMaster.submit(new UpdatePageJob(child, jobMaster, forceDownload));
 				report("download finished", 1);
 			} else {
 				report("up to date", 1);

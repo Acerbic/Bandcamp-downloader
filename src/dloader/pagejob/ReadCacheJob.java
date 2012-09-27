@@ -5,6 +5,7 @@ import dloader.page.AbstractPage;
 
 /**
  * Job to read page data from cache ONLY. Starts same jobs for child nodes. 
+ * Any previous data in this page is discarded.
  * @author Acerbic
  */
 public class ReadCacheJob extends PageJob {
@@ -15,7 +16,7 @@ public class ReadCacheJob extends PageJob {
 
 	/**
 	 * summary of the messages reported by ReadCacheJob:
-	 * "checking cache", 1
+	 * "checking cache", 1 
 	 * "read from cache", 1
 	 * "read cache failed", 1
 	 */

@@ -18,29 +18,37 @@ public class TreeNodePageWrapper {
 	// TODO job progress flags and logs
 	boolean readFromCache = false;
 	boolean downloadPageQ = false;
+	
+	boolean downloading = false;
 	boolean downloaded = false;
+	boolean downloadPageFailed = false;
+	boolean upToDate = false;
 	
 	public TreeNodePageWrapper(AbstractPage page) {
 		this.page = page;
 	}
 
-	public void update(String type, long report) {
+	/**
+	 * update flags and states of this node visual representation
+	 * @param type
+	 * @param report
+	 * @return true if node must be repainted
+	 */
+	public boolean update(String type, long report) {
 		switch (type) {
 		//messages reported by ReadCacheJob and GetPageJob:
 		case "checking cache": break;
-		case "read from cache": readFromCache = true; break;
+		case "read from cache": readFromCache = true; return true; 
 		//message reported by ReadCacheJob
 		case "read cache failed": break;
 		//message reported by GetPageJob:
-		case "cache reading failed, submitting download job": downloadPageQ = true; break;
-		
-		/**
-		 * summary of the messages reported by DownloadPageJob:
-		 * "download job started", 1
-		 * "download finished", 1
-		 * "up to date", 1
-		 * "download failed", 1
-		 */
+		case "cache reading failed, submitting download job": downloadPageQ = true; return true; 
+		// messages reported by DownloadPageJob:
+		case "download job started": downloading = true; downloadPageQ = false; return true;
+		case "download finished": downloading = false; downloaded = true; return true;
+		case "up to date": downloading = false; downloaded = true; upToDate = true; return true;
+		case "download failed": downloading = false; downloadPageFailed = true; return true;
+
 		
 		/**
 		 * summary of the messages reported by SaveDataJob:
@@ -56,20 +64,55 @@ public class TreeNodePageWrapper {
 		 */
 		
 		}
+		return false;
 	}
 	
 	@Override
 	public String toString() {
+		// TODO fix representation
 		
 		String header = "<html>";
 		String bottom = "</html>";
-		// TODO fix representation
+		String styleCompilation = "";
+		String title = page.toString();
+		
+		styleCompilation += "span#url {color:gray; font: 0.8em;}";
+		
+		// title color
+		String titleColor = "black";
+		if (readFromCache) titleColor = "blue";
+		if (downloaded && !upToDate) titleColor = "green";
+		if (downloadPageQ || downloadPageFailed) titleColor = "red";
+		if (downloading) titleColor = "orange";
+		styleCompilation += "span#title {color:" + titleColor + "}";
+		
+		// title formatters;
+		String childrenCount = (page.childPages.size() > 0)? "<span id='children'>["+page.childPages.size()+"]</span>":"";
+		
+		if (downloading) {
+			title = "Scanning... " + title;
+//			styleCompilation += "span#title {font: bold}";
+		}
+		
+		if (downloadPageQ) {
+			title = "In queue for scan... " + title;
+//			styleCompilation += "span#title {font: bold}";
+		}
+		// finalize title
+		title = "<span id='title'>"+title+"</span>";
+
+		// finalize style
+		header += "<style type='text/css'> " + styleCompilation + "</style>";
+		
+		// output layouts
 		if (page instanceof Track)
-			return  header +page.toString()+
+			return  header +
+					title +
 					bottom;
 		else 
-			return header+"<b>" +page.toString()+
-				"<br></b><u>" +page.url+
+			return header + 
+					title + " " + childrenCount +
+				"<br>" + "<span id='url'>" + page.url + "</span>" +
 				"</u>"+ bottom;
 	}
 

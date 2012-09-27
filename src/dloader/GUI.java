@@ -5,6 +5,7 @@ import javax.swing.*;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import java.awt.Font;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.Enumeration;
 import java.util.LinkedList;
@@ -15,6 +16,7 @@ import dloader.JobMaster.JobType;
 import dloader.gui.MyWorker;
 import dloader.gui.TreeNodePageWrapper;
 import dloader.page.AbstractPage;
+import dloader.page.Track;
 
 import javax.swing.tree.*;
 
@@ -137,6 +139,13 @@ public class GUI extends JFrame {
 			}
 		});
 		
+		btnFetch.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				initScan();
+			}
+		});
+		
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
 			gl_panel.createParallelGroup(Alignment.TRAILING)
@@ -227,19 +236,34 @@ public class GUI extends JFrame {
 		lblStatus.setText("Preparing");
 		chckbxLog.setSelected( Main.logger != null);
 		chckbxUseCache.setSelected(Main.allowFromCache);
+		
+		updateTree (rootPage, "", 1); //empty message to put root page on display;
 	}
 	
-	public void initPrefetch() {
+	private void initPrefetch() {
 		lblStatus.setText("Prefetching");
 		MyWorker newWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
 		newWorker.execute();
 		btnPrefetch.setEnabled(false);		
 	}
 	
-	public void finishPrefetch() {
+	private void finishPrefetch() {
 		if (lblStatus.getText().equals("Prefetching"))
 			lblStatus.setText("");
 		btnPrefetch.setEnabled(true);		
+	}
+	
+	private void initScan() {
+		lblStatus.setText("Scanning");
+		MyWorker newWorker = new MyWorker(rootPage, JobType.UPDATEPAGES);
+		newWorker.execute();
+		btnFetch.setEnabled(false);		
+	}
+	
+	private void finishScan() {
+		if (lblStatus.getText().equals("Scanning"))
+			lblStatus.setText("");
+		btnFetch.setEnabled(true);		
 	}
 	
 	/**
@@ -285,29 +309,56 @@ public class GUI extends JFrame {
 				indices[0] = parent.getIndex(child);
 				model.nodesWereInserted(parent, indices); //notification to repaint
 				
-				//expand only top node
-				Object userObject = parent.getUserObject();
-				if (userObject instanceof TreeNodePageWrapper && 
-					((TreeNodePageWrapper)userObject).page.equals(pathToPage.getFirst())) 
+				//expand only if not a Track
+				if (!(childsUserObject.page instanceof Track))
 					tree.expandPath(new TreePath(parent.getPath())); 
 			}
 			
-			// pass message to the user object and refresh its visual if needed
-			childsUserObject.update(message, value);
-			model.nodeChanged(child);
-			
 			parent = child; // advance to search next element in our pathToPage
 		}
+		// after search is complete, parent points to a DefaultMutableTreeNode containing TreeNodePageWrapper containing original p (but now p is different)
+		
+		// Reading cache forces reset of page data, the node branch must be trimmed accordingly
+		if (message.equals("read from cache") || message.equals("read cache failed") 
+			|| message.equals("cache reading failed, submitting download job")
+			|| message.equals("download finished") || message.equals("up to date")
+			|| message.equals("download failed")
+			)
+			trimBranch(parent, model);
+		// pass message to the user object and refresh its visual if needed
+		if (((TreeNodePageWrapper)parent.getUserObject()).update(message, value))
+			model.nodeChanged(parent);
+		
 	}
 	
+	/**
+	 * Remove branch->children nodes don't correspond to branch->page->children pages
+	 * @param branch - node branch to clean up
+	 * @param model - reference model
+	 */
+	private void trimBranch(DefaultMutableTreeNode branch, DefaultTreeModel model) {
+		AbstractPage branchPage = ((TreeNodePageWrapper)branch.getUserObject()).page;
+		Collection<DefaultMutableTreeNode> removeList = new LinkedList<>();
+		for (@SuppressWarnings("unchecked")
+			Enumeration<DefaultMutableTreeNode> children = branch.children(); children.hasMoreElements();) {
+			DefaultMutableTreeNode childNode = children.nextElement();
+			AbstractPage childPage = ((TreeNodePageWrapper)childNode.getUserObject()).page; 
+			if (! branchPage.childPages.contains(childPage)) {
+				// child's page is no more contained within its parent's page children collection
+				removeList.add(childNode); // can't remove on spot, it will fuck up the iteration
+			}
+		}
+		for (DefaultMutableTreeNode element: removeList) 
+			model.removeNodeFromParent(element);
+	}
+
 	// captures SwingWorker finish jobs event
 	public void myWorkerDone (AbstractPage root, JobMaster.JobType jobType) {
 		switch  (jobType) {
 		case READCACHEPAGES: finishPrefetch(); break;
-		case UPDATEDATA:
+		case SAVEDATA:
 			break;
-		case UPDATEPAGES:
-			break;
+		case UPDATEPAGES: finishScan(); break;
 		default:
 			break;
 		}
