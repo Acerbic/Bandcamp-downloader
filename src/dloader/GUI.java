@@ -13,7 +13,7 @@ import javax.swing.border.BevelBorder;
 
 import dloader.JobMaster.JobType;
 import dloader.gui.MyWorker;
-import dloader.gui.TreeCell_AbstactPageGUI;
+import dloader.gui.TreeNodePageWrapper;
 import dloader.page.AbstractPage;
 
 import javax.swing.tree.*;
@@ -36,7 +36,11 @@ public class GUI extends JFrame {
 	private JCheckBox chckbxUseCache;
 	private JCheckBox chckbxLog;
 	private Thread eventDispatchThread;
-	private JButton btnNewButton;
+	private JButton btnPrefetch;
+	private JButton btnFetch;
+	private JButton btnFix;
+	private JButton btnUpdate;
+	private JButton btnRetag;
 	
 	
 	@SuppressWarnings("serial")
@@ -92,16 +96,6 @@ public class GUI extends JFrame {
 		JLabel lblNewLabel_1 = new JLabel("Target directory:");
 		lblNewLabel_1.setLabelFor(textFieldDirectory);
 		
-		btnNewButton = new JButton("Prefetch");
-		btnNewButton.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				MyWorker newWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
-				newWorker.execute();
-				btnNewButton.setEnabled(false);
-			}
-		});
-		
 		tree = new JTree();
 		tree.setRootVisible(false);
 		tree.setShowsRootHandles(true);
@@ -118,13 +112,13 @@ public class GUI extends JFrame {
 		lblStatus.setHorizontalAlignment(SwingConstants.CENTER);
 		lblStatus.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		
-		JButton btnNewButton_1 = new JButton("Fetch");
+		btnPrefetch = new JButton("Prefetch");
+		btnFetch = new JButton("Fetch");
+		btnFix = new JButton("Fix");
+		btnFix.setEnabled(false);
+		btnUpdate = new JButton("Update");
+		btnRetag = new JButton("Retag");
 		
-		JButton btnNewButton_2 = new JButton("Fix");
-		
-		JButton btnNewButton_3 = new JButton("Download");
-		
-		JButton btnNewButton_4 = new JButton("Retag");
 		
 		chckbxUseCache = new JCheckBox("cache");
 		chckbxUseCache.setEnabled(false);
@@ -134,8 +128,14 @@ public class GUI extends JFrame {
 		
 		JScrollPane scrollPane = new JScrollPane();
 		
-		JLabel lblNewLabel_2 = new JLabel("sdf");
-		lblNewLabel_2.setIcon(new ImageIcon("D:\\Pics & Photos\\\u0421\u0435\u043C\u044C\u044F\\\u0420\u0430\u0437\u043D\u043E\u0435\\Photo-0041.jpg"));
+//		JLabel lblNewLabel_2 = new JLabel("sdf");
+//		lblNewLabel_2.setIcon(new ImageIcon("D:\\Pics & Photos\\\u0421\u0435\u043C\u044C\u044F\\\u0420\u0430\u0437\u043D\u043E\u0435\\Photo-0041.jpg"));
+		btnPrefetch.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				initPrefetch();
+			}
+		});
 		
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
@@ -157,25 +157,22 @@ public class GUI extends JFrame {
 										.addComponent(textFieldDirectory, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)
 										.addComponent(textFieldURL, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)))
 								.addGroup(gl_panel.createSequentialGroup()
-									.addComponent(btnNewButton)
+									.addComponent(btnPrefetch)
 									.addGap(7)
-									.addComponent(btnNewButton_1, GroupLayout.PREFERRED_SIZE, 68, GroupLayout.PREFERRED_SIZE)
+									.addComponent(btnFetch, GroupLayout.PREFERRED_SIZE, 68, GroupLayout.PREFERRED_SIZE)
 									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(btnNewButton_2)
+									.addComponent(btnFix)
 									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(btnNewButton_3)
+									.addComponent(btnUpdate)
 									.addPreferredGap(ComponentPlacement.RELATED)
 									.addComponent(lblStatus, GroupLayout.DEFAULT_SIZE, 419, Short.MAX_VALUE))))
 						.addGroup(gl_panel.createSequentialGroup()
 							.addGap(28)
-							.addComponent(btnNewButton_4)
+							.addComponent(btnRetag)
 							.addPreferredGap(ComponentPlacement.RELATED, 538, Short.MAX_VALUE)
 							.addComponent(chckbxLog)
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(chckbxUseCache))
-						.addGroup(gl_panel.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(lblNewLabel_2, GroupLayout.PREFERRED_SIZE, 180, GroupLayout.PREFERRED_SIZE)))
+							.addComponent(chckbxUseCache)))
 					.addContainerGap())
 		);
 		gl_panel.setVerticalGroup(
@@ -191,20 +188,19 @@ public class GUI extends JFrame {
 						.addComponent(lblNewLabel_1))
 					.addPreferredGap(ComponentPlacement.UNRELATED)
 					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
-						.addComponent(btnNewButton_4)
+						.addComponent(btnRetag)
 						.addComponent(chckbxUseCache)
 						.addComponent(chckbxLog))
 					.addGap(44)
 					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
-						.addComponent(btnNewButton)
+						.addComponent(btnPrefetch)
 						.addComponent(lblStatus)
-						.addComponent(btnNewButton_1)
-						.addComponent(btnNewButton_2)
-						.addComponent(btnNewButton_3))
+						.addComponent(btnFetch)
+						.addComponent(btnFix)
+						.addComponent(btnUpdate))
 					.addPreferredGap(ComponentPlacement.UNRELATED)
 					.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 535, GroupLayout.PREFERRED_SIZE)
 					.addGap(18)
-					.addComponent(lblNewLabel_2, GroupLayout.PREFERRED_SIZE, 179, Short.MAX_VALUE)
 					.addContainerGap())
 		);
 		
@@ -233,7 +229,28 @@ public class GUI extends JFrame {
 		chckbxUseCache.setSelected(Main.allowFromCache);
 	}
 	
+	public void initPrefetch() {
+		lblStatus.setText("Prefetching");
+		MyWorker newWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
+		newWorker.execute();
+		btnPrefetch.setEnabled(false);		
+	}
+	
+	public void finishPrefetch() {
+		if (lblStatus.getText().equals("Prefetching"))
+			lblStatus.setText("");
+		btnPrefetch.setEnabled(true);		
+	}
+	
+	/**
+	 * Receiving message from SwingWorker
+	 * @param p - page node to update
+	 * @param message - status info
+	 * @param value - numeral info 
+	 */
 	public void updateTree (AbstractPage p, String message, long value) {
+		
+		// construct list of elements from root page to this page
 		Deque<AbstractPage> pathToPage = new LinkedList<AbstractPage>();
 		while (p != null) {
 			pathToPage.push(p);
@@ -241,14 +258,18 @@ public class GUI extends JFrame {
 		}
 		
 		DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-		DefaultMutableTreeNode parent = (DefaultMutableTreeNode) model.getRoot();
+		DefaultMutableTreeNode parent = (DefaultMutableTreeNode) model.getRoot(); parent.setUserObject(null);
 		for (AbstractPage x: pathToPage) {
-			DefaultMutableTreeNode child = null; 
+			// check if this page exists in the tree
+			DefaultMutableTreeNode child = null;
+			TreeNodePageWrapper childsUserObject = null;
 			boolean found = false;
 			for (@SuppressWarnings("unchecked")
 			Enumeration<DefaultMutableTreeNode> children = parent.children(); children.hasMoreElements();) {
 				child = children.nextElement();
-				if (((TreeCell_AbstactPageGUI)child.getUserObject()).page.equals(x)) {
+				if (child.getUserObject() instanceof TreeNodePageWrapper)
+					childsUserObject = (TreeNodePageWrapper) child.getUserObject();
+				if (x.equals(childsUserObject.page)) {
 					found = true;
 					break;
 				}
@@ -256,14 +277,39 @@ public class GUI extends JFrame {
 			if (! found) {
 				//TODO: fix elements order in tree.... 
 				// add new item under this parent
-				child = new DefaultMutableTreeNode(new TreeCell_AbstactPageGUI(x));
+				childsUserObject = new TreeNodePageWrapper(x);
+				child = new DefaultMutableTreeNode(childsUserObject);
 				parent.add(child);
+				
 				int[] indices = new int[1];
 				indices[0] = parent.getIndex(child);
-				model.nodesWereInserted(parent, indices);
-				tree.expandPath(new TreePath(parent.getPath()));
+				model.nodesWereInserted(parent, indices); //notification to repaint
+				
+				//expand only top node
+				Object userObject = parent.getUserObject();
+				if (userObject instanceof TreeNodePageWrapper && 
+					((TreeNodePageWrapper)userObject).page.equals(pathToPage.getFirst())) 
+					tree.expandPath(new TreePath(parent.getPath())); 
 			}
-			parent = child;
+			
+			// pass message to the user object and refresh its visual if needed
+			childsUserObject.update(message, value);
+			model.nodeChanged(child);
+			
+			parent = child; // advance to search next element in our pathToPage
+		}
+	}
+	
+	// captures SwingWorker finish jobs event
+	public void myWorkerDone (AbstractPage root, JobMaster.JobType jobType) {
+		switch  (jobType) {
+		case READCACHEPAGES: finishPrefetch(); break;
+		case UPDATEDATA:
+			break;
+		case UPDATEPAGES:
+			break;
+		default:
+			break;
 		}
 	}
 }

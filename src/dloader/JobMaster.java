@@ -47,8 +47,8 @@ public abstract class JobMaster {
 	 *  (also since creating jobs means sharing a reference to this JobMaster 
 	 *    it is not wise to leak "this" reference before construction is finished) 
 	 */
-	private AbstractPage rootPage; 
-	private JobType whatToDo; 
+	public final AbstractPage rootPage; 
+	public final JobType whatToDo; 
 	
 
 	/**

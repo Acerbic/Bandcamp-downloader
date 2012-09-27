@@ -567,6 +567,6 @@ public abstract class AbstractPage {
 	public 
 	String toString() {
 		String className = this.getClass().getSimpleName();
-		return ((getTitle() == null || getTitle().isEmpty())? url.toString(): getTitle()) + "[" +className+ "]";
+		return ((getTitle() == null || getTitle().isEmpty())? url.toString(): "[" +className+ "] " + getTitle());
 	}
 }

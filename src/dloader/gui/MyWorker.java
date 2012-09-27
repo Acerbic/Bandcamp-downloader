@@ -9,6 +9,11 @@ import dloader.Main;
 import dloader.JobMaster.JobType;
 import dloader.page.AbstractPage;
 
+/**
+ * This is a SwingWorker extended to operate with JobMaster.
+ * @author Acerbic
+ *
+ */
 public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct> {
 	
 	/**
@@ -53,16 +58,22 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	@Override
 	protected Object doInBackground() throws Exception {
 		if (jm != null)
-			jm.goGoGo();
-		return null;
+			jm.goGoGo(); // -> several calls to jm.report() -> publish() -> process() -> gui.updateTree()
+		return null; // call to done() -> gui.myWorkerDone()
 	}
 
 	// called in ED thread
 	@Override
 	protected void process(List<ProgressReportStruct> chunks) {
 		for (ProgressReportStruct element : chunks) {
-			// kinda stupid.
+			// kind of stupid.
 			Main.gui.updateTree(element.page, element.type, element.value);
 		}
+	}
+	
+	// called in ED thread
+	@Override
+	protected void done() {
+		Main.gui.myWorkerDone(jm.rootPage, jm.whatToDo);
 	}
 }
