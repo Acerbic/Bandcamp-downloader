@@ -61,6 +61,7 @@ public abstract class PageJob implements Runnable, ProgressReporter {
 	
 	/**
 	 * summary of the messages reported by DownloadPageJob:
+	 * "download job queued", 1
 	 * "download job started", 1
 	 * "download finished", 1
 	 * "up to date", 1

@@ -33,7 +33,7 @@ public class GUI extends JFrame {
 	private JTextField textFieldDirectory;
 	private JTree tree;
 	
-	AbstractPage rootPage;
+	private AbstractPage rootPage;
 	private JLabel lblStatus;
 	private JCheckBox chckbxUseCache;
 	private JCheckBox chckbxLog;
@@ -43,6 +43,7 @@ public class GUI extends JFrame {
 	private JButton btnFix;
 	private JButton btnUpdate;
 	private JButton btnRetag;
+	private MyWorker newWorker;
 	
 	
 	@SuppressWarnings("serial")
@@ -130,8 +131,6 @@ public class GUI extends JFrame {
 		
 		JScrollPane scrollPane = new JScrollPane();
 		
-//		JLabel lblNewLabel_2 = new JLabel("sdf");
-//		lblNewLabel_2.setIcon(new ImageIcon("D:\\Pics & Photos\\\u0421\u0435\u043C\u044C\u044F\\\u0420\u0430\u0437\u043D\u043E\u0435\\Photo-0041.jpg"));
 		btnPrefetch.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
@@ -150,11 +149,11 @@ public class GUI extends JFrame {
 		gl_panel.setHorizontalGroup(
 			gl_panel.createParallelGroup(Alignment.TRAILING)
 				.addGroup(gl_panel.createSequentialGroup()
-					.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
-						.addGroup(gl_panel.createSequentialGroup()
+					.addGroup(gl_panel.createParallelGroup(Alignment.TRAILING)
+						.addGroup(Alignment.LEADING, gl_panel.createSequentialGroup()
 							.addContainerGap()
 							.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 709, Short.MAX_VALUE))
-						.addGroup(gl_panel.createSequentialGroup()
+						.addGroup(Alignment.LEADING, gl_panel.createSequentialGroup()
 							.addContainerGap()
 							.addGroup(gl_panel.createParallelGroup(Alignment.TRAILING)
 								.addGroup(gl_panel.createSequentialGroup()
@@ -174,8 +173,8 @@ public class GUI extends JFrame {
 									.addPreferredGap(ComponentPlacement.RELATED)
 									.addComponent(btnUpdate)
 									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(lblStatus, GroupLayout.DEFAULT_SIZE, 419, Short.MAX_VALUE))))
-						.addGroup(gl_panel.createSequentialGroup()
+									.addComponent(lblStatus, GroupLayout.DEFAULT_SIZE, 431, Short.MAX_VALUE))))
+						.addGroup(Alignment.LEADING, gl_panel.createSequentialGroup()
 							.addGap(28)
 							.addComponent(btnRetag)
 							.addPreferredGap(ComponentPlacement.RELATED, 538, Short.MAX_VALUE)
@@ -208,8 +207,7 @@ public class GUI extends JFrame {
 						.addComponent(btnFix)
 						.addComponent(btnUpdate))
 					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 535, GroupLayout.PREFERRED_SIZE)
-					.addGap(18)
+					.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 732, Short.MAX_VALUE)
 					.addContainerGap())
 		);
 		
@@ -242,7 +240,8 @@ public class GUI extends JFrame {
 	
 	private void initPrefetch() {
 		lblStatus.setText("Prefetching");
-		MyWorker newWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
+		if (newWorker != null) 
+			newWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
 		newWorker.execute();
 		btnPrefetch.setEnabled(false);		
 	}
@@ -251,11 +250,13 @@ public class GUI extends JFrame {
 		if (lblStatus.getText().equals("Prefetching"))
 			lblStatus.setText("");
 		btnPrefetch.setEnabled(true);		
+		newWorker = null;
 	}
 	
 	private void initScan() {
 		lblStatus.setText("Scanning");
-		MyWorker newWorker = new MyWorker(rootPage, JobType.UPDATEPAGES);
+		if (newWorker != null) 
+			newWorker = new MyWorker(rootPage, JobType.UPDATEPAGES);
 		newWorker.execute();
 		btnFetch.setEnabled(false);		
 	}
@@ -263,6 +264,7 @@ public class GUI extends JFrame {
 	private void finishScan() {
 		if (lblStatus.getText().equals("Scanning"))
 			lblStatus.setText("");
+		newWorker = null;
 		btnFetch.setEnabled(true);		
 	}
 	
@@ -273,7 +275,6 @@ public class GUI extends JFrame {
 	 * @param value - numeral info 
 	 */
 	public void updateTree (AbstractPage p, String message, long value) {
-		
 		// construct list of elements from root page to this page
 		Deque<AbstractPage> pathToPage = new LinkedList<AbstractPage>();
 		while (p != null) {
@@ -282,8 +283,8 @@ public class GUI extends JFrame {
 		}
 		
 		DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-		DefaultMutableTreeNode parent = (DefaultMutableTreeNode) model.getRoot(); parent.setUserObject(null);
-		for (AbstractPage x: pathToPage) {
+		DefaultMutableTreeNode parent = (DefaultMutableTreeNode) model.getRoot(); 
+		for (AbstractPage currentPage: pathToPage) {
 			// check if this page exists in the tree
 			DefaultMutableTreeNode child = null;
 			TreeNodePageWrapper childsUserObject = null;
@@ -293,20 +294,29 @@ public class GUI extends JFrame {
 				child = children.nextElement();
 				if (child.getUserObject() instanceof TreeNodePageWrapper)
 					childsUserObject = (TreeNodePageWrapper) child.getUserObject();
-				if (x.equals(childsUserObject.page)) {
+				if (currentPage.equals(childsUserObject.page)) {
 					found = true;
 					break;
 				}
 			}
 			if (! found) {
 				//TODO: fix elements order in tree.... 
+				
 				// add new item under this parent
-				childsUserObject = new TreeNodePageWrapper(x);
-				child = new DefaultMutableTreeNode(childsUserObject);
+				child = new DefaultMutableTreeNode();
+				childsUserObject = new TreeNodePageWrapper(currentPage, child);
+				child.setUserObject(childsUserObject);
+				
 				parent.add(child);
 				
 				int[] indices = new int[1];
 				indices[0] = parent.getIndex(child);
+				
+				// new item's children if any (that way they maintain their order)
+				for (AbstractPage subPage: currentPage.childPages) {
+					DefaultMutableTreeNode subChild = new DefaultMutableTreeNode();
+					subChild.setUserObject(new TreeNodePageWrapper(subPage, subChild));					
+				}
 				model.nodesWereInserted(parent, indices); //notification to repaint
 				
 				//expand only if not a Track
@@ -316,15 +326,17 @@ public class GUI extends JFrame {
 			
 			parent = child; // advance to search next element in our pathToPage
 		}
-		// after search is complete, parent points to a DefaultMutableTreeNode containing TreeNodePageWrapper containing original p (but now p is different)
+		// after search is complete, parent points to a DefaultMutableTreeNode 
+		//  containing TreeNodePageWrapper containing original p (but now p is different)
 		
-		// Reading cache forces reset of page data, the node branch must be trimmed accordingly
+		// Reading cache forces reset of page data (children refs), the node branch must be trimmed accordingly
 		if (message.equals("read from cache") || message.equals("read cache failed") 
 			|| message.equals("cache reading failed, submitting download job")
 			|| message.equals("download finished") || message.equals("up to date")
 			|| message.equals("download failed")
 			)
 			trimBranch(parent, model);
+		
 		// pass message to the user object and refresh its visual if needed
 		if (((TreeNodePageWrapper)parent.getUserObject()).update(message, value))
 			model.nodeChanged(parent);
@@ -337,19 +349,22 @@ public class GUI extends JFrame {
 	 * @param model - reference model
 	 */
 	private void trimBranch(DefaultMutableTreeNode branch, DefaultTreeModel model) {
-		AbstractPage branchPage = ((TreeNodePageWrapper)branch.getUserObject()).page;
+		AbstractPage branchPage = pageOfNode(branch);
 		Collection<DefaultMutableTreeNode> removeList = new LinkedList<>();
 		for (@SuppressWarnings("unchecked")
 			Enumeration<DefaultMutableTreeNode> children = branch.children(); children.hasMoreElements();) {
 			DefaultMutableTreeNode childNode = children.nextElement();
-			AbstractPage childPage = ((TreeNodePageWrapper)childNode.getUserObject()).page; 
+			AbstractPage childPage = pageOfNode(childNode); 
 			if (! branchPage.childPages.contains(childPage)) {
 				// child's page is no more contained within its parent's page children collection
 				removeList.add(childNode); // can't remove on spot, it will fuck up the iteration
 			}
 		}
-		for (DefaultMutableTreeNode element: removeList) 
+		for (DefaultMutableTreeNode element: removeList) { 
 			model.removeNodeFromParent(element);
+			//since this page is no more of our concern, all jobs executing and pending are irrelevant CPU consumers
+			newWorker.stopJobsForPage(pageOfNode(element)); 
+		}
 	}
 
 	// captures SwingWorker finish jobs event
@@ -362,5 +377,11 @@ public class GUI extends JFrame {
 		default:
 			break;
 		}
+	}
+	
+	private AbstractPage pageOfNode(DefaultMutableTreeNode node) {
+		if (node.getUserObject() instanceof TreeNodePageWrapper)
+			return ((TreeNodePageWrapper)node.getUserObject()).page;
+		else return null;
 	}
 }

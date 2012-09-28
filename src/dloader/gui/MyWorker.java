@@ -76,4 +76,12 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	protected void done() {
 		Main.gui.myWorkerDone(jm.rootPage, jm.whatToDo);
 	}
+
+	/**
+	 * Stop all jobs generated for this page and all of its children (recursively)
+	 * @param pageOfNode
+	 */
+	public void stopJobsForPage(AbstractPage pageOfNode) {
+		// TODO Auto-generated method stub
+	}
 }

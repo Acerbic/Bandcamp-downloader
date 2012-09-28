@@ -7,14 +7,12 @@ import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 /**
  * Job to download a page from network. Firstly, reads from cache and then updates with network data.
  * if no changes to current page happened, children nodes would be read from cache only (if possible, 
- * download can still happen when cache reading failed)
- * . 
+ * download can still happen when cache reading failed).
+ *  
  * If new page data is different, all children will be submitted to the same test.
  * forceDownload flag in constructor makes job to always download, skipping whole cache checks, 
  * for this page and all generated jobs.
  * @author Acerbic
- *
- * reports "download job started", "downloaded", "up to date", "download failed"
  */
 public class UpdatePageJob extends PageJob {
 	
@@ -29,10 +27,12 @@ public class UpdatePageJob extends PageJob {
 	public UpdatePageJob(AbstractPage page, JobMaster owner, boolean forceDownload) {
 		super(page, owner);
 		this.forceDownload = forceDownload;
+		report("download job queued", 1);
 	}
 
 	/**
 	 * summary of the messages reported by DownloadPageJob:
+	 * "download job queued", 1
 	 * "download job started", 1
 	 * "download finished", 1
 	 * "up to date", 1
@@ -41,7 +41,11 @@ public class UpdatePageJob extends PageJob {
 	@Override
 	public void run() {
 		report ("download job started", 1);
-		if (!forceDownload) page.loadFromCache();
+		if (!forceDownload) 
+			if (page.loadFromCache())
+				report("read from cache", 1);
+			else 
+				report("cache reading failed", 1);
 		try {
 //			try {
 //				Thread.sleep(3000);

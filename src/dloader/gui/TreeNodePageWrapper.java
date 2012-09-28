@@ -1,5 +1,7 @@
 package dloader.gui;
 
+import javax.swing.tree.DefaultMutableTreeNode;
+
 import dloader.page.AbstractPage;
 import dloader.page.Track;
 
@@ -15,6 +17,7 @@ public class TreeNodePageWrapper {
 	
 	public final AbstractPage page; //wrapped object
 	
+	public final DefaultMutableTreeNode container;
 	// TODO job progress flags and logs
 	boolean readFromCache = false;
 	boolean downloadPageQ = false;
@@ -24,8 +27,9 @@ public class TreeNodePageWrapper {
 	boolean downloadPageFailed = false;
 	boolean upToDate = false;
 	
-	public TreeNodePageWrapper(AbstractPage page) {
+	public TreeNodePageWrapper(AbstractPage page, DefaultMutableTreeNode container) {
 		this.page = page;
+		this.container = container;
 	}
 
 	/**
@@ -40,10 +44,12 @@ public class TreeNodePageWrapper {
 		case "checking cache": break;
 		case "read from cache": readFromCache = true; return true; 
 		//message reported by ReadCacheJob
-		case "read cache failed": break;
+		case "read cache failed": readFromCache = false; break;
 		//message reported by GetPageJob:
-		case "cache reading failed, submitting download job": downloadPageQ = true; return true; 
+		case "cache reading failed, submitting download job": readFromCache = false; downloadPageQ = true; return true; 
 		// messages reported by DownloadPageJob:
+		case "download job queued": downloadPageQ = true; return true;
+
 		case "download job started": downloading = true; downloadPageQ = false; return true;
 		case "download finished": downloading = false; downloaded = true; return true;
 		case "up to date": downloading = false; downloaded = true; upToDate = true; return true;
@@ -79,11 +85,11 @@ public class TreeNodePageWrapper {
 		styleCompilation += "span#url {color:gray; font: 0.8em;}";
 		
 		// title color
-		String titleColor = "black";
-		if (readFromCache) titleColor = "blue";
-		if (downloaded && !upToDate) titleColor = "green";
-		if (downloadPageQ || downloadPageFailed) titleColor = "red";
-		if (downloading) titleColor = "orange";
+		String titleColor = "black"; // page data did not differ from net
+		if (readFromCache && !upToDate) titleColor = "blue"; // page data was read from cache only 
+		if (downloaded && !upToDate) titleColor = "green"; // page data was updated from net
+		if (downloadPageQ || downloadPageFailed) titleColor = "red"; // page is in Q to be updated or update failed
+		if (downloading) titleColor = "orange"; // in a process of downloading page data
 		styleCompilation += "span#title {color:" + titleColor + "}";
 		
 		// title formatters;
@@ -91,13 +97,14 @@ public class TreeNodePageWrapper {
 		
 		if (downloading) {
 			title = "Scanning... " + title;
-//			styleCompilation += "span#title {font: bold}";
+		} 
+		else if (downloadPageFailed) {
+			title = "Scan failed: " + title;
+			styleCompilation += "span#title {font: bold}";
+		} else if (downloadPageQ) {
+			title = "In queue for scan... " + title;
 		}
 		
-		if (downloadPageQ) {
-			title = "In queue for scan... " + title;
-//			styleCompilation += "span#title {font: bold}";
-		}
 		// finalize title
 		title = "<span id='title'>"+title+"</span>";
 
