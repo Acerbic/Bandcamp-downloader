@@ -240,7 +240,7 @@ public class GUI extends JFrame {
 	
 	private void initPrefetch() {
 		lblStatus.setText("Prefetching");
-		if (newWorker != null) 
+		if (newWorker == null) 
 			newWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
 		newWorker.execute();
 		btnPrefetch.setEnabled(false);		
@@ -255,7 +255,7 @@ public class GUI extends JFrame {
 	
 	private void initScan() {
 		lblStatus.setText("Scanning");
-		if (newWorker != null) 
+		if (newWorker == null) 
 			newWorker = new MyWorker(rootPage, JobType.UPDATEPAGES);
 		newWorker.execute();
 		btnFetch.setEnabled(false);		
@@ -275,10 +275,18 @@ public class GUI extends JFrame {
 	 * @param value - numeral info 
 	 */
 	public void updateTree (AbstractPage p, String message, long value) {
-		// construct list of elements from root page to this page
+		// construct list of elements from root page to this page while checking pages to be actual children 
 		Deque<AbstractPage> pathToPage = new LinkedList<AbstractPage>();
 		while (p != null) {
 			pathToPage.push(p);
+			if (p.getParent() == null) {
+				if (!p.equals(rootPage))
+					// root node's page is not the same as root of AbstractPage tree. <- something is really wrong
+					return;
+			} 
+			else if (!p.getParent().childPages.contains(p))
+				// stray ghost report on page no longer in a tree
+				return;
 			p = p.getParent();
 		}
 		
@@ -287,24 +295,22 @@ public class GUI extends JFrame {
 		for (AbstractPage currentPage: pathToPage) {
 			// check if this page exists in the tree
 			DefaultMutableTreeNode child = null;
-			TreeNodePageWrapper childsUserObject = null;
 			boolean found = false;
 			for (@SuppressWarnings("unchecked")
 			Enumeration<DefaultMutableTreeNode> children = parent.children(); children.hasMoreElements();) {
 				child = children.nextElement();
-				if (child.getUserObject() instanceof TreeNodePageWrapper)
-					childsUserObject = (TreeNodePageWrapper) child.getUserObject();
-				if (currentPage.equals(childsUserObject.page)) {
+				if (currentPage.equals(pageOfNode(child))) {
 					found = true;
 					break;
 				}
 			}
 			if (! found) {
+				// currentPage's node was not found in parent node 
 				//TODO: fix elements order in tree.... 
 				
 				// add new item under this parent
 				child = new DefaultMutableTreeNode();
-				childsUserObject = new TreeNodePageWrapper(currentPage, child);
+				TreeNodePageWrapper childsUserObject = new TreeNodePageWrapper(currentPage, child);
 				child.setUserObject(childsUserObject);
 				
 				parent.add(child);
