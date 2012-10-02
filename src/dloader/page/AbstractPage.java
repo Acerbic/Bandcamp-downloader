@@ -42,7 +42,7 @@ import dloader.pagejob.ProgressReporter;
  * transfer notion.
  * 
  *   Objects of this class are mutable 
- *   	(effectively immutable after initialization with downloadPage() and loadFromCache(),
+ *   	(effectively immutable after initialization with updateFromNet()/downloadPage() and loadFromCache(),
  *     	but that can be delayed).
  *   Objects of this class are thread-safe 
  */
@@ -80,7 +80,7 @@ public abstract class AbstractPage {
 	public final String saveTo;
 
 	/**
-	 * List of a children items to this page (can be of size zero) 
+	 * List of a children items to this page (can be of size zero, can't be null) 
 	 * It is important this variable is concurrent, since many different threads may iterate
 	 * through children at any given moment.
 	 * This list is empty on construction and filled with elements by loadFromCache() and updateFromNet() calls.

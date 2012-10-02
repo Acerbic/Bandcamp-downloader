@@ -236,7 +236,8 @@ public class GUI extends JFrame {
 		chckbxLog.setSelected( Main.logger != null);
 		chckbxUseCache.setSelected(Main.allowFromCache);
 		
-		updateTree (rootPage, "", 1); //empty message to put root page on display;
+		initPrefetch();
+//		updateTree (rootPage, "", 1); //empty message to put root page on display;
 	}
 	
 	private void initPrefetch() {
@@ -304,7 +305,7 @@ public class GUI extends JFrame {
 				
 				// add new item under this parent
 				childNode = new DefaultMutableTreeNode();
-				TreeNodePageWrapper childsUserObject = new TreeNodePageWrapper(childPage, childNode);
+				TreeNodePageWrapper childsUserObject = new TreeNodePageWrapper(childPage);
 				childNode.setUserObject(childsUserObject);
 				
 				if (childPage.getParent() == null)
@@ -316,19 +317,18 @@ public class GUI extends JFrame {
 						parentNode.add(childNode); // to the end
 					else 
 						parentNode.insert(childNode, insertionIndex);
-					
 				}
-				int[] indices = new int[1];
-				indices[0] = parentNode.getIndex(childNode);
 				
 				// new item's children if any (that way they maintain their order)
 				for (AbstractPage subPage: childPage.childPages) {
 					DefaultMutableTreeNode subChild = new DefaultMutableTreeNode();
-					subChild.setUserObject(new TreeNodePageWrapper(subPage, subChild));					
+					subChild.setUserObject(new TreeNodePageWrapper(subPage));					
 				}
-				model.nodesWereInserted(parentNode, indices); //notification to repaint
+				int[] indices = new int[1];
+				indices[0] = parentNode.getIndex(childNode);
+				model.nodesWereInserted(parentNode, indices); // notification to repaint
 				
-				//expand only if not a Track
+				// expand only if not a Track
 				if (!(childsUserObject.page instanceof Track))
 					tree.expandPath(new TreePath(parentNode.getPath())); 
 			}
@@ -348,21 +348,38 @@ public class GUI extends JFrame {
 			trimBranch(parentNode, model);
 		
 		// pass message to the user object and refresh its visual if needed
-		if (((TreeNodePageWrapper)parentNode.getUserObject()).update(message, value))
+		TreeNodePageWrapper parentWrapper = (TreeNodePageWrapper)parentNode.getUserObject();
+		
+		// TODO: consider using EventListener mechanic
+		if (parentWrapper.update(message, value)) {
 			model.nodeChanged(parentNode);
+			if (getPageOfNode(parentNode) instanceof Track) {
+				DefaultMutableTreeNode gParentNode = (DefaultMutableTreeNode) parentNode.getParent();
+				if (gParentNode != null) {
+					TreeNodePageWrapper grandParentWrapper = (TreeNodePageWrapper) gParentNode.getUserObject();
+					grandParentWrapper.kidChanged(parentWrapper, gParentNode, message, value);
+					model.nodeChanged(gParentNode);
+				}
+			}
+		}
 		
 	}
 
+	/**
+	 * Time to find proper insertion position (assume nodes are ordered same way as pages so far with "skips" probably existing)
+	 * check "DoubleListMatcher.graphml" automaton diagram to understand the following
+	 *	p1   p2   p3   p4        p5  p6
+	 *	n1             n2   n3   n4
+	 * @param parentNode - node to which new node will be inserted.
+	 * @param childPage - a page to be inserted. childPage.getParent() must not be null.
+	 * @return -1 if new node should be appended to the end, or a proper insertion index
+	 */
 	private int findInsertionPoint(DefaultMutableTreeNode parentNode,
 			AbstractPage childPage) {
-		// time to find proper insertion position (assume nodes are ordered same way as pages so far with "skips" probably existing)
-		// p1   p2   p3   p4        p5  p6
-		// n1             n2   n3   n4
 		Iterator<AbstractPage> pageLooker = childPage.getParent().childPages.iterator();
 		@SuppressWarnings("unchecked")
 		Enumeration<DefaultMutableTreeNode> nodeLooker = parentNode.children();
 		
-		// check "DoubleListMatcher.graphml" automaton diagram to understand the following
 		// *S*
 		// *A1*
 		while (nodeLooker.hasMoreElements()) { // *G* exit

@@ -24,7 +24,7 @@ public class ReadCacheJob extends PageJob {
 	public void run() {
 		report("checking cache", 1); // same as in GetPageJob before trying to read cache;
 		if (page.loadFromCache()) {
-			//note: this iterator does not require locking because of ConcurrentLinkedQueue implementation
+			//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
 			for (AbstractPage child: page.childPages)
 				jobMaster.submit(new ReadCacheJob(child, jobMaster));
 			report("read from cache", 1); // same as in GetPageJob on successful reading cache;

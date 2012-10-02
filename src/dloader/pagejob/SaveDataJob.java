@@ -40,7 +40,7 @@ public class SaveDataJob extends PageJob {
 //			e.printStackTrace();
 		}
 		
-		//note: this iterator does not require locking because of ConcurrentLinkedQueue implementation
+		//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
 		for (AbstractPage child: page.childPages)
 			jobMaster.submit(new SaveDataJob(child,jobMaster));
 	}

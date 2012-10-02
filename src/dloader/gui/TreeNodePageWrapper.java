@@ -1,5 +1,7 @@
 package dloader.gui;
 
+import java.util.Enumeration;
+
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import dloader.page.AbstractPage;
@@ -18,7 +20,6 @@ public class TreeNodePageWrapper {
 	
 	public final AbstractPage page; //wrapped object
 	
-	public final DefaultMutableTreeNode container;
 	// TODO job progress flags and logs
 	boolean readFromCache = false;
 	boolean downloadPageQ = false;
@@ -28,9 +29,10 @@ public class TreeNodePageWrapper {
 	boolean downloadPageFailed = false;
 	boolean upToDate = false;
 	
-	public TreeNodePageWrapper(AbstractPage page, DefaultMutableTreeNode container) {
+	int kidsInProcessing = 0;
+	
+	public TreeNodePageWrapper(AbstractPage page) {
 		this.page = page;
-		this.container = container;
 	}
 
 	/**
@@ -40,21 +42,37 @@ public class TreeNodePageWrapper {
 	 * @return true if node must be repainted
 	 */
 	public boolean update(String type, long report) {
+		boolean updateVisuals = false;
 		switch (type) {
 		//messages reported by ReadCacheJob and GetPageJob:
 		case "checking cache": break;
-		case "read from cache": readFromCache = true; return true; 
+		case "read from cache": 
+			readFromCache = true; 
+			updateVisuals = true; break; 
 		//message reported by ReadCacheJob
-		case "read cache failed": readFromCache = false; break;
+		case "read cache failed": 
+			readFromCache = false; break;
 		//message reported by GetPageJob:
-		case "cache reading failed, submitting download job": readFromCache = false; downloadPageQ = true; return true; 
+		case "cache reading failed, submitting download job": 
+			readFromCache = false; downloadPageQ = true; 
+			updateVisuals = true; break; 
+			
 		// messages reported by DownloadPageJob:
-		case "download job queued": downloadPageQ = true; return true;
-
-		case "download job started": downloading = true; downloadPageQ = false; return true;
-		case "download finished": downloading = false; downloaded = true; return true;
-		case "up to date": downloading = false; downloaded = true; upToDate = true; return true;
-		case "download failed": downloading = false; downloadPageFailed = true; return true;
+		case "download job queued": 
+			downloadPageQ = true; 
+			updateVisuals = true; break;
+		case "download job started": 
+			downloading = true; downloadPageQ = false; 
+			updateVisuals = true; break;
+		case "download finished": 
+			downloading = false; downloaded = true; 
+			updateVisuals = true; break;
+		case "up to date": 
+			downloading = false; downloaded = true; upToDate = true; 
+			updateVisuals = true; break;
+		case "download failed": 
+			downloading = false; downloadPageFailed = true; 
+			updateVisuals = true; break;
 
 		
 		/**
@@ -71,7 +89,7 @@ public class TreeNodePageWrapper {
 		 */
 		
 		}
-		return false;
+		return updateVisuals;
 	}
 	
 	@Override
@@ -92,9 +110,13 @@ public class TreeNodePageWrapper {
 		if (downloadPageQ || downloadPageFailed) titleColor = "red"; // page is in Q to be updated or update failed
 		if (downloading) titleColor = "orange"; // in a process of downloading page data
 		styleCompilation += "span#title {color:" + titleColor + "}";
+		styleCompilation += "span#children {color:" + (kidsInProcessing > 0? "orange" : "black") + "}";
 		
 		// title formatters;
-		String childrenCount = (page.childPages.size() > 0)? "<span id='children'>["+page.childPages.size()+"]</span>":"";
+		String childrenCount = (page.childPages.size() <= 0)? "":
+			"<span id='children'>["+
+			(kidsInProcessing <= 0 ? "": (page.childPages.size()-kidsInProcessing)+"/")+
+			page.childPages.size()+"]</span>";
 		
 		if (downloading) {
 			title = "Scanning... " + title;
@@ -122,6 +144,20 @@ public class TreeNodePageWrapper {
 					title + " " + childrenCount +
 				"<br>" + "<span id='url'>" + page.url + "</span>" +
 				"</u>"+ bottom;
+	}
+
+	public void kidChanged(TreeNodePageWrapper kidWrapper,
+			DefaultMutableTreeNode thisNode, String message, long value) {
+		
+		kidsInProcessing = 0;
+		for (@SuppressWarnings("unchecked")
+		Enumeration<DefaultMutableTreeNode> children = thisNode.children(); children.hasMoreElements();) {
+			TreeNodePageWrapper kid = (TreeNodePageWrapper) children.nextElement().getUserObject();
+			
+			if (kid.downloading || kid.downloadPageQ)
+				kidsInProcessing++;
+		}
+		
 	}
 
 }

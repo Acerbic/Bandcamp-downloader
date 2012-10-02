@@ -54,7 +54,7 @@ public class UpdatePageJob extends PageJob {
 //			}
 			if (page.updateFromNet(this) || forceDownload) {
 				page.saveToCache();
-				//note: this iterator does not require locking because of ConcurrentLinkedQueue implementation
+				//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
 				for (AbstractPage child: page.childPages) 
 					jobMaster.submit(new UpdatePageJob(child, jobMaster, forceDownload));
 				report("download finished", 1);
