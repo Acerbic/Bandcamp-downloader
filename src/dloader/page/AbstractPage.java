@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import java.util.logging.Level;
 
@@ -84,9 +84,11 @@ public abstract class AbstractPage {
 	 * It is important this variable is concurrent, since many different threads may iterate
 	 * through children at any given moment.
 	 * This list is empty on construction and filled with elements by loadFromCache() and updateFromNet() calls.
+	 * Due to efficiency issues, elements should be added as .addAll(...) when possible
 	 */
 	public final 
-	Collection<AbstractPage> childPages = new ConcurrentLinkedQueue<>(); 
+//	Queue<AbstractPage> childPages = new ConcurrentLinkedQueue<>(); 
+	List<AbstractPage> childPages = new CopyOnWriteArrayList<>(); 
 	
 
 	/**
@@ -335,9 +337,10 @@ public abstract class AbstractPage {
 
 	/** 
 	 * Downloads the page, parses it and creates child nodes.
+	 * Note: children pages are dropped always. Their references are no longer part of the page tree.
+	 * Note2: it is better to invoke updateFromNet(), as it preserves children pages if they are identical to the new data
 	 * @throws ProblemsReadingDocumentException if any error
 	 */
-	//FIXME: make this private (public for testing purposes)
 	public final 
 	void downloadPage(ProgressReporter reporter) throws ProblemsReadingDocumentException {
 		Main.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
@@ -363,15 +366,16 @@ public abstract class AbstractPage {
 			// discover info about children pages
 			childPages.clear();
 			Collection<Element> result = queryXPathList(getChildNodesXPath(), doc);
+			List<AbstractPage> newChildren = new LinkedList<>();
 			for (Element el: result) 
 				try {
-					childPages.add(parseChild(el));
+					newChildren.add(parseChild(el));
 				} catch (ProblemsReadingDocumentException e) {
 					Main.log(Level.WARNING, "unable to parse child data", e);
 				} // skip this child to next one
+
+			childPages.addAll(newChildren);
 		}
-//		if (reporter != null)
-//			reporter.report("download finished", 1);
 		Main.log(Level.FINE, String.format("...finished %s.%n", url.toString()));
 	}
 
@@ -439,11 +443,12 @@ public abstract class AbstractPage {
 					oldChild = current; break;
 				}
 			
+			List<AbstractPage> resultChildren = new LinkedList<>();
 			if (oldChild != null) {
-				childPages.add(oldChild);
-				oldChildren.remove(oldChild); // very little optimization
+				resultChildren.add(oldChild);
 			} else
-				childPages.add(newChild);
+				resultChildren.add(newChild);
+			childPages.addAll(resultChildren);
 		}
 	}
 	/**

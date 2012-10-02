@@ -10,6 +10,7 @@ import dloader.page.Track;
  * 
  * It simultaneously wraps AbstractPage object, tracks download job progress by capturing PageJob's messages
  * and provides "toString()" method to represent a page in JTree view. 
+ * It does not change node tree model. All modifying of the tree is located at GUI.updateTree(...) 
  * @author Acerbic
  *
  */
@@ -75,7 +76,7 @@ public class TreeNodePageWrapper {
 	
 	@Override
 	public String toString() {
-		// TODO fix representation
+		// TODO
 		
 		String header = "<html>";
 		String bottom = "</html>";

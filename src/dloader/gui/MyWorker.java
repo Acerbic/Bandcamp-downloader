@@ -47,7 +47,6 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 //				try {
 //					Thread.sleep(300);
 //				} catch (InterruptedException e) {
-//					// TODO Auto-generated catch block
 //					e.printStackTrace();
 //				}
 			}

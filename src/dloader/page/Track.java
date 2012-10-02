@@ -40,7 +40,7 @@ public class Track extends AbstractPage {
 	/**
 	 * Set of custom properties read from page, saved to cache and 
 	 * resulting audio file metadata tags. Before iterating through properties,
-	 * they might be required to be update with "title" field from getTitle().
+	 * they might be required to be updated with "title" field from getTitle().
 	 */	
 	private Properties properties; // thread-safe class
 	
@@ -95,7 +95,6 @@ public class Track extends AbstractPage {
 	public synchronized 
 	boolean saveResult(ProgressReporter reporter) throws IOException {
 		Path p = Paths.get(getTrackFileName());
-		// TODO: progress reporting in HERE
 		boolean wasDownloaded = 
 				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString(), reporter) != 0;
 		

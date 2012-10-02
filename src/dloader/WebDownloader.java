@@ -21,13 +21,13 @@ import dloader.pagejob.ProgressReporter;
  */
 public class WebDownloader {
 	
-/**
+	/**
 	 * Downloads and saves a resource by given string address (URL) .
 	 * @param from - resource URL string
- * @param to - file to save to.
- * @param reporter TODO
+	 * @param to - file to save to.
+	 * @param reporter - way to publish download progress.
 	 * @return size of the downloaded file in bytes, 
-	 * 0 if download was skipped (file exists and not zero length)
+	 * 			0 if download was skipped (file exists and not zero length)
 	 * @throws IOException on stream problems or server has responded bad
 	 */
 	public static long fetchWebFile(String from, String to, ProgressReporter reporter) throws IOException {
