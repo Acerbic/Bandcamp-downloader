@@ -10,6 +10,7 @@ import java.util.Deque;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 import javax.swing.border.BevelBorder;
 
@@ -74,7 +75,6 @@ public class GUI extends JFrame {
 		return eventDispatchThread;
 	}
 
-	@SuppressWarnings("serial")
 	public GUI() throws HeadlessException {
 		assert (SwingUtilities.isEventDispatchThread());
 		eventDispatchThread = Thread.currentThread();
@@ -104,11 +104,7 @@ public class GUI extends JFrame {
 		tree.setRootVisible(false);
 		tree.setShowsRootHandles(true);
 		tree.setEditable(true);
-		tree.setModel(new DefaultTreeModel(
-			new DefaultMutableTreeNode("JTree") {
-				{}
-			}
-		));
+		tree.setModel(new DefaultTreeModel(new TreeNodePageWrapper(null)));
 //		tree.setCellRenderer(new MyRenderer());		
 		tree.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
@@ -237,7 +233,6 @@ public class GUI extends JFrame {
 		chckbxUseCache.setSelected(Main.allowFromCache);
 		
 		initPrefetch();
-//		updateTree (rootPage, "", 1); //empty message to put root page on display;
 	}
 	
 	private void initPrefetch() {
@@ -254,6 +249,14 @@ public class GUI extends JFrame {
 			lblStatus.setText("");
 		btnPrefetch.setEnabled(true);		
 		newWorker = null;
+		
+		TreeNodePageWrapper target = (TreeNodePageWrapper)tree.getModel().getRoot();
+		try {
+			target = (TreeNodePageWrapper) target.getFirstChild();
+			tree.expandPath(new TreePath(target.getPath())); 
+		} catch (NoSuchElementException e) {
+		}
+		
 	}
 	
 	private void initScan() {
@@ -295,18 +298,16 @@ public class GUI extends JFrame {
 		}
 		
 		DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-		DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) model.getRoot(); 
+		TreeNodePageWrapper parentNode = (TreeNodePageWrapper) model.getRoot(); 
 		for (AbstractPage childPage: pathToPage) {
 			// check if this page exists in the parent
-			DefaultMutableTreeNode childNode = getNodeOfPage (parentNode, childPage);
+			TreeNodePageWrapper childNode = getNodeOfPage (parentNode, childPage);
 			
 			if (childNode == null) {
 				// currentPage's node was not found in parent node 
 				
 				// add new item under this parent
-				childNode = new DefaultMutableTreeNode();
-				TreeNodePageWrapper childsUserObject = new TreeNodePageWrapper(childPage);
-				childNode.setUserObject(childsUserObject);
+				childNode = new TreeNodePageWrapper(childPage);
 				
 				if (childPage.getParent() == null)
 					parentNode.add(childNode); // to the end
@@ -321,22 +322,18 @@ public class GUI extends JFrame {
 				
 				// new item's children if any (that way they maintain their order)
 				for (AbstractPage subPage: childPage.childPages) {
-					DefaultMutableTreeNode subChild = new DefaultMutableTreeNode();
-					subChild.setUserObject(new TreeNodePageWrapper(subPage));					
+					TreeNodePageWrapper subChild = new TreeNodePageWrapper(subPage);
+					childNode.add(subChild);
 				}
 				int[] indices = new int[1];
 				indices[0] = parentNode.getIndex(childNode);
 				model.nodesWereInserted(parentNode, indices); // notification to repaint
 				
-				// expand only if not a Track
-				if (!(childsUserObject.page instanceof Track))
-					tree.expandPath(new TreePath(parentNode.getPath())); 
 			}
 			
 			parentNode = childNode; // advance to search next element in our pathToPage
 		}
-		// after search is complete, parent points to a DefaultMutableTreeNode 
-		//  containing TreeNodePageWrapper containing original p (but now p is different)
+		// after search is complete, parent points to a TreeNodePageWrapper containing original p (but now p is different)
 		
 		// Reading cache/ downloading a page forces reset of page data (children refs), 
 		//  the node branch must be trimmed accordingly
@@ -348,16 +345,15 @@ public class GUI extends JFrame {
 			trimBranch(parentNode, model);
 		
 		// pass message to the user object and refresh its visual if needed
-		TreeNodePageWrapper parentWrapper = (TreeNodePageWrapper)parentNode.getUserObject();
+//		TreeNodePageWrapper parentWrapper = (TreeNodePageWrapper)parentNode.getUserObject();
 		
 		// TODO: consider using EventListener mechanic
-		if (parentWrapper.update(message, value)) {
+		if (parentNode.update(message, value)) {
 			model.nodeChanged(parentNode);
-			if (getPageOfNode(parentNode) instanceof Track) {
-				DefaultMutableTreeNode gParentNode = (DefaultMutableTreeNode) parentNode.getParent();
+			if (parentNode.page instanceof Track) {
+				TreeNodePageWrapper gParentNode = (TreeNodePageWrapper) parentNode.getParent();
 				if (gParentNode != null) {
-					TreeNodePageWrapper grandParentWrapper = (TreeNodePageWrapper) gParentNode.getUserObject();
-					grandParentWrapper.kidChanged(parentWrapper, gParentNode, message, value);
+					gParentNode.kidChanged(parentNode, gParentNode, message, value);
 					model.nodeChanged(gParentNode);
 				}
 			}
@@ -374,16 +370,16 @@ public class GUI extends JFrame {
 	 * @param childPage - a page to be inserted. childPage.getParent() must not be null.
 	 * @return -1 if new node should be appended to the end, or a proper insertion index
 	 */
-	private int findInsertionPoint(DefaultMutableTreeNode parentNode,
+	private int findInsertionPoint(TreeNodePageWrapper parentNode,
 			AbstractPage childPage) {
 		Iterator<AbstractPage> pageLooker = childPage.getParent().childPages.iterator();
 		@SuppressWarnings("unchecked")
-		Enumeration<DefaultMutableTreeNode> nodeLooker = parentNode.children();
+		Enumeration<TreeNodePageWrapper> nodeLooker = parentNode.children();
 		
 		// *S*
 		// *A1*
 		while (nodeLooker.hasMoreElements()) { // *G* exit
-			DefaultMutableTreeNode currentNode = nodeLooker.nextElement();
+			TreeNodePageWrapper currentNode = nodeLooker.nextElement();
 			
 			// *A2*
 			if (!pageLooker.hasNext())
@@ -392,17 +388,17 @@ public class GUI extends JFrame {
 			
 			// these are B-C-D123-B and B-C-E-B loops 
 			b_loop:
-			while (! getPageOfNode(currentNode).equals(currentPage)) { // *A2*->*B* check AND *E*->*B* check
+			while (! currentNode.page.equals(currentPage)) { // *A2*->*B* check AND *E*->*B* check
 				// *B*
 				if (childPage.equals(currentPage)) {
 					return parentNode.getIndex(currentNode); // *F*
 				}
 				// *C*
-				if (getPageOfNode(parentNode).childPages.contains(getPageOfNode(currentNode))) {
+				if (parentNode.page.childPages.contains(currentNode.page)) {
 					// *D2*
 					while (pageLooker.hasNext()) 
 						currentPage = pageLooker.next(); 
-						if (getPageOfNode(currentNode).equals(currentPage))
+						if (currentNode.page.equals(currentPage))
 							break b_loop; // -> *A*
 						// *D3*
 						if (childPage.equals(currentPage)) {
@@ -429,25 +425,25 @@ public class GUI extends JFrame {
 	 * @param branch - node branch to clean up
 	 * @param model - reference model
 	 */
-	private void trimBranch(DefaultMutableTreeNode branch, DefaultTreeModel model) {
-		AbstractPage branchPage = getPageOfNode(branch);
-		Collection<DefaultMutableTreeNode> removeList = new LinkedList<>();
+	private void trimBranch(TreeNodePageWrapper branch, DefaultTreeModel model) {
+		AbstractPage branchPage = branch.page;
+		Collection<TreeNodePageWrapper> removeList = new LinkedList<>();
 		for (@SuppressWarnings("unchecked")
-			Enumeration<DefaultMutableTreeNode> children = branch.children(); children.hasMoreElements();) {
-			DefaultMutableTreeNode childNode = children.nextElement();
-			AbstractPage childPage = getPageOfNode(childNode); 
+			Enumeration<TreeNodePageWrapper> children = branch.children(); children.hasMoreElements();) {
+			TreeNodePageWrapper childNode = children.nextElement();
+			AbstractPage childPage = childNode.page; 
 			if (! branchPage.childPages.contains(childPage)) {
 				// child's page is no more contained within its parent's page children collection
 				removeList.add(childNode); // can't remove on spot, it will fuck up the iteration
 			}
 		}
 		
-		for (DefaultMutableTreeNode element: removeList) {
+		for (TreeNodePageWrapper element: removeList) {
 			// ordinary, this should never happen. if this is executing, it means that cache data was in conflict
 			// with updated net data.
 			model.removeNodeFromParent(element);
 			//since this page is no more of our concern, all jobs executing and pending are irrelevant CPU consumers
-			newWorker.stopJobsForPage(getPageOfNode(element)); 
+			newWorker.stopJobsForPage(element.page); 
 		}
 	}
 
@@ -464,28 +460,17 @@ public class GUI extends JFrame {
 	}
 	
 	/**
-	 * Shorthand to extract the page this node is displaying through user object
-	 * @param node
-	 * @return null if user object is not a AbstractPage wrapper
-	 */
-	private AbstractPage getPageOfNode(DefaultMutableTreeNode node) {
-		if (node.getUserObject() instanceof TreeNodePageWrapper)
-			return ((TreeNodePageWrapper)node.getUserObject()).page;
-		else return null;
-	}
-	
-	/**
-	 * Search children nodes of a parentNode for a DefaultMutableTreeNode containing given AbstractPage. 
+	 * Search children nodes of a parentNode for a TreeNodePageWrapper containing given AbstractPage. 
 	 * @param parentNode - parent of nodes to search among
 	 * @param page - page to search
 	 * @return found node or null if not found
 	 */
-	private DefaultMutableTreeNode getNodeOfPage (DefaultMutableTreeNode parentNode, AbstractPage page) {
-		DefaultMutableTreeNode childNode = null;
+	private TreeNodePageWrapper getNodeOfPage (TreeNodePageWrapper parentNode, AbstractPage page) {
+		TreeNodePageWrapper childNode = null;
 		for (@SuppressWarnings("unchecked")
-		Enumeration<DefaultMutableTreeNode> children = parentNode.children(); children.hasMoreElements();) {
+		Enumeration<TreeNodePageWrapper> children = parentNode.children(); children.hasMoreElements();) {
 			childNode = children.nextElement();
-			if (page.equals(getPageOfNode(childNode))) 
+			if (page.equals(childNode.page)) 
 				return childNode;
 		}
 		return null;

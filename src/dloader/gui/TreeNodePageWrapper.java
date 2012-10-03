@@ -16,8 +16,13 @@ import dloader.page.Track;
  * @author Acerbic
  *
  */
-public class TreeNodePageWrapper {
+public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -265090747493368344L;
+
 	public final AbstractPage page; //wrapped object
 	
 	// TODO job progress flags and logs
@@ -32,11 +37,12 @@ public class TreeNodePageWrapper {
 	int kidsInProcessing = 0;
 	
 	public TreeNodePageWrapper(AbstractPage page) {
+		super(null);
 		this.page = page;
 	}
 
 	/**
-	 * update flags and states of this node visual representation
+	 * Update flags and states of this node visual representation
 	 * @param type
 	 * @param report
 	 * @return true if node must be repainted
@@ -94,6 +100,7 @@ public class TreeNodePageWrapper {
 	
 	@Override
 	public String toString() {
+		if (page == null) return null;
 		// TODO
 		
 		String header = "<html>";
@@ -114,8 +121,8 @@ public class TreeNodePageWrapper {
 		
 		// title formatters;
 		String childrenCount = (page.childPages.size() <= 0)? "":
-			"<span id='children'>["+
-			(kidsInProcessing <= 0 ? "": (page.childPages.size()-kidsInProcessing)+"/")+
+			"<span id='children'>[" +
+			(kidsInProcessing <= 0 ? "": (page.childPages.size()-kidsInProcessing) +"/") +
 			page.childPages.size()+"]</span>";
 		
 		if (downloading) {
@@ -129,7 +136,7 @@ public class TreeNodePageWrapper {
 		}
 		
 		// finalize title
-		title = "<span id='title'>"+title+"</span>";
+		title = "<span id='title'>" + title + "</span>";
 
 		// finalize style
 		header += "<style type='text/css'> " + styleCompilation + "</style>";
@@ -152,7 +159,7 @@ public class TreeNodePageWrapper {
 		kidsInProcessing = 0;
 		for (@SuppressWarnings("unchecked")
 		Enumeration<DefaultMutableTreeNode> children = thisNode.children(); children.hasMoreElements();) {
-			TreeNodePageWrapper kid = (TreeNodePageWrapper) children.nextElement().getUserObject();
+			TreeNodePageWrapper kid = (TreeNodePageWrapper) children.nextElement();
 			
 			if (kid.downloading || kid.downloadPageQ)
 				kidsInProcessing++;
