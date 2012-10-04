@@ -140,6 +140,7 @@ public class Main {
 						gui = new GUI();
 						gui.init();
 						gui.pack();
+						gui.setSize(750, 950);
 						gui.setVisible(true);
 					}
 				});

@@ -290,14 +290,14 @@ public abstract class AbstractPage {
 		return new URL(url, fixURLString(url, link));
 	}
 
-	private final static 
+	public final static 
 	String fixURLString(URL base, String u) {
 		if (u == null) return null;
 		if (u.endsWith("/"))
 			u = u.substring(0, u.length()-1); // uniform "...com/" to "...com" address
 		if (base == null && !u.contains(":/"))
 			u = "http://"+u; // default protocol
-		return u;
+		return u.toLowerCase();
 	}
 	
 	/**

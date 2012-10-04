@@ -2,8 +2,6 @@ package dloader;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.GroupLayout.Alignment;
-import javax.swing.LayoutStyle.ComponentPlacement;
 import java.awt.Font;
 import java.util.Collection;
 import java.util.Deque;
@@ -22,8 +20,8 @@ import dloader.page.Track;
 
 import javax.swing.tree.*;
 
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class GUI extends JFrame {
 
@@ -89,9 +87,13 @@ public class GUI extends JFrame {
 		JLabel lblNewLabel = new JLabel("Source URL:");
 		
 		textFieldURL = new JTextField();
-		textFieldURL.setEditable(false);
 		lblNewLabel.setLabelFor(textFieldURL);
 		textFieldURL.setColumns(10);
+		textFieldURL.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				reInit();
+			}
+		});
 		
 		textFieldDirectory = new JTextField();
 		textFieldDirectory.setEditable(false);
@@ -103,8 +105,8 @@ public class GUI extends JFrame {
 		tree = new JTree();
 		tree.setRootVisible(false);
 		tree.setShowsRootHandles(true);
-		tree.setEditable(true);
-		tree.setModel(new DefaultTreeModel(new TreeNodePageWrapper(null)));
+//		tree.setModel(new DefaultTreeModel(new TreeNodePageWrapper(null)));
+		tree.setModel(new DefaultTreeModel(null));
 //		tree.setCellRenderer(new MyRenderer());		
 		tree.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
@@ -112,8 +114,18 @@ public class GUI extends JFrame {
 		lblStatus.setHorizontalAlignment(SwingConstants.CENTER);
 		lblStatus.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		
-		btnPrefetch = new JButton("Prefetch");
+		btnPrefetch = new JButton("Check");
+		btnPrefetch.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				reInit();
+			}
+		});
 		btnFetch = new JButton("Fetch");
+		btnFetch.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				initScan();
+			}
+		});
 		btnFix = new JButton("Fix");
 		btnFix.setEnabled(false);
 		btnUpdate = new JButton("Update");
@@ -128,88 +140,55 @@ public class GUI extends JFrame {
 		
 		JScrollPane scrollPane = new JScrollPane();
 		
-		btnPrefetch.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				initPrefetch();
-			}
-		});
-		
-		btnFetch.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				initScan();
-			}
-		});
-		
-		GroupLayout gl_panel = new GroupLayout(panel);
-		gl_panel.setHorizontalGroup(
-			gl_panel.createParallelGroup(Alignment.TRAILING)
-				.addGroup(gl_panel.createSequentialGroup()
-					.addGroup(gl_panel.createParallelGroup(Alignment.TRAILING)
-						.addGroup(Alignment.LEADING, gl_panel.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 709, Short.MAX_VALUE))
-						.addGroup(Alignment.LEADING, gl_panel.createSequentialGroup()
-							.addContainerGap()
-							.addGroup(gl_panel.createParallelGroup(Alignment.TRAILING)
-								.addGroup(gl_panel.createSequentialGroup()
-									.addGroup(gl_panel.createParallelGroup(Alignment.LEADING, false)
-										.addComponent(lblNewLabel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(lblNewLabel_1, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-									.addPreferredGap(ComponentPlacement.UNRELATED)
-									.addGroup(gl_panel.createParallelGroup(Alignment.TRAILING)
-										.addComponent(textFieldDirectory, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)
-										.addComponent(textFieldURL, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)))
-								.addGroup(gl_panel.createSequentialGroup()
-									.addComponent(btnPrefetch)
-									.addGap(7)
-									.addComponent(btnFetch, GroupLayout.PREFERRED_SIZE, 68, GroupLayout.PREFERRED_SIZE)
-									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(btnFix)
-									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(btnUpdate)
-									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(lblStatus, GroupLayout.DEFAULT_SIZE, 431, Short.MAX_VALUE))))
-						.addGroup(Alignment.LEADING, gl_panel.createSequentialGroup()
-							.addGap(28)
-							.addComponent(btnRetag)
-							.addPreferredGap(ComponentPlacement.RELATED, 538, Short.MAX_VALUE)
-							.addComponent(chckbxLog)
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(chckbxUseCache)))
-					.addContainerGap())
-		);
-		gl_panel.setVerticalGroup(
-			gl_panel.createParallelGroup(Alignment.LEADING)
-				.addGroup(gl_panel.createSequentialGroup()
-					.addContainerGap()
-					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblNewLabel)
-						.addComponent(textFieldURL, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
-						.addComponent(textFieldDirectory, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-						.addComponent(lblNewLabel_1))
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
-						.addComponent(btnRetag)
-						.addComponent(chckbxUseCache)
-						.addComponent(chckbxLog))
-					.addGap(44)
-					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
-						.addComponent(btnPrefetch)
-						.addComponent(lblStatus)
-						.addComponent(btnFetch)
-						.addComponent(btnFix)
-						.addComponent(btnUpdate))
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 732, Short.MAX_VALUE)
-					.addContainerGap())
-		);
+		SpringLayout sl_panel = new SpringLayout();
+		sl_panel.putConstraint(SpringLayout.WEST, textFieldURL, 10, SpringLayout.EAST, lblNewLabel_1);
+		sl_panel.putConstraint(SpringLayout.WEST, textFieldDirectory, 10, SpringLayout.EAST, lblNewLabel_1);
+		sl_panel.putConstraint(SpringLayout.EAST, lblStatus, -10, SpringLayout.EAST, panel);
+		sl_panel.putConstraint(SpringLayout.EAST, chckbxLog, 0, SpringLayout.WEST, chckbxUseCache);
+		sl_panel.putConstraint(SpringLayout.EAST, textFieldDirectory, -10, SpringLayout.EAST, panel);
+		sl_panel.putConstraint(SpringLayout.EAST, btnPrefetch, -10, SpringLayout.EAST, panel);
+		sl_panel.putConstraint(SpringLayout.EAST, chckbxUseCache, -10, SpringLayout.EAST, panel);
+		sl_panel.putConstraint(SpringLayout.SOUTH, scrollPane, -10, SpringLayout.SOUTH, panel);
+		sl_panel.putConstraint(SpringLayout.EAST, scrollPane, -10, SpringLayout.EAST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnPrefetch, 14, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.EAST, textFieldURL, -6, SpringLayout.WEST, btnPrefetch);
+		sl_panel.putConstraint(SpringLayout.NORTH, textFieldURL, 15, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, textFieldDirectory, 48, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, chckbxUseCache, 70, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, chckbxLog, 70, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, lblStatus, 100, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, lblStatus, 214, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnUpdate, 103, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, btnUpdate, 137, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnFix, 103, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, btnFix, 84, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnFetch, 103, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, btnFetch, 10, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.EAST, btnFetch, 78, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnRetag, 71, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, btnRetag, 10, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, lblNewLabel_1, 51, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, lblNewLabel_1, 10, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, lblNewLabel, 18, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, lblNewLabel, 10, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, scrollPane, 144, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, scrollPane, 10, SpringLayout.WEST, panel);
+		panel.setLayout(sl_panel);
 		
 		scrollPane.setViewportView(tree);
-		panel.setLayout(gl_panel);
+		panel.add(scrollPane);
+		panel.add(lblNewLabel);
+		panel.add(lblNewLabel_1);
+		panel.add(btnRetag);
+		panel.add(btnFetch);
+		panel.add(btnFix);
+		panel.add(btnUpdate);
+		panel.add(lblStatus);
+		panel.add(chckbxLog);
+		panel.add(chckbxUseCache);
+		panel.add(textFieldDirectory);
+		panel.add(textFieldURL);
+		panel.add(btnPrefetch);
 	}
 
 	public GUI(GraphicsConfiguration gc) {
@@ -231,10 +210,13 @@ public class GUI extends JFrame {
 		lblStatus.setText("Preparing");
 		chckbxLog.setSelected( Main.logger != null);
 		chckbxUseCache.setSelected(Main.allowFromCache);
-		
+		((DefaultTreeModel) tree.getModel()).setRoot(new TreeNodePageWrapper(rootPage));
 		initPrefetch();
 	}
 	
+	/**
+	 * Starting cache-only quick lookup
+	 */
 	private void initPrefetch() {
 		if (newWorker == null) {
 			lblStatus.setText("Prefetching");
@@ -275,6 +257,22 @@ public class GUI extends JFrame {
 		btnFetch.setEnabled(true);		
 	}
 	
+	private void reInit() {
+		String newURL = AbstractPage.fixURLString(null, textFieldURL.getText()); 
+		if (newURL == null) return;
+		textFieldURL.setText(newURL);
+		if (newURL.equals(rootPage.url.toString())) return;
+		
+		AbstractPage newRootPage = AbstractPage.bakeAPage(null, newURL, textFieldDirectory.getText(), null);
+		if (newRootPage != null) {
+			rootPage = newRootPage;
+			
+			TreeNodePageWrapper x = new TreeNodePageWrapper(null);
+			x.add(new TreeNodePageWrapper(rootPage)); // proxy null root for better display
+			((DefaultTreeModel) tree.getModel()).setRoot(x);
+			initPrefetch();
+		}
+	}
 	/**
 	 * Receiving message from MyWorker (SwingWorker)
 	 * @param p - page node to update
