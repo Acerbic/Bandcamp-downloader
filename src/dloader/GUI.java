@@ -43,7 +43,7 @@ public class GUI extends JFrame {
 	private JButton btnFix;
 	private JButton btnUpdate;
 	private JButton btnRetag;
-	private MyWorker newWorker;
+	private MyWorker theWorker;
 	
 	
 //	@SuppressWarnings("serial")
@@ -87,13 +87,13 @@ public class GUI extends JFrame {
 		JLabel lblNewLabel = new JLabel("Source URL:");
 		
 		textFieldURL = new JTextField();
-		lblNewLabel.setLabelFor(textFieldURL);
-		textFieldURL.setColumns(10);
 		textFieldURL.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				reInit();
 			}
 		});
+		lblNewLabel.setLabelFor(textFieldURL);
+		textFieldURL.setColumns(10);
 		
 		textFieldDirectory = new JTextField();
 		textFieldDirectory.setEditable(false);
@@ -105,7 +105,6 @@ public class GUI extends JFrame {
 		tree = new JTree();
 		tree.setRootVisible(false);
 		tree.setShowsRootHandles(true);
-//		tree.setModel(new DefaultTreeModel(new TreeNodePageWrapper(null)));
 		tree.setModel(new DefaultTreeModel(null));
 //		tree.setCellRenderer(new MyRenderer());		
 		tree.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
@@ -120,6 +119,7 @@ public class GUI extends JFrame {
 				reInit();
 			}
 		});
+		
 		btnFetch = new JButton("Fetch");
 		btnFetch.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -205,12 +205,19 @@ public class GUI extends JFrame {
 	
 	public void init() {
 		textFieldDirectory.setText(Main.saveTo);
-		textFieldURL.setText(Main.baseURL);
-		rootPage = AbstractPage.bakeAPage(null, Main.baseURL, Main.saveTo, null);
-		lblStatus.setText("Preparing");
 		chckbxLog.setSelected( Main.logger != null);
 		chckbxUseCache.setSelected(Main.allowFromCache);
-		((DefaultTreeModel) tree.getModel()).setRoot(new TreeNodePageWrapper(rootPage));
+		textFieldURL.setText(AbstractPage.fixURLString(null, Main.baseURL));
+		try {
+			rootPage = AbstractPage.bakeAPage(null, Main.baseURL, Main.saveTo, null);
+		} catch (IllegalArgumentException e) {
+			return;
+		}
+		lblStatus.setText("Preparing");
+		
+		TreeNodePageWrapper x = new TreeNodePageWrapper(null); // proxy null root for better display
+		x.add(new TreeNodePageWrapper(rootPage)); 
+		((DefaultTreeModel) tree.getModel()).setRoot(x);
 		initPrefetch();
 	}
 	
@@ -218,10 +225,10 @@ public class GUI extends JFrame {
 	 * Starting cache-only quick lookup
 	 */
 	private void initPrefetch() {
-		if (newWorker == null) {
+		if (theWorker == null) {
 			lblStatus.setText("Prefetching");
-			newWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
-			newWorker.execute();
+			theWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
+			theWorker.execute();
 			btnPrefetch.setEnabled(false);
 		}
 	}
@@ -230,22 +237,28 @@ public class GUI extends JFrame {
 		if (lblStatus.getText().equals("Prefetching"))
 			lblStatus.setText("");
 		btnPrefetch.setEnabled(true);		
-		newWorker = null;
+		theWorker = null;
 		
+		unfoldFirst();
+	}
+
+	/**
+	 *  Shows children of the rootPage's node elements
+	 */
+	private void unfoldFirst() {
 		TreeNodePageWrapper target = (TreeNodePageWrapper)tree.getModel().getRoot();
 		try {
 			target = (TreeNodePageWrapper) target.getFirstChild();
 			tree.expandPath(new TreePath(target.getPath())); 
 		} catch (NoSuchElementException e) {
 		}
-		
 	}
 	
 	private void initScan() {
-		if (newWorker == null) { 
+		if (theWorker == null) { 
 			lblStatus.setText("Scanning");
-			newWorker = new MyWorker(rootPage, JobType.UPDATEPAGES);
-			newWorker.execute();
+			theWorker = new MyWorker(rootPage, JobType.UPDATEPAGES);
+			theWorker.execute();
 			btnFetch.setEnabled(false);
 		}
 	}
@@ -253,8 +266,10 @@ public class GUI extends JFrame {
 	private void finishScan() {
 		if (lblStatus.getText().equals("Scanning"))
 			lblStatus.setText("");
-		newWorker = null;
+		theWorker = null;
 		btnFetch.setEnabled(true);		
+		
+		unfoldFirst();
 	}
 	
 	private void reInit() {
@@ -263,16 +278,39 @@ public class GUI extends JFrame {
 		textFieldURL.setText(newURL);
 		if (newURL.equals(rootPage.url.toString())) return;
 		
-		AbstractPage newRootPage = AbstractPage.bakeAPage(null, newURL, textFieldDirectory.getText(), null);
+		AbstractPage newRootPage = null;
+		try {
+			newRootPage = AbstractPage.bakeAPage(null, newURL, textFieldDirectory.getText(), null);
+		} catch (IllegalArgumentException e) {
+			textFieldURL.setText(rootPage.url.toString());
+		}
 		if (newRootPage != null) {
 			rootPage = newRootPage;
 			
-			TreeNodePageWrapper x = new TreeNodePageWrapper(null);
-			x.add(new TreeNodePageWrapper(rootPage)); // proxy null root for better display
+			TreeNodePageWrapper x = new TreeNodePageWrapper(null); // proxy null root for better display
+			x.add(new TreeNodePageWrapper(rootPage)); 
 			((DefaultTreeModel) tree.getModel()).setRoot(x);
 			initPrefetch();
+			btnPrefetch.setEnabled(false);			
 		}
 	}
+	
+	/** 
+	 * Captures SwingWorker finish jobs event
+	 * @param root - root job for the work in question (not used atm)
+	 * @param jobType - job type
+	 */
+	public void myWorkerDone (AbstractPage root, JobMaster.JobType jobType) {
+		switch  (jobType) {
+		case READCACHEPAGES: finishPrefetch(); break;
+		case SAVEDATA:
+			break;
+		case UPDATEPAGES: finishScan(); break;
+		default:
+			break;
+		}
+	}
+
 	/**
 	 * Receiving message from MyWorker (SwingWorker)
 	 * @param p - page node to update
@@ -323,6 +361,7 @@ public class GUI extends JFrame {
 					TreeNodePageWrapper subChild = new TreeNodePageWrapper(subPage);
 					childNode.add(subChild);
 				}
+				
 				int[] indices = new int[1];
 				indices[0] = parentNode.getIndex(childNode);
 				model.nodesWereInserted(parentNode, indices); // notification to repaint
@@ -342,10 +381,13 @@ public class GUI extends JFrame {
 			)
 			trimBranch(parentNode, model);
 		
-		// pass message to the user object and refresh its visual if needed
-//		TreeNodePageWrapper parentWrapper = (TreeNodePageWrapper)parentNode.getUserObject();
+		// usually unfolding happens only after job is finished (for performance), but in
+		// case of new page downloads it is visually more pleasing to see what is going on asap 
+		if (message.equals("download finished") && parentNode.page.equals(pathToPage.getFirst())) 
+			unfoldFirst(); 
 		
-		// TODO: consider using EventListener mechanic
+		// pass message to the user object and refresh its visual if needed
+		// XXX: consider using EventListener mechanic
 		if (parentNode.update(message, value)) {
 			model.nodeChanged(parentNode);
 			if (parentNode.page instanceof Track) {
@@ -441,22 +483,10 @@ public class GUI extends JFrame {
 			// with updated net data.
 			model.removeNodeFromParent(element);
 			//since this page is no more of our concern, all jobs executing and pending are irrelevant CPU consumers
-			newWorker.stopJobsForPage(element.page); 
+			theWorker.stopJobsForPage(element.page); 
 		}
 	}
 
-	// captures SwingWorker finish jobs event
-	public void myWorkerDone (AbstractPage root, JobMaster.JobType jobType) {
-		switch  (jobType) {
-		case READCACHEPAGES: finishPrefetch(); break;
-		case SAVEDATA:
-			break;
-		case UPDATEPAGES: finishScan(); break;
-		default:
-			break;
-		}
-	}
-	
 	/**
 	 * Search children nodes of a parentNode for a TreeNodePageWrapper containing given AbstractPage. 
 	 * @param parentNode - parent of nodes to search among
