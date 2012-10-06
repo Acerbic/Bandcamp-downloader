@@ -351,8 +351,8 @@ public class Track extends AbstractPage {
 	}
 	
 	@Override
-	public boolean isPageOK() {
-		if (! super.isPageOK() ) return false;
+	public boolean isOK() {
+		if (! super.isOK() ) return false;
 		
 		for (String p: XMLCacheDataKeys) 
 			if (getProperty(p) == null) 

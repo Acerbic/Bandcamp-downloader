@@ -16,7 +16,6 @@ import dloader.JobMaster.JobType;
 import dloader.gui.MyWorker;
 import dloader.gui.TreeNodePageWrapper;
 import dloader.page.AbstractPage;
-import dloader.page.Track;
 
 import javax.swing.tree.*;
 
@@ -109,7 +108,7 @@ public class GUI extends JFrame {
 //		tree.setCellRenderer(new MyRenderer());		
 		tree.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
-		lblStatus = new JLabel("kkkkss");
+		lblStatus = new JLabel("Status messages");
 		lblStatus.setHorizontalAlignment(SwingConstants.CENTER);
 		lblStatus.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		
@@ -207,17 +206,15 @@ public class GUI extends JFrame {
 		textFieldDirectory.setText(Main.saveTo);
 		chckbxLog.setSelected( Main.logger != null);
 		chckbxUseCache.setSelected(Main.allowFromCache);
-		textFieldURL.setText(AbstractPage.fixURLString(null, Main.baseURL));
 		try {
 			rootPage = AbstractPage.bakeAPage(null, Main.baseURL, Main.saveTo, null);
+			textFieldURL.setText(rootPage.url.toString());
 		} catch (IllegalArgumentException e) {
 			return;
 		}
 		lblStatus.setText("Preparing");
 		
-		TreeNodePageWrapper x = new TreeNodePageWrapper(null); // proxy null root for better display
-		x.add(new TreeNodePageWrapper(rootPage)); 
-		((DefaultTreeModel) tree.getModel()).setRoot(x);
+		setRootNodeForRootPage();
 		initPrefetch();
 	}
 	
@@ -230,6 +227,10 @@ public class GUI extends JFrame {
 			theWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
 			theWorker.execute();
 			btnPrefetch.setEnabled(false);
+			btnFetch.setEnabled(false);
+			btnFix.setEnabled(false);
+			btnRetag.setEnabled(false);
+			btnUpdate.setEnabled(false);
 		}
 	}
 	
@@ -237,9 +238,16 @@ public class GUI extends JFrame {
 		if (lblStatus.getText().equals("Prefetching"))
 			lblStatus.setText("");
 		btnPrefetch.setEnabled(true);		
+		btnPrefetch.setEnabled(true);
+		btnFetch.setEnabled(true);
+		btnFix.setEnabled(true);
+		btnRetag.setEnabled(true);
+		btnUpdate.setEnabled(true);		
 		theWorker = null;
 		
 		unfoldFirst();
+		// commented out for later. now we are in testing mode.
+//		initScan();
 	}
 
 	/**
@@ -286,15 +294,20 @@ public class GUI extends JFrame {
 		}
 		if (newRootPage != null) {
 			rootPage = newRootPage;
+			setRootNodeForRootPage();
 			
-			TreeNodePageWrapper x = new TreeNodePageWrapper(null); // proxy null root for better display
-			x.add(new TreeNodePageWrapper(rootPage)); 
-			((DefaultTreeModel) tree.getModel()).setRoot(x);
 			initPrefetch();
 			btnPrefetch.setEnabled(false);			
 		}
 	}
 	
+	private void setRootNodeForRootPage() {
+		DefaultTreeModel model = (DefaultTreeModel) tree.getModel(); 
+		TreeNodePageWrapper x = new TreeNodePageWrapper(null, model); // proxy null root for better display
+		x.add(new TreeNodePageWrapper(rootPage, model)); 
+		model.setRoot(x);
+		
+	}
 	/** 
 	 * Captures SwingWorker finish jobs event
 	 * @param root - root job for the work in question (not used atm)
@@ -343,7 +356,7 @@ public class GUI extends JFrame {
 				// currentPage's node was not found in parent node 
 				
 				// add new item under this parent
-				childNode = new TreeNodePageWrapper(childPage);
+				childNode = new TreeNodePageWrapper(childPage, model);
 				
 				if (childPage.getParent() == null)
 					parentNode.add(childNode); // to the end
@@ -358,7 +371,7 @@ public class GUI extends JFrame {
 				
 				// new item's children if any (that way they maintain their order)
 				for (AbstractPage subPage: childPage.childPages) {
-					TreeNodePageWrapper subChild = new TreeNodePageWrapper(subPage);
+					TreeNodePageWrapper subChild = new TreeNodePageWrapper(subPage, model);
 					childNode.add(subChild);
 				}
 				
@@ -387,17 +400,10 @@ public class GUI extends JFrame {
 			unfoldFirst(); 
 		
 		// pass message to the user object and refresh its visual if needed
-		// XXX: consider using EventListener mechanic
-		if (parentNode.update(message, value)) {
-			model.nodeChanged(parentNode);
-			if (parentNode.page instanceof Track) {
-				TreeNodePageWrapper gParentNode = (TreeNodePageWrapper) parentNode.getParent();
-				if (gParentNode != null) {
-					gParentNode.kidChanged(parentNode, gParentNode, message, value);
-					model.nodeChanged(gParentNode);
-				}
-			}
-		}
+		parentNode.update(message, value);
+//		if (parentNode.update(message, value)) {
+//			model.nodeChanged(parentNode);
+//		}
 		
 	}
 

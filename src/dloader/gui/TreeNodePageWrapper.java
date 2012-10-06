@@ -3,6 +3,8 @@ package dloader.gui;
 import java.util.Enumeration;
 
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
 
 import dloader.page.AbstractPage;
 import dloader.page.Track;
@@ -24,6 +26,7 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	private static final long serialVersionUID = -265090747493368344L;
 
 	public final AbstractPage page; //wrapped object
+	public final DefaultTreeModel model; //backref to model
 	
 	// TODO job progress flags and logs
 	boolean readFromCache = false;
@@ -36,20 +39,21 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	
 	int kidsInProcessing = 0;
 	
-	public TreeNodePageWrapper(AbstractPage page) {
+	public TreeNodePageWrapper(AbstractPage page, TreeModel treeModel) {
 		super(null);
+		this.model = (DefaultTreeModel) treeModel;
 		this.page = page;
 	}
 
 	/**
 	 * Update flags and states of this node visual representation
-	 * @param type
-	 * @param report
+	 * @param message
+	 * @param value
 	 * @return true if node must be repainted
 	 */
-	public boolean update(String type, long report) {
+	public boolean update(String message, long value) {
 		boolean updateVisuals = false;
-		switch (type) {
+		switch (message) {
 		//messages reported by ReadCacheJob and GetPageJob:
 		case "checking cache": break;
 		case "read from cache": 
@@ -95,6 +99,16 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		 */
 		
 		}
+		
+		if (page instanceof Track) {
+			TreeNodePageWrapper parentNode = (TreeNodePageWrapper) getParent();
+			if (parentNode != null) {
+				parentNode.kidChanged(this, message, value);
+				model.nodeChanged(parentNode);
+			}
+		}
+		if (updateVisuals)
+			model.nodeChanged(this);
 		return updateVisuals;
 	}
 	
@@ -126,13 +140,13 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 			page.childPages.size()+"]</span>";
 		
 		if (downloading) {
-			title = "Scanning... " + title;
+			title = title + " (Scanning...)";
 		} 
 		else if (downloadPageFailed) {
 			title = "Scan failed: " + title;
 			styleCompilation += "span#title {font: bold}";
 		} else if (downloadPageQ) {
-			title = "In queue for scan... " + title;
+			title = title + " (In queue for scan...)";
 		}
 		
 		// finalize title
@@ -153,12 +167,11 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 				"</u>"+ bottom;
 	}
 
-	public void kidChanged(TreeNodePageWrapper kidWrapper,
-			DefaultMutableTreeNode thisNode, String message, long value) {
+	public void kidChanged(TreeNodePageWrapper kidWrapper, String message, long value) {
 		
 		kidsInProcessing = 0;
 		for (@SuppressWarnings("unchecked")
-		Enumeration<DefaultMutableTreeNode> children = thisNode.children(); children.hasMoreElements();) {
+		Enumeration<DefaultMutableTreeNode> children = children(); children.hasMoreElements();) {
 			TreeNodePageWrapper kid = (TreeNodePageWrapper) children.nextElement();
 			
 			if (kid.downloading || kid.downloadPageQ)

@@ -46,9 +46,9 @@ public class DiscographyTest {
 	public void testCaching() {
 		Main.cache = new XMLCache("test/pages_scan_cache.xml");
 		Discography page = new Discography("http://homestuck.bandcamp.com",null,null);
-		assertFalse(page.isPageOK());
+		assertFalse(page.isOK());
 		assertTrue(page.loadFromCache());
-		assertTrue(page.isPageOK());
+		assertTrue(page.isOK());
 		assertEquals("Homestuck", page.getTitle());
 		assertEquals(15, page.childPages.size());
 		
@@ -56,9 +56,9 @@ public class DiscographyTest {
 		page.saveToCache();
 		
 		Discography page2 = new Discography("http://homestuck.bandcamp.com",null,null);
-		assertFalse(page2.isPageOK());
+		assertFalse(page2.isOK());
 		assertTrue(page2.loadFromCache());
-		assertTrue(page2.isPageOK());
+		assertTrue(page2.isOK());
 		assertEquals("Homestuck", page2.getTitle());
 		assertEquals(15, page2.childPages.size());
 		
@@ -75,7 +75,7 @@ public class DiscographyTest {
 			fail("can't load from file");
 		}
 		assertNotNull(page.getChildByURLString("file:/album/homestuck-vol-9")); //the way relative url is resolved 
-		assertTrue(page.isPageOK());
+		assertTrue(page.isOK());
 		assertEquals("Homestuck", page.getTitle());
 		assertEquals(20, page.childPages.size());
 		try {
@@ -83,7 +83,7 @@ public class DiscographyTest {
 		} catch (ProblemsReadingDocumentException e) {
 			fail("can't load from file");
 		}
-		assertTrue(page.isPageOK());
+		assertTrue(page.isOK());
 		
 		page.childPages.clear(); // now page is  different.
 		try {
@@ -91,7 +91,7 @@ public class DiscographyTest {
 		} catch (ProblemsReadingDocumentException e) {
 			fail("can't load from file");
 		}
-		assertTrue(page.isPageOK());
+		assertTrue(page.isOK());
 	}
 	
 	@Test

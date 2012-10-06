@@ -163,7 +163,7 @@ public class Album extends AbstractPage {
 	}
 	
 	@Override
-	public boolean isPageOK() {
-		return super.isPageOK() && (coverUrl != null);
+	public boolean isOK() {
+		return super.isOK() && (coverUrl != null);
 	}
 }

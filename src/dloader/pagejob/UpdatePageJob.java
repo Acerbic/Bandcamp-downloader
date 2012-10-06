@@ -47,11 +47,6 @@ public class UpdatePageJob extends PageJob {
 			else 
 				report("cache reading failed", 1);
 		try {
-//			try {
-//				Thread.sleep(3000);
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
 			if (page.updateFromNet(this) || forceDownload) {
 				page.saveToCache();
 				//note: this iterator does not require locking because of CopyOnWriteArrayList implementation

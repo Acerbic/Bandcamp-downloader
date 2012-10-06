@@ -87,7 +87,6 @@ public abstract class AbstractPage {
 	 * Due to efficiency issues, elements should be added as .addAll(...) when possible
 	 */
 	public final 
-//	Queue<AbstractPage> childPages = new ConcurrentLinkedQueue<>(); 
 	List<AbstractPage> childPages = new CopyOnWriteArrayList<>(); 
 	
 
@@ -121,10 +120,6 @@ public abstract class AbstractPage {
 		catch (MalformedURLException e) {throw new IllegalArgumentException(e);}
 		catch (NullPointerException e) {throw new IllegalArgumentException(e);}
 
-		//path in question may not exist at this point and will be created by parent page later. 
-//		Path p = Paths.get(saveTo);
-//		if (! (Files.isDirectory(p) && Files.isWritable(p)))
-//			throw new IllegalArgumentException();
 		this.saveTo = saveTo;
 		this.parent = parent;
 	}
@@ -161,6 +156,7 @@ public abstract class AbstractPage {
 		return name;
 	}
 
+	// TODO: this assumes children type is fixed and controlled by parent type, but it may not hold true, i.e. Track within Discography without intermediary album
 	/**
 	 * Returns an XPath string to get links to children pages 
 	 * from current page. All tags in the path are in "pre" namespace.
@@ -591,7 +587,7 @@ public abstract class AbstractPage {
 	 */
 	//XXX: may be should be complemented with "lastUpdated" time stamp.
 	public 
-	boolean isPageOK() {
+	boolean isOK() {
 		if (getTitle()==null || getTitle().isEmpty())
 			return false;
 		return true;
