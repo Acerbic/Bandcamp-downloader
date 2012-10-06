@@ -28,7 +28,6 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	public final AbstractPage page; //wrapped object
 	public final DefaultTreeModel model; //backref to model
 	
-	// TODO job progress flags and logs
 	boolean readFromCache = false;
 	boolean downloadPageQ = false;
 	
@@ -53,6 +52,7 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	 */
 	public boolean update(String message, long value) {
 		boolean updateVisuals = false;
+		boolean updateParent = false;
 		switch (message) {
 		//messages reported by ReadCacheJob and GetPageJob:
 		case "checking cache": break;
@@ -70,21 +70,22 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		// messages reported by DownloadPageJob:
 		case "download job queued": 
 			downloadPageQ = true; 
-			updateVisuals = true; break;
+			updateVisuals = true; updateParent = true; break;
 		case "download job started": 
 			downloading = true; downloadPageQ = false; 
 			updateVisuals = true; break;
 		case "download finished": 
 			downloading = false; downloaded = true; 
-			updateVisuals = true; break;
+			updateVisuals = true; updateParent = true; break;
 		case "up to date": 
 			downloading = false; downloaded = true; upToDate = true; 
-			updateVisuals = true; break;
+			updateVisuals = true; updateParent = true; break;
 		case "download failed": 
 			downloading = false; downloadPageFailed = true; 
-			updateVisuals = true; break;
+			updateVisuals = true; updateParent = true; break;
 
-		
+			
+		// TODO: more events
 		/**
 		 * summary of the messages reported by SaveDataJob:
 		 * "saving started", 1
@@ -100,7 +101,7 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		
 		}
 		
-		if (page instanceof Track) {
+		if ((page instanceof Track) && updateParent) {
 			TreeNodePageWrapper parentNode = (TreeNodePageWrapper) getParent();
 			if (parentNode != null) {
 				parentNode.kidChanged(this, message, value);
@@ -115,12 +116,13 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	@Override
 	public String toString() {
 		if (page == null) return null;
-		// TODO
 		
 		String header = "<html>";
 		String bottom = "</html>";
 		String styleCompilation = "";
-		String title = page.toString();
+		String title = page.getTitle(); 
+		if (title == null || title.isEmpty())
+			title = "????";
 		
 		styleCompilation += "span#url {color:gray; font: 0.8em;}";
 		
