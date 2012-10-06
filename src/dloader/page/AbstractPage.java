@@ -412,12 +412,13 @@ public abstract class AbstractPage {
 			setTitle(tempPage.getTitle());
 			// somewhat awkward way to copy custom object data from temp object
 			readCacheSelf(tempPage.getSpecificDataXML()); 
-	
+
+			// modifying child without locking because child pages are not published yet. 
+			for (AbstractPage child: tempPage.childPages)
+				child.parent = this;
+
 			// lets try to save some existing children for performance 
 			mergeNewChildren(new LinkedList<>(childPages), tempPage.childPages);
-			
-			for (AbstractPage child: childPages)
-				child.parent = this;
 		}
 		return true;
 	}
@@ -429,6 +430,8 @@ public abstract class AbstractPage {
 	 */
 	private void mergeNewChildren (Collection<AbstractPage> oldChildren, Collection<AbstractPage> newChildren) {
 		childPages.clear(); // discard previous data if any.
+		List<AbstractPage> resultChildren = new LinkedList<>();
+		
 		for (AbstractPage newChild: newChildren) {
 			// search if exactly that child existed.
 			AbstractPage oldChild = null;
@@ -439,13 +442,12 @@ public abstract class AbstractPage {
 					oldChild = current; break;
 				}
 			
-			List<AbstractPage> resultChildren = new LinkedList<>();
 			if (oldChild != null) {
 				resultChildren.add(oldChild);
 			} else
 				resultChildren.add(newChild);
-			childPages.addAll(resultChildren);
 		}
+		childPages.addAll(resultChildren); // at this point new children become published, as childPages is of unprotected access
 	}
 	/**
 	 * Saves this page data into XML tree. 
