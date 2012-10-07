@@ -18,6 +18,7 @@ import dloader.gui.TreeNodePageWrapper;
 import dloader.page.AbstractPage;
 
 import javax.swing.tree.*;
+import javax.swing.UIManager.*;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -77,6 +78,16 @@ public class GUI extends JFrame {
 		assert (SwingUtilities.isEventDispatchThread());
 		eventDispatchThread = Thread.currentThread();
 		
+		try {
+		    for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+		        if ("Nimbus".equals(info.getName())) {
+		            UIManager.setLookAndFeel(info.getClassName());
+		            break;
+		        }
+		    }
+		} catch (Exception e) {
+		    // If Nimbus is not available, you can set the GUI to another look and feel.
+		}
 		
 		setTitle("Bandcamp dloader");
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -106,7 +117,7 @@ public class GUI extends JFrame {
 		tree.setShowsRootHandles(true);
 		tree.setModel(new DefaultTreeModel(null));
 //		tree.setCellRenderer(new MyRenderer());		
-		tree.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
+		tree.setBorder(null);
 		
 		lblStatus = new JLabel("Status messages");
 		lblStatus.setHorizontalAlignment(SwingConstants.CENTER);
@@ -148,6 +159,7 @@ public class GUI extends JFrame {
 		chckbxLog.setEnabled(false);
 		
 		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setViewportBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
 		SpringLayout sl_panel = new SpringLayout();
 		sl_panel.putConstraint(SpringLayout.NORTH, chckbxLog, 0, SpringLayout.NORTH, chckbxUseCache);
