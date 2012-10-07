@@ -38,6 +38,10 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	
 	boolean mustSavePage = false;
 	
+	boolean saving = false;
+	long fullSize = 0;
+	long savedSoFar = 0;
+	
 	int kidsInProcessing = 0;
 	
 	public TreeNodePageWrapper(AbstractPage page, TreeModel treeModel) {
@@ -94,20 +98,39 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 			mustSavePage = true;
 			updateVisuals = true; break;
 			
-		// TODO: more events
-		/**
-		 * summary of the messages reported by SaveDataJob:
-		 * "saving started", 1
-		 *     "cover image downloaded", 1 (Album)
-		 *     "file size", X (Track)
-		 *     "downloaded bytes", X (Track)    
-		 *     "file updated", 1 (Track)
-		 *     "file downloaded", 1 (Track)
-		 * "save skipped", 1
-		 * "saved", 1
-		 * "saving caused exception", 1
-		 */
-		
+		// messages reported by SaveDataJob:
+		case "saving started":
+			saving = true;
+			updateVisuals = true; updateParent = true; break;
+		case "cover image downloaded":
+			saving = false;
+			updateVisuals = true; updateParent = true; break;
+		case "file size":
+			fullSize = value; saving = true;
+			updateVisuals = true; break;
+		case "downloaded bytes":
+			if (savedSoFar < value) savedSoFar = value;
+			if (savedSoFar < fullSize) 
+				saving = true;
+			else {
+				saving = false; updateParent = true;
+			}
+			updateVisuals = true; break;
+//		case "file updated":
+//			saving = false;
+//			updateVisuals = true; updateParent = true; break;
+//		case "file downloaded":
+//			saving = false;
+//			updateVisuals = true; updateParent = true; break;
+		case "save skipped":
+			saving = false; mustSavePage = false;
+			updateVisuals = true; updateParent = true; break;
+		case "saved":
+			saving = false; mustSavePage = false;
+			updateVisuals = true; updateParent = true; break;
+		case "saving caused exception":
+			saving = false;
+			updateVisuals = true; updateParent = true; break;
 		}
 		
 		if ((page instanceof Track) && updateParent) {
@@ -161,8 +184,12 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 			title = title + " (In queue for scan...)";
 		}
 		
-		if (mustSavePage) {
+		if (mustSavePage || saving) {
 			saveDecorator = "{NEW!}";
+			String progress = (fullSize > savedSoFar)? String.valueOf(savedSoFar*100/fullSize) : null;
+			if (saving) 
+				saveDecorator = (progress != null) ? 
+						"{Downloading: " + progress + "%}" : "{Downloading...}";
 			styleCompilation += "span#saving {color:red}";
 		}
 		// finalize title
@@ -192,7 +219,7 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		Enumeration<DefaultMutableTreeNode> children = children(); children.hasMoreElements();) {
 			TreeNodePageWrapper kid = (TreeNodePageWrapper) children.nextElement();
 			
-			if (kid.downloading || kid.downloadPageQ)
+			if (kid.downloading || kid.downloadPageQ || kid.saving)
 				kidsInProcessing++;
 		}
 		

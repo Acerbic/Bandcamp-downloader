@@ -21,8 +21,8 @@ public class SaveDataJob extends PageJob {
 	 *     "cover image downloaded", 1 (Album)
 	 *     "file size", X (Track)
 	 *     "downloaded bytes", X (Track)    
-	 *     "file updated", 1 (Track)
-	 *     "file downloaded", 1 (Track)
+	 *     "file updated", 1 (Track) -- when only tags changed
+	 *     "file downloaded", 1 (Track) -- when track got actually downloaded
 	 * "save skipped", 1
 	 * "saved", 1
 	 * "saving caused exception", 1

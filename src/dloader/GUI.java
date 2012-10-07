@@ -39,7 +39,7 @@ public class GUI extends JFrame {
 	private Thread eventDispatchThread;
 	private JButton btnPrefetch;
 	private JButton btnFetch;
-	private JButton btnFix;
+	private JButton btnCheck;
 	private JButton btnUpdate;
 	private JButton btnRetag;
 	private MyWorker theWorker;
@@ -96,7 +96,6 @@ public class GUI extends JFrame {
 		textFieldURL.setColumns(10);
 		
 		textFieldDirectory = new JTextField();
-		textFieldDirectory.setEditable(false);
 		textFieldDirectory.setColumns(10);
 		
 		JLabel lblNewLabel_1 = new JLabel("Target directory:");
@@ -127,13 +126,13 @@ public class GUI extends JFrame {
 				initScan();
 			}
 		});
-		btnFix = new JButton("Fix");
-		btnFix.addActionListener(new ActionListener() {
+		btnCheck = new JButton("Check");
+		btnCheck.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				initCheckSavingReq();
 			}
 		});
-		btnFix.setEnabled(false);
+		btnCheck.setEnabled(false);
 		btnUpdate = new JButton("Update");
 		btnUpdate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -161,9 +160,9 @@ public class GUI extends JFrame {
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxUseCache, -10, SpringLayout.EAST, panel);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxLog, 0, SpringLayout.WEST, chckbxUseCache);
 		sl_panel.putConstraint(SpringLayout.NORTH, btnUpdate, 0, SpringLayout.NORTH, btnFetch);
-		sl_panel.putConstraint(SpringLayout.WEST, btnUpdate, 6, SpringLayout.EAST, btnFix);
-		sl_panel.putConstraint(SpringLayout.NORTH, btnFix, 0, SpringLayout.NORTH, btnFetch);
-		sl_panel.putConstraint(SpringLayout.WEST, btnFix, 6, SpringLayout.EAST, btnFetch);
+		sl_panel.putConstraint(SpringLayout.WEST, btnUpdate, 6, SpringLayout.EAST, btnCheck);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnCheck, 0, SpringLayout.NORTH, btnFetch);
+		sl_panel.putConstraint(SpringLayout.WEST, btnCheck, 6, SpringLayout.EAST, btnFetch);
 		sl_panel.putConstraint(SpringLayout.NORTH, btnFetch, 6, SpringLayout.SOUTH, btnRetag);
 		sl_panel.putConstraint(SpringLayout.WEST, btnFetch, 0, SpringLayout.WEST, scrollPane);
 		sl_panel.putConstraint(SpringLayout.EAST, btnFetch, 78, SpringLayout.WEST, panel);
@@ -192,7 +191,7 @@ public class GUI extends JFrame {
 		panel.add(lblNewLabel_1);
 		panel.add(btnRetag);
 		panel.add(btnFetch);
-		panel.add(btnFix);
+		panel.add(btnCheck);
 		panel.add(btnUpdate);
 		panel.add(lblStatus);
 		panel.add(chckbxLog);
@@ -265,7 +264,7 @@ public class GUI extends JFrame {
 			theWorker.execute();
 			btnPrefetch.setEnabled(false);
 			btnFetch.setEnabled(false);
-			btnFix.setEnabled(false);
+			btnCheck.setEnabled(false);
 			btnRetag.setEnabled(false);
 			btnUpdate.setEnabled(false);
 		}
@@ -277,7 +276,7 @@ public class GUI extends JFrame {
 		btnPrefetch.setEnabled(true);		
 		btnPrefetch.setEnabled(true);
 		btnFetch.setEnabled(true);
-		btnFix.setEnabled(true);
+		btnCheck.setEnabled(true);
 		btnRetag.setEnabled(true);
 		btnUpdate.setEnabled(true);		
 		theWorker = null;
@@ -297,7 +296,7 @@ public class GUI extends JFrame {
 			theWorker.execute();
 			btnPrefetch.setEnabled(false);
 			btnFetch.setEnabled(false);
-			btnFix.setEnabled(false);
+			btnCheck.setEnabled(false);
 			btnRetag.setEnabled(false);
 			btnUpdate.setEnabled(false);
 		}
@@ -309,7 +308,7 @@ public class GUI extends JFrame {
 		btnPrefetch.setEnabled(true);		
 		btnPrefetch.setEnabled(true);
 		btnFetch.setEnabled(true);
-		btnFix.setEnabled(true);
+		btnCheck.setEnabled(true);
 		btnRetag.setEnabled(true);
 		btnUpdate.setEnabled(true);		
 		theWorker = null;
