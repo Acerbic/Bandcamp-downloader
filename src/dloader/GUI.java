@@ -329,6 +329,7 @@ public class GUI extends JFrame {
 		model.setRoot(x);
 		
 	}
+	
 	/** 
 	 * Captures SwingWorker finish jobs event
 	 * @param root - root job for the work in question (not used atm)

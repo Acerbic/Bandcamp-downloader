@@ -132,6 +132,7 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		String title = page.getTitle(); 
 		if (title == null || title.isEmpty())
 			title = "????";
+		String saveDecorator = "";
 		
 		styleCompilation += "span#url {color:gray; font: 0.8em;}";
 		
@@ -160,22 +161,26 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 			title = title + " (In queue for scan...)";
 		}
 		
-		if (mustSavePage)
-			title = "{NEW!} " + title;
+		if (mustSavePage) {
+			saveDecorator = "{NEW!}";
+			styleCompilation += "span#saving {color:red}";
+		}
 		// finalize title
 		title = "<span id='title'>" + title + "</span>";
 
 		// finalize style
 		header += "<style type='text/css'> " + styleCompilation + "</style>";
 		
+		saveDecorator = "<span id='saving'>" + saveDecorator + "</span>";
+		
 		// output layouts
 		if (page instanceof Track)
 			return  header +
-					title +
+					title + " " + saveDecorator +
 					bottom;
 		else 
 			return header + 
-					title + " " + childrenCount +
+					title + " " + childrenCount + " " + saveDecorator +
 				"<br>" + "<span id='url'>" + page.url + "</span>" +
 				"</u>"+ bottom;
 	}

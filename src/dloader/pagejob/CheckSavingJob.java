@@ -5,8 +5,14 @@ import dloader.page.AbstractPage;
 
 public class CheckSavingJob extends PageJob {
 
+	private boolean recursive;
 	public CheckSavingJob(AbstractPage page, JobMaster owner) {
+		this(page, owner, true);
+	}	
+	
+	public CheckSavingJob(AbstractPage page, JobMaster owner, boolean recursive) {
 		super(page, owner);
+		this.recursive = recursive;
 	}
 
 	/**
@@ -17,8 +23,9 @@ public class CheckSavingJob extends PageJob {
 	@Override
 	public void run() {
 		//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
-		for (AbstractPage child: page.childPages)
-			jobMaster.submit(new CheckSavingJob(child, jobMaster));
+		if (recursive)
+			for (AbstractPage child: page.childPages)
+				jobMaster.submit(new CheckSavingJob(child, jobMaster, recursive));
 		
 		if (page.isSavingNotRequired()) {
 			report("saving not required", 1); 
