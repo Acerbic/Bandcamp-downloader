@@ -36,6 +36,8 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	boolean downloadPageFailed = false;
 	boolean upToDate = false;
 	
+	boolean mustSavePage = false;
+	
 	int kidsInProcessing = 0;
 	
 	public TreeNodePageWrapper(AbstractPage page, TreeModel treeModel) {
@@ -84,6 +86,13 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 			downloading = false; downloadPageFailed = true; 
 			updateVisuals = true; updateParent = true; break;
 
+		// messages reported by CheckSavingJob:
+		case "saving not required":
+			mustSavePage = false;
+			updateVisuals = true; break;
+		case "saving required":
+			mustSavePage = true;
+			updateVisuals = true; break;
 			
 		// TODO: more events
 		/**
@@ -151,6 +160,8 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 			title = title + " (In queue for scan...)";
 		}
 		
+		if (mustSavePage)
+			title = "{NEW!} " + title;
 		// finalize title
 		title = "<span id='title'>" + title + "</span>";
 

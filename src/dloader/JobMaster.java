@@ -39,7 +39,7 @@ public abstract class JobMaster {
 	 * It is vital that different kinds of jobs are not ran on the same page concurrently.
 	 * @author Acerbic
 	 */
-	public enum JobType { READCACHEPAGES, UPDATEPAGES, SAVEDATA};
+	public enum JobType { READCACHEPAGES, UPDATEPAGES, SAVEDATA, CHECKSAVINGREQUIREMENT};
 
 	/**
 	 *  i'm not sure about this. It is a temporary variable to the rootPage. 
@@ -83,6 +83,7 @@ public abstract class JobMaster {
 			case READCACHEPAGES: submit(new ReadCacheJob(rootPage, this)); break;
 			case UPDATEPAGES: submit(new UpdatePageJob(rootPage, this, !Main.allowFromCache)); break;
 			case SAVEDATA: submit(new SaveDataJob(rootPage, this)); break;
+			case CHECKSAVINGREQUIREMENT: submit(new CheckSavingJob(rootPage, this)); break;
 			}
 		}
 		

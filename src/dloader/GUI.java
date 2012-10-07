@@ -102,6 +102,7 @@ public class GUI extends JFrame {
 		lblNewLabel_1.setLabelFor(textFieldDirectory);
 		
 		tree = new JTree();
+		tree.setEditable(true);
 		tree.setRootVisible(false);
 		tree.setShowsRootHandles(true);
 		tree.setModel(new DefaultTreeModel(null));
@@ -126,6 +127,11 @@ public class GUI extends JFrame {
 			}
 		});
 		btnFix = new JButton("Fix");
+		btnFix.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				initCheckSavingReq();
+			}
+		});
 		btnFix.setEnabled(false);
 		btnUpdate = new JButton("Update");
 		btnRetag = new JButton("Retag");
@@ -190,6 +196,7 @@ public class GUI extends JFrame {
 		panel.add(btnPrefetch);
 	}
 
+
 	public GUI(GraphicsConfiguration gc) {
 		super(gc);
 	}
@@ -216,6 +223,20 @@ public class GUI extends JFrame {
 		
 		setRootNodeForRootPage();
 		initPrefetch();
+	}
+	
+	private void initCheckSavingReq() {
+		if (theWorker == null) {
+			lblStatus.setText("SaveReq");
+			theWorker = new MyWorker(rootPage, JobType.CHECKSAVINGREQUIREMENT);
+			theWorker.execute();			
+		}
+	}
+	
+	private void finishCheckSavingReq() {
+		if (lblStatus.getText().equals("SaveReq"))
+			lblStatus.setText("");
+		theWorker = null;
 	}
 	
 	/**
@@ -319,6 +340,7 @@ public class GUI extends JFrame {
 		case SAVEDATA:
 			break;
 		case UPDATEPAGES: finishScan(); break;
+		case CHECKSAVINGREQUIREMENT: finishCheckSavingReq(); break;
 		default:
 			break;
 		}

@@ -30,6 +30,13 @@ public class SaveDataJob extends PageJob {
 	@Override
 	public void run() {
 		report ("saving started", 1);
+		
+		// TODO think on using calls to isSavingNotRequired prior to attempting to save page.
+		
+		//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
+		for (AbstractPage child: page.childPages)
+			jobMaster.submit(new SaveDataJob(child,jobMaster));
+		
 		try {
 			if (!page.saveResult(this))
 				report("save skipped", 1);
@@ -40,9 +47,6 @@ public class SaveDataJob extends PageJob {
 //			e.printStackTrace();
 		}
 		
-		//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
-		for (AbstractPage child: page.childPages)
-			jobMaster.submit(new SaveDataJob(child,jobMaster));
 	}
 
 }
