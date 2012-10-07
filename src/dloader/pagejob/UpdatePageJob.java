@@ -37,6 +37,8 @@ public class UpdatePageJob extends PageJob {
 	 * "download finished", 1
 	 * "up to date", 1
 	 * "download failed", 1
+	 * 
+	 * also it will call to CheckSavingJob and more messages will be reported from there  
 	 */
 	@Override
 	public void run() {

@@ -92,13 +92,22 @@ public class Track extends AbstractPage {
 	}
 	
 	@Override
-	public synchronized 
+	public  
 	boolean saveResult(ProgressReporter reporter) throws IOException {
-		Path p = Paths.get(getTrackFileName());
+		Path p;
+		String fileURL;
+		synchronized (this) {
+			p = Paths.get(getTrackFileName());
+			fileURL = getProperty("mediaLink");
+		}
+		
 		boolean wasDownloaded = 
-				WebDownloader.fetchWebFile(getProperty("mediaLink"), p.toString(), reporter) != 0;
+				WebDownloader.fetchWebFile(fileURL, p.toString(), reporter) != 0;
 		
 		String statusReport = null; // defaults to "skipped"
+		
+		// tagging does not require synchronization as it is operating with Properties object which is thread-safe. 
+		//XXX: this is not strictly true, but as properties are read much later than written, we may assume those operations do not overlap. 
 		if (tagAudioFile(Main.forceTagging))
 			statusReport = "file updated";
 		if (wasDownloaded)

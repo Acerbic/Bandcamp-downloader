@@ -43,6 +43,7 @@ public class GUI extends JFrame {
 	private JButton btnUpdate;
 	private JButton btnRetag;
 	private MyWorker theWorker;
+	private JCheckBox chckbxForceTag;
 	
 	
 //	@SuppressWarnings("serial")
@@ -134,6 +135,11 @@ public class GUI extends JFrame {
 		});
 		btnFix.setEnabled(false);
 		btnUpdate = new JButton("Update");
+		btnUpdate.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				initSaveData();
+			}
+		});
 		btnRetag = new JButton("Retag");
 		
 		
@@ -194,6 +200,12 @@ public class GUI extends JFrame {
 		panel.add(textFieldDirectory);
 		panel.add(textFieldURL);
 		panel.add(btnPrefetch);
+		
+		chckbxForceTag = new JCheckBox("force rescan");
+		chckbxForceTag.setEnabled(false);
+		sl_panel.putConstraint(SpringLayout.NORTH, chckbxForceTag, 0, SpringLayout.NORTH, chckbxLog);
+		sl_panel.putConstraint(SpringLayout.EAST, chckbxForceTag, 0, SpringLayout.WEST, chckbxLog);
+		panel.add(chckbxForceTag);
 	}
 
 
@@ -213,6 +225,7 @@ public class GUI extends JFrame {
 		textFieldDirectory.setText(Main.saveTo);
 		chckbxLog.setSelected( Main.logger != null);
 		chckbxUseCache.setSelected(Main.allowFromCache);
+		chckbxForceTag.setSelected(Main.forceTagging);
 		try {
 			rootPage = AbstractPage.bakeAPage(null, Main.baseURL, Main.saveTo, null);
 			textFieldURL.setText(rootPage.url.toString());
@@ -225,16 +238,19 @@ public class GUI extends JFrame {
 		initPrefetch();
 	}
 	
+	/**
+	 * recursively check tree if any file downloads are required.
+	 */
 	private void initCheckSavingReq() {
 		if (theWorker == null) {
-			lblStatus.setText("SaveReq");
+			lblStatus.setText("Checking files");
 			theWorker = new MyWorker(rootPage, JobType.CHECKSAVINGREQUIREMENT);
 			theWorker.execute();			
 		}
 	}
 	
 	private void finishCheckSavingReq() {
-		if (lblStatus.getText().equals("SaveReq"))
+		if (lblStatus.getText().equals("Checking files"))
 			lblStatus.setText("");
 		theWorker = null;
 	}
@@ -270,6 +286,36 @@ public class GUI extends JFrame {
 		// commented out for later. now we are in testing mode.
 //		initScan();
 	}
+	
+	/**
+	 * Starting cache-only quick lookup
+	 */
+	private void initSaveData() {
+		if (theWorker == null) {
+			lblStatus.setText("Downloading files");
+			theWorker = new MyWorker(rootPage, JobType.SAVEDATA);
+			theWorker.execute();
+			btnPrefetch.setEnabled(false);
+			btnFetch.setEnabled(false);
+			btnFix.setEnabled(false);
+			btnRetag.setEnabled(false);
+			btnUpdate.setEnabled(false);
+		}
+	}
+	
+	private void finishSaveData() {
+		if (lblStatus.getText().equals("Downloading files"))
+			lblStatus.setText("");
+		btnPrefetch.setEnabled(true);		
+		btnPrefetch.setEnabled(true);
+		btnFetch.setEnabled(true);
+		btnFix.setEnabled(true);
+		btnRetag.setEnabled(true);
+		btnUpdate.setEnabled(true);		
+		theWorker = null;
+		
+		initCheckSavingReq();
+	}	
 
 	/**
 	 *  Shows children of the rootPage's node elements
@@ -298,6 +344,7 @@ public class GUI extends JFrame {
 		theWorker = null;
 		btnFetch.setEnabled(true);		
 		
+		initCheckSavingReq();
 		unfoldFirst();
 	}
 	
@@ -338,8 +385,7 @@ public class GUI extends JFrame {
 	public void myWorkerDone (AbstractPage root, JobMaster.JobType jobType) {
 		switch  (jobType) {
 		case READCACHEPAGES: finishPrefetch(); break;
-		case SAVEDATA:
-			break;
+		case SAVEDATA: finishSaveData(); break;
 		case UPDATEPAGES: finishScan(); break;
 		case CHECKSAVINGREQUIREMENT: finishCheckSavingReq(); break;
 		default:
