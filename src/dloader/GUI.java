@@ -162,6 +162,7 @@ public class GUI extends JFrame {
 		scrollPane.setViewportBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
 		SpringLayout sl_panel = new SpringLayout();
+		sl_panel.putConstraint(SpringLayout.WEST, textFieldURL, 115, SpringLayout.WEST, panel);
 		sl_panel.putConstraint(SpringLayout.NORTH, chckbxLog, 0, SpringLayout.NORTH, chckbxUseCache);
 		sl_panel.putConstraint(SpringLayout.NORTH, scrollPane, 10, SpringLayout.SOUTH, btnFetch);
 		sl_panel.putConstraint(SpringLayout.NORTH, lblStatus, 2, SpringLayout.NORTH, btnFetch);
@@ -180,7 +181,6 @@ public class GUI extends JFrame {
 		sl_panel.putConstraint(SpringLayout.NORTH, btnRetag, 10, SpringLayout.SOUTH, lblNewLabel_1);
 		sl_panel.putConstraint(SpringLayout.NORTH, textFieldDirectory, -2, SpringLayout.NORTH, lblNewLabel_1);
 		sl_panel.putConstraint(SpringLayout.NORTH, lblNewLabel_1, 15, SpringLayout.SOUTH, lblNewLabel);
-		sl_panel.putConstraint(SpringLayout.WEST, textFieldURL, 35, SpringLayout.EAST, lblNewLabel);
 		sl_panel.putConstraint(SpringLayout.EAST, textFieldURL, -6, SpringLayout.WEST, btnPrefetch);
 		sl_panel.putConstraint(SpringLayout.NORTH, btnPrefetch, -5, SpringLayout.NORTH, lblNewLabel);
 		sl_panel.putConstraint(SpringLayout.EAST, btnPrefetch, 0, SpringLayout.EAST, scrollPane);
