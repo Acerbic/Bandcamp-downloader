@@ -102,7 +102,6 @@ public class GUI extends JFrame {
 		lblNewLabel_1.setLabelFor(textFieldDirectory);
 		
 		tree = new JTree();
-		tree.setEditable(true);
 		tree.setRootVisible(false);
 		tree.setShowsRootHandles(true);
 		tree.setModel(new DefaultTreeModel(null));
@@ -126,20 +125,20 @@ public class GUI extends JFrame {
 				initScan();
 			}
 		});
-		btnCheck = new JButton("Check");
+		btnCheck = new JButton("Check files");
 		btnCheck.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				initCheckSavingReq();
 			}
 		});
-		btnCheck.setEnabled(false);
-		btnUpdate = new JButton("Update");
+		btnUpdate = new JButton("Update files");
 		btnUpdate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				initSaveData();
 			}
 		});
 		btnRetag = new JButton("Retag");
+		btnRetag.setEnabled(false);
 		
 		
 		chckbxUseCache = new JCheckBox("cache");
@@ -151,11 +150,11 @@ public class GUI extends JFrame {
 		JScrollPane scrollPane = new JScrollPane();
 		
 		SpringLayout sl_panel = new SpringLayout();
+		sl_panel.putConstraint(SpringLayout.NORTH, chckbxLog, 0, SpringLayout.NORTH, chckbxUseCache);
 		sl_panel.putConstraint(SpringLayout.NORTH, scrollPane, 10, SpringLayout.SOUTH, btnFetch);
 		sl_panel.putConstraint(SpringLayout.NORTH, lblStatus, 2, SpringLayout.NORTH, btnFetch);
 		sl_panel.putConstraint(SpringLayout.WEST, lblStatus, 6, SpringLayout.EAST, btnUpdate);
 		sl_panel.putConstraint(SpringLayout.EAST, lblStatus, -10, SpringLayout.EAST, panel);
-		sl_panel.putConstraint(SpringLayout.NORTH, chckbxLog, 10, SpringLayout.SOUTH, textFieldDirectory);
 		sl_panel.putConstraint(SpringLayout.NORTH, chckbxUseCache, 10, SpringLayout.SOUTH, textFieldDirectory);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxUseCache, -10, SpringLayout.EAST, panel);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxLog, 0, SpringLayout.WEST, chckbxUseCache);

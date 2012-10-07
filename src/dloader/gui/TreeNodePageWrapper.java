@@ -7,6 +7,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 
 import dloader.page.AbstractPage;
+import dloader.page.Album;
 import dloader.page.Track;
 
 /**
@@ -42,7 +43,8 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	long fullSize = 0;
 	long savedSoFar = 0;
 	
-	int kidsInProcessing = 0;
+	int kidsInScanning = 0;
+	int kidsToSave = 0;
 	
 	public TreeNodePageWrapper(AbstractPage page, TreeModel treeModel) {
 		super(null);
@@ -93,14 +95,14 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		// messages reported by CheckSavingJob:
 		case "saving not required":
 			mustSavePage = false;
-			updateVisuals = true; break;
+			updateVisuals = true; updateParent = true; break;
 		case "saving required":
 			mustSavePage = true;
-			updateVisuals = true; break;
+			updateVisuals = true; updateParent = true; break;
 			
 		// messages reported by SaveDataJob:
 		case "saving started":
-			saving = true;
+			if (mustSavePage) saving = true; // only means saving job started, not actual downloading, so we check if page needs saving to lower false alarms
 			updateVisuals = true; updateParent = true; break;
 		case "cover image downloaded":
 			saving = false;
@@ -133,7 +135,7 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 			updateVisuals = true; updateParent = true; break;
 		}
 		
-		if ((page instanceof Track) && updateParent) {
+		if (((page instanceof Track) || (page instanceof Album)) && updateParent) {
 			TreeNodePageWrapper parentNode = (TreeNodePageWrapper) getParent();
 			if (parentNode != null) {
 				parentNode.kidChanged(this, message, value);
@@ -166,12 +168,20 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		if (downloadPageQ || downloadPageFailed) titleColor = "red"; // page is in Q to be updated or update failed
 		if (downloading) titleColor = "orange"; // in a process of downloading page data
 		styleCompilation += "span#title {color:" + titleColor + "}";
-		styleCompilation += "span#children {color:" + (kidsInProcessing > 0? "orange" : "black") + "}";
+		
+		String childrenCountColor = "black";
+		if (kidsInScanning > 0)
+			childrenCountColor = "orange";
+		else if (kidsToSave > 0)
+			childrenCountColor = "red";
+		styleCompilation += "span#children {color:" + childrenCountColor + "}";
 		
 		// title formatters;
-		String childrenCount = (page.childPages.size() <= 0)? "":
+		
+		int childrenCount = (kidsInScanning > 0)? kidsInScanning: kidsToSave;
+		String strChildrenCount = (page.childPages.size() <= 0)? "":
 			"<span id='children'>[" +
-			(kidsInProcessing <= 0 ? "": (page.childPages.size()-kidsInProcessing) +"/") +
+			(childrenCount <= 0 ? "": (page.childPages.size()-childrenCount) +"/") +
 			page.childPages.size()+"]</span>";
 		
 		if (downloading) {
@@ -192,12 +202,14 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 						"{Downloading: " + progress + "%}" : "{Downloading...}";
 			styleCompilation += "span#saving {color:red}";
 		}
+		
 		// finalize title
 		title = "<span id='title'>" + title + "</span>";
 
 		// finalize style
 		header += "<style type='text/css'> " + styleCompilation + "</style>";
 		
+		// finalize save decorator
 		saveDecorator = "<span id='saving'>" + saveDecorator + "</span>";
 		
 		// output layouts
@@ -207,20 +219,23 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 					bottom;
 		else 
 			return header + 
-					title + " " + childrenCount + " " + saveDecorator +
+					title + " " + strChildrenCount + " " + saveDecorator +
 				"<br>" + "<span id='url'>" + page.url + "</span>" +
 				"</u>"+ bottom;
 	}
 
 	public void kidChanged(TreeNodePageWrapper kidWrapper, String message, long value) {
 		
-		kidsInProcessing = 0;
+		kidsInScanning = 0;
+		kidsToSave = 0;
 		for (@SuppressWarnings("unchecked")
 		Enumeration<DefaultMutableTreeNode> children = children(); children.hasMoreElements();) {
 			TreeNodePageWrapper kid = (TreeNodePageWrapper) children.nextElement();
 			
-			if (kid.downloading || kid.downloadPageQ || kid.saving)
-				kidsInProcessing++;
+			if (kid.downloading || kid.downloadPageQ)
+				kidsInScanning++;
+			if (kid.mustSavePage || kid.saving)
+				kidsToSave++;
 		}
 		
 	}
