@@ -60,7 +60,7 @@ public abstract class AbstractPage {
 	}
 	
 	/** 
-	 * title of this item 
+	 * title of this item. Can be null.
 	 */
 	private String title;  
 	
@@ -98,10 +98,18 @@ public abstract class AbstractPage {
 	private XMLCache getCache() {
 		return Main.cache; //default cache location. 
 	}
-	
+
+	/**
+	 * 
+	 * @return parent page, if any. null otherwise
+	 */
 	public synchronized final
 	AbstractPage getParent() {return parent;}
 
+	/**
+	 * 
+	 * @return title or null if undefined.
+	 */
 	public synchronized final
 	String getTitle() {return title;} 
 	
@@ -133,6 +141,7 @@ public abstract class AbstractPage {
 	 */
 	public static final
 	String getFSSafeName(String name) throws IOException   {
+		if (name == null) throw new IOException();
 		for (char c : ":/\\*?\"<>|\t\n\r".toCharArray())
 			name = name.replace(String.valueOf(c), "");
 		name = name.trim(); // only trailing spaces are forbidden

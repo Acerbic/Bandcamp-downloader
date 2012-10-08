@@ -96,7 +96,6 @@ public class Discography extends AbstractPage {
 	protected AbstractPage parseChild(Element element) throws ProblemsReadingDocumentException  {
 		try {
 			URL u = resolveLink(element.getAttributeValue("href"));
-//			Album c = new Album(u.toString(), getChildrenSaveTo(), this);
 			
 			//sad day. bandcamp sometimes breaks hierarchy and puts "track" right into "discography"
 			AbstractPage c = bakeAPage(null,u.toString(), getChildrenSaveTo(), this);

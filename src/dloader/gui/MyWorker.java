@@ -44,11 +44,6 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 			@Override
 			public void report(AbstractPage page, String type, long i) {
 				publish(new ProgressReportStruct(page, type, i));
-//				try {
-//					Thread.sleep(300);
-//				} catch (InterruptedException e) {
-//					e.printStackTrace();
-//				}
 			}
 		};
 	}
