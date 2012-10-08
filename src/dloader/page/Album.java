@@ -138,6 +138,7 @@ public class Album extends AbstractPage {
 	@Override
 	public 
 	boolean isSavingNotRequired() {
+//		return true;
 		Path p;
 		try {
 			p = Paths.get(getChildrenSaveTo());

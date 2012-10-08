@@ -16,7 +16,7 @@ public class CheckSavingJob extends PageJob {
 	}
 
 	/**
-	 * summary of the messages reported by CheckSavingJob:
+	 * Summary of the messages reported by CheckSavingJob:
 	 * "saving not required", 1 
 	 * "saving required", 1
 	 */	
@@ -27,11 +27,9 @@ public class CheckSavingJob extends PageJob {
 			for (AbstractPage child: page.childPages)
 				jobMaster.submit(new CheckSavingJob(child, jobMaster, recursive));
 		
-		if (page.isSavingNotRequired()) {
+		if (page.isSavingNotRequired()) 
 			report("saving not required", 1); 
-		} else
+		else
 			report("saving required", 1);
 	}
-
-	
 }

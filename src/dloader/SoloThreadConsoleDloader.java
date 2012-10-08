@@ -78,8 +78,6 @@ public class SoloThreadConsoleDloader {
 		
 		//1 read cache;
 		STCD_JobMaster jm;
-//		jm = new STCD_JobMaster(JobMaster.JobType.READCACHEPAGES, p);
-//		jm.goGoGo();
 		
 		System.out.println("-------Updating page data------");
 		//2 update page data

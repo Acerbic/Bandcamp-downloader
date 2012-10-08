@@ -323,6 +323,7 @@ public class Track extends AbstractPage {
 
 	@Override
 	public boolean isSavingNotRequired() {
+//		return true;
 		try {
 			Path p = Paths.get(getTrackFileName());
 			if ( ! (Files.isRegularFile(p) && Files.size(p) > 0))

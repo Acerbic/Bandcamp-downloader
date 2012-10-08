@@ -62,6 +62,14 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		boolean updateVisuals = false;
 		boolean updateParent = false;
 		switch (message) {
+//		// messages reported by CheckSavingJob:
+//		case "saving not required":
+//			mustSavePage = false;
+//			updateVisuals = true; updateParent = true; break;
+//		case "saving required":
+//			mustSavePage = true;
+//			updateVisuals = true; updateParent = true; break;
+			
 		//messages reported by ReadCacheJob and GetPageJob:
 		case "checking cache": break;
 		case "read from cache": 

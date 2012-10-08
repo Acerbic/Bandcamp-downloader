@@ -38,8 +38,6 @@ public class GUI extends JFrame {
 	private JCheckBox chckbxUseCache;
 	private JCheckBox chckbxLog;
 	private Thread eventDispatchThread;
-	private JButton btnPrefetch;
-	private JButton btnFetch;
 	private JButton btnCheck;
 	private JButton btnUpdate;
 	private JButton btnRetag;
@@ -107,6 +105,11 @@ public class GUI extends JFrame {
 		textFieldURL.setColumns(10);
 		
 		textFieldDirectory = new JTextField();
+		textFieldDirectory.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				reInit();
+			}
+		});
 		textFieldDirectory.setColumns(10);
 		
 		JLabel lblNewLabel_1 = new JLabel("Target directory:");
@@ -115,31 +118,16 @@ public class GUI extends JFrame {
 		tree = new JTree();
 		tree.setRootVisible(false);
 		tree.setShowsRootHandles(true);
-		tree.setModel(new DefaultTreeModel(null));
-//		tree.setCellRenderer(new MyRenderer());		
-		tree.setBorder(null);
+		tree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("JTree")));
 		
 		lblStatus = new JLabel("Status messages");
 		lblStatus.setHorizontalAlignment(SwingConstants.CENTER);
 		lblStatus.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		
-		btnPrefetch = new JButton("Check");
-		btnPrefetch.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				reInit();
-			}
-		});
-		
-		btnFetch = new JButton("Fetch");
-		btnFetch.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				initScan();
-			}
-		});
-		btnCheck = new JButton("Check files");
+		btnCheck = new JButton("Check");
 		btnCheck.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				initCheckSavingReq();
+				reInit();
 			}
 		});
 		btnUpdate = new JButton("Update files");
@@ -148,9 +136,9 @@ public class GUI extends JFrame {
 				initSaveData();
 			}
 		});
+		
 		btnRetag = new JButton("Retag");
 		btnRetag.setEnabled(false);
-		
 		
 		chckbxUseCache = new JCheckBox("cache");
 		chckbxUseCache.setEnabled(false);
@@ -162,34 +150,30 @@ public class GUI extends JFrame {
 		scrollPane.setViewportBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
 		SpringLayout sl_panel = new SpringLayout();
-		sl_panel.putConstraint(SpringLayout.WEST, textFieldURL, 115, SpringLayout.WEST, panel);
-		sl_panel.putConstraint(SpringLayout.NORTH, chckbxLog, 0, SpringLayout.NORTH, chckbxUseCache);
-		sl_panel.putConstraint(SpringLayout.NORTH, scrollPane, 10, SpringLayout.SOUTH, btnFetch);
-		sl_panel.putConstraint(SpringLayout.NORTH, lblStatus, 2, SpringLayout.NORTH, btnFetch);
-		sl_panel.putConstraint(SpringLayout.WEST, lblStatus, 6, SpringLayout.EAST, btnUpdate);
+		sl_panel.putConstraint(SpringLayout.WEST, btnUpdate, 10, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, lblStatus, 6, SpringLayout.EAST, btnRetag);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnUpdate, 44, SpringLayout.SOUTH, lblNewLabel_1);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnRetag, 0, SpringLayout.NORTH, btnUpdate);
+		sl_panel.putConstraint(SpringLayout.WEST, btnRetag, 6, SpringLayout.EAST, btnUpdate);
 		sl_panel.putConstraint(SpringLayout.EAST, lblStatus, -10, SpringLayout.EAST, panel);
-		sl_panel.putConstraint(SpringLayout.NORTH, chckbxUseCache, 10, SpringLayout.SOUTH, textFieldDirectory);
+		sl_panel.putConstraint(SpringLayout.NORTH, scrollPane, 10, SpringLayout.SOUTH, btnUpdate);
+		sl_panel.putConstraint(SpringLayout.SOUTH, scrollPane, -10, SpringLayout.SOUTH, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, lblStatus, 8, SpringLayout.SOUTH, chckbxLog);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnCheck, -3, SpringLayout.NORTH, lblNewLabel);
+		sl_panel.putConstraint(SpringLayout.EAST, textFieldDirectory, 0, SpringLayout.EAST, textFieldURL);
+		sl_panel.putConstraint(SpringLayout.WEST, textFieldURL, 35, SpringLayout.EAST, lblNewLabel);
+		sl_panel.putConstraint(SpringLayout.EAST, textFieldURL, -6, SpringLayout.WEST, btnCheck);
+		sl_panel.putConstraint(SpringLayout.NORTH, chckbxUseCache, 10, SpringLayout.SOUTH, btnCheck);
+		sl_panel.putConstraint(SpringLayout.SOUTH, btnCheck, 57, SpringLayout.NORTH, lblNewLabel);
+		sl_panel.putConstraint(SpringLayout.NORTH, chckbxLog, 0, SpringLayout.NORTH, chckbxUseCache);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxUseCache, -10, SpringLayout.EAST, panel);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxLog, 0, SpringLayout.WEST, chckbxUseCache);
-		sl_panel.putConstraint(SpringLayout.NORTH, btnUpdate, 0, SpringLayout.NORTH, btnFetch);
-		sl_panel.putConstraint(SpringLayout.WEST, btnUpdate, 6, SpringLayout.EAST, btnCheck);
-		sl_panel.putConstraint(SpringLayout.NORTH, btnCheck, 0, SpringLayout.NORTH, btnFetch);
-		sl_panel.putConstraint(SpringLayout.WEST, btnCheck, 6, SpringLayout.EAST, btnFetch);
-		sl_panel.putConstraint(SpringLayout.NORTH, btnFetch, 6, SpringLayout.SOUTH, btnRetag);
-		sl_panel.putConstraint(SpringLayout.WEST, btnFetch, 0, SpringLayout.WEST, scrollPane);
-		sl_panel.putConstraint(SpringLayout.EAST, btnFetch, 78, SpringLayout.WEST, panel);
-		sl_panel.putConstraint(SpringLayout.NORTH, btnRetag, 10, SpringLayout.SOUTH, lblNewLabel_1);
 		sl_panel.putConstraint(SpringLayout.NORTH, textFieldDirectory, -2, SpringLayout.NORTH, lblNewLabel_1);
 		sl_panel.putConstraint(SpringLayout.NORTH, lblNewLabel_1, 15, SpringLayout.SOUTH, lblNewLabel);
-		sl_panel.putConstraint(SpringLayout.EAST, textFieldURL, -6, SpringLayout.WEST, btnPrefetch);
-		sl_panel.putConstraint(SpringLayout.NORTH, btnPrefetch, -5, SpringLayout.NORTH, lblNewLabel);
-		sl_panel.putConstraint(SpringLayout.EAST, btnPrefetch, 0, SpringLayout.EAST, scrollPane);
+		sl_panel.putConstraint(SpringLayout.EAST, btnCheck, 0, SpringLayout.EAST, scrollPane);
 		sl_panel.putConstraint(SpringLayout.NORTH, textFieldURL, -2, SpringLayout.NORTH, lblNewLabel);
 		sl_panel.putConstraint(SpringLayout.WEST, textFieldDirectory, 115, SpringLayout.WEST, panel);
-		sl_panel.putConstraint(SpringLayout.EAST, textFieldDirectory, -10, SpringLayout.EAST, panel);
-		sl_panel.putConstraint(SpringLayout.SOUTH, scrollPane, -10, SpringLayout.SOUTH, panel);
 		sl_panel.putConstraint(SpringLayout.EAST, scrollPane, -10, SpringLayout.EAST, panel);
-		sl_panel.putConstraint(SpringLayout.WEST, btnRetag, 10, SpringLayout.WEST, panel);
 		sl_panel.putConstraint(SpringLayout.WEST, lblNewLabel_1, 10, SpringLayout.WEST, panel);
 		sl_panel.putConstraint(SpringLayout.NORTH, lblNewLabel, 18, SpringLayout.NORTH, panel);
 		sl_panel.putConstraint(SpringLayout.WEST, lblNewLabel, 10, SpringLayout.WEST, panel);
@@ -201,15 +185,13 @@ public class GUI extends JFrame {
 		panel.add(lblNewLabel);
 		panel.add(lblNewLabel_1);
 		panel.add(btnRetag);
-		panel.add(btnFetch);
-		panel.add(btnCheck);
 		panel.add(btnUpdate);
 		panel.add(lblStatus);
 		panel.add(chckbxLog);
 		panel.add(chckbxUseCache);
 		panel.add(textFieldDirectory);
 		panel.add(textFieldURL);
-		panel.add(btnPrefetch);
+		panel.add(btnCheck);
 		
 		chckbxForceTag = new JCheckBox("force rescan");
 		chckbxForceTag.setEnabled(false);
@@ -242,10 +224,75 @@ public class GUI extends JFrame {
 		} catch (IllegalArgumentException e) {
 			return;
 		}
-		lblStatus.setText("Preparing");
+		lblStatus.setText("Press 'Check' button");
 		
 		setRootNodeForRootPage();
-		initPrefetch();
+//		initPrefetch();
+	}
+	
+	private void disableButtons() {
+		btnCheck.setEnabled(false);
+		btnRetag.setEnabled(false);
+		btnUpdate.setEnabled(false);
+		textFieldURL.setEnabled(false);
+		textFieldDirectory.setEnabled(false);
+	}
+	
+	private void enableButtons() {
+		btnCheck.setEnabled(true);		
+		btnRetag.setEnabled(false); //XXX: temporary as retag is not functioning yet
+		btnUpdate.setEnabled(true);			
+		textFieldURL.setEnabled(true);
+		textFieldDirectory.setEnabled(true);
+	}
+	
+	private void reInit() {
+		// fix/normalize url if possible
+		String newURL = AbstractPage.fixURLString(null, textFieldURL.getText());
+		
+		//TODO: add normalization to path, creation of non-existing dirs request and such.
+		String newDir = textFieldDirectory.getText();
+		
+		if (newURL == null) {
+			// fix failed, restoring current root url if one exists
+			// FIXME: maybe error status message and leave wrong text in place (for continued editing?)
+			if (rootPage != null) {
+				textFieldURL.setText(rootPage.url.toString());
+				textFieldDirectory.setText(rootPage.saveTo);
+			}
+			return;
+		}
+		
+		// apply fix
+		textFieldURL.setText(newURL);
+		
+		// check if no change happened
+		if (newURL.equals(rootPage.url.toString()) &&
+			newDir.equals(rootPage.saveTo)) {
+			
+			// url and dir did not change. 
+			initPrefetch(); // still full rescan.
+			return;
+		}
+			
+		// now at least directory or URL changed --> drop old root and start anew
+		AbstractPage newRootPage = null;
+		try {
+			newRootPage = AbstractPage.bakeAPage(null, newURL, newDir, null);
+		} catch (IllegalArgumentException e) {
+			// fail to make a page out of newURL.
+			if (rootPage != null) {
+				textFieldURL.setText(rootPage.url.toString());
+				textFieldDirectory.setText(rootPage.saveTo);
+			}
+		}
+		
+		if (newRootPage != null) {
+			rootPage = newRootPage;
+			setRootNodeForRootPage();
+			
+			initPrefetch(); // prefetch -> fetch -> checkSaving chain job start
+		}
 	}
 	
 	/**
@@ -253,16 +300,17 @@ public class GUI extends JFrame {
 	 */
 	private void initCheckSavingReq() {
 		if (theWorker == null) {
-			lblStatus.setText("Checking files");
+			lblStatus.setText("Checking files on disk");
 			theWorker = new MyWorker(rootPage, JobType.CHECKSAVINGREQUIREMENT);
-			theWorker.execute();			
+			theWorker.execute();
+//			disableButtons();
 		}
 	}
 	
 	private void finishCheckSavingReq() {
-		if (lblStatus.getText().equals("Checking files"))
-			lblStatus.setText("");
+		lblStatus.setText("");
 		theWorker = null;
+		enableButtons();
 	}
 	
 	/**
@@ -273,28 +321,19 @@ public class GUI extends JFrame {
 			lblStatus.setText("Prefetching");
 			theWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
 			theWorker.execute();
-			btnPrefetch.setEnabled(false);
-			btnFetch.setEnabled(false);
-			btnCheck.setEnabled(false);
-			btnRetag.setEnabled(false);
-			btnUpdate.setEnabled(false);
+			disableButtons();
 		}
 	}
 	
 	private void finishPrefetch() {
-		if (lblStatus.getText().equals("Prefetching"))
-			lblStatus.setText("");
-		btnPrefetch.setEnabled(true);		
-		btnPrefetch.setEnabled(true);
-		btnFetch.setEnabled(true);
-		btnCheck.setEnabled(true);
-		btnRetag.setEnabled(true);
-		btnUpdate.setEnabled(true);		
+		lblStatus.setText("");
+	
+//		enableButtons();
 		theWorker = null;
 		
 		unfoldFirst();
 		// commented out for later. now we are in testing mode.
-//		initScan();
+		initScan();
 	}
 	
 	/**
@@ -305,25 +344,15 @@ public class GUI extends JFrame {
 			lblStatus.setText("Downloading files");
 			theWorker = new MyWorker(rootPage, JobType.SAVEDATA);
 			theWorker.execute();
-			btnPrefetch.setEnabled(false);
-			btnFetch.setEnabled(false);
-			btnCheck.setEnabled(false);
-			btnRetag.setEnabled(false);
-			btnUpdate.setEnabled(false);
+			disableButtons();
 		}
 	}
 	
 	private void finishSaveData() {
-		if (lblStatus.getText().equals("Downloading files"))
-			lblStatus.setText("");
-		btnPrefetch.setEnabled(true);		
-		btnPrefetch.setEnabled(true);
-		btnFetch.setEnabled(true);
-		btnCheck.setEnabled(true);
-		btnRetag.setEnabled(true);
-		btnUpdate.setEnabled(true);		
-		theWorker = null;
+		lblStatus.setText("");
+//		enableButtons();
 		
+		theWorker = null;
 		initCheckSavingReq();
 	}	
 
@@ -344,47 +373,27 @@ public class GUI extends JFrame {
 			lblStatus.setText("Scanning");
 			theWorker = new MyWorker(rootPage, JobType.UPDATEPAGES);
 			theWorker.execute();
-			btnFetch.setEnabled(false);
+//			disableButtons();
 		}
 	}
 	
 	private void finishScan() {
-		if (lblStatus.getText().equals("Scanning"))
-			lblStatus.setText("");
+		lblStatus.setText("");
 		theWorker = null;
-		btnFetch.setEnabled(true);		
+//		enableButtons();		
 		
 		initCheckSavingReq();
 		unfoldFirst();
 	}
 	
-	private void reInit() {
-		String newURL = AbstractPage.fixURLString(null, textFieldURL.getText()); 
-		if (newURL == null) return;
-		textFieldURL.setText(newURL);
-		if (newURL.equals(rootPage.url.toString())) return;
-		
-		AbstractPage newRootPage = null;
-		try {
-			newRootPage = AbstractPage.bakeAPage(null, newURL, textFieldDirectory.getText(), null);
-		} catch (IllegalArgumentException e) {
-			textFieldURL.setText(rootPage.url.toString());
-		}
-		if (newRootPage != null) {
-			rootPage = newRootPage;
-			setRootNodeForRootPage();
-			
-			initPrefetch();
-			btnPrefetch.setEnabled(false);			
-		}
-	}
-	
+	/**
+	 * Replaces old tree with new root.
+	 */
 	private void setRootNodeForRootPage() {
 		DefaultTreeModel model = (DefaultTreeModel) tree.getModel(); 
 		TreeNodePageWrapper x = new TreeNodePageWrapper(null, model); // proxy null root for better display
 		x.add(new TreeNodePageWrapper(rootPage, model)); 
 		model.setRoot(x);
-		
 	}
 	
 	/** 
@@ -480,10 +489,6 @@ public class GUI extends JFrame {
 		
 		// pass message to the user object and refresh its visual if needed
 		parentNode.update(message, value);
-//		if (parentNode.update(message, value)) {
-//			model.nodeChanged(parentNode);
-//		}
-		
 	}
 
 	/**
