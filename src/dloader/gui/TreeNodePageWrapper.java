@@ -1,6 +1,7 @@
 package dloader.gui;
 
 import java.util.Enumeration;
+import java.util.HashMap;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -62,13 +63,6 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		boolean updateVisuals = false;
 		boolean updateParent = false;
 		switch (message) {
-//		// messages reported by CheckSavingJob:
-//		case "saving not required":
-//			mustSavePage = false;
-//			updateVisuals = true; updateParent = true; break;
-//		case "saving required":
-//			mustSavePage = true;
-//			updateVisuals = true; updateParent = true; break;
 			
 		//messages reported by ReadCacheJob and GetPageJob:
 		case "checking cache": break;
@@ -246,6 +240,24 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 				kidsToSave++;
 		}
 		
+	}
+
+	public void updateSavingReqBunch(
+			HashMap<AbstractPage, Long> savingReqJobResults) {
+		
+		mustSavePage = savingReqJobResults.get(page) == 0;
+		
+		kidsToSave = 0;
+		for (@SuppressWarnings("unchecked")
+		Enumeration<DefaultMutableTreeNode> children = children(); children.hasMoreElements();) {
+			TreeNodePageWrapper kid = (TreeNodePageWrapper) children.nextElement();
+			
+			kid.updateSavingReqBunch(savingReqJobResults);
+			if (kid.mustSavePage || kid.saving)
+				kidsToSave++;
+		}
+		
+		model.nodeChanged(this);
 	}
 
 }

@@ -6,6 +6,7 @@ import java.awt.Font;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
@@ -45,28 +46,28 @@ public class GUI extends JFrame {
 	private JCheckBox chckbxForceTag;
 	
 	
-//	@SuppressWarnings("serial")
-//	class MyRenderer extends DefaultTreeCellRenderer {
-//
-//	    public Component getTreeCellRendererComponent(
-//	                        JTree tree,
-//	                        Object value,
-//	                        boolean sel,
-//	                        boolean expanded,
-//	                        boolean leaf,
-//	                        int row,
-//	                        boolean hasFocus) {
-//
-//	        super.getTreeCellRendererComponent(
-//	                        tree, value, sel,
-//	                        expanded, leaf, row,
-//	                        hasFocus);
-//	        if (value instanceof DefaultMutableTreeNode)
-//	        	return this;
-//	        return this;
-//	    }
-//
-//	}	
+/*	@SuppressWarnings("serial")
+	class MyRenderer extends DefaultTreeCellRenderer {
+
+	    public Component getTreeCellRendererComponent(
+	                        JTree tree,
+	                        Object value,
+	                        boolean sel,
+	                        boolean expanded,
+	                        boolean leaf,
+	                        int row,
+	                        boolean hasFocus) {
+
+	        super.getTreeCellRendererComponent(
+	                        tree, value, sel,
+	                        expanded, leaf, row,
+	                        hasFocus);
+	        if (value instanceof DefaultMutableTreeNode)
+	        	return this;
+	        return this;
+	    }
+
+	}	*/
 
 	public Thread getEventDispatchThread() {
 		return eventDispatchThread;
@@ -230,6 +231,110 @@ public class GUI extends JFrame {
 //		initPrefetch();
 	}
 	
+	public void myWorkerDoneCheckSavingReq(AbstractPage root,
+			HashMap<AbstractPage, Long> savingReqJobResults) {
+
+		TreeNodePageWrapper proxyRoot = (TreeNodePageWrapper) tree.getModel().getRoot();
+		((TreeNodePageWrapper) proxyRoot.getFirstChild()).updateSavingReqBunch(savingReqJobResults);
+		
+		finishCheckSavingReq();
+	}
+
+	/** 
+	 * Captures SwingWorker finish jobs event
+	 * @param root - root job for the work in question (not used atm)
+	 * @param jobType - job type
+	 */
+	public void myWorkerDone (AbstractPage root, JobMaster.JobType jobType) {
+		switch  (jobType) {
+		case READCACHEPAGES: finishPrefetch(); break;
+		case SAVEDATA: finishSaveData(); break;
+		case UPDATEPAGES: finishScan(); break;
+		case CHECKSAVINGREQUIREMENT: finishCheckSavingReq(); break;
+		default:
+			break;
+		}
+	}
+
+	/**
+	 * Receiving message from MyWorker (SwingWorker)
+	 * @param p - page node to update
+	 * @param message - status info
+	 * @param value - numeral info 
+	 */
+	public void updateTree (AbstractPage p, String message, long value) {
+		// construct list of elements from root page to this page while checking pages to be actual children 
+		Deque<AbstractPage> pathToPage = new LinkedList<AbstractPage>();
+		while (p != null) {
+			pathToPage.push(p);
+			if (p.getParent() == null) {
+				if (!p.equals(rootPage))
+					// root node's page is not the same as root of AbstractPage tree. <- something is really wrong
+					return;
+			} 
+			else if (!p.getParent().childPages.contains(p))
+				// stray ghost report on page no longer in a tree
+				return;
+			p = p.getParent();
+		}
+		
+		DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+		TreeNodePageWrapper parentNode = (TreeNodePageWrapper) model.getRoot(); 
+		for (AbstractPage childPage: pathToPage) {
+			// check if this page exists in the parent
+			TreeNodePageWrapper childNode = getNodeOfPage (parentNode, childPage);
+			
+			if (childNode == null) {
+				// currentPage's node was not found in parent node 
+				
+				// add new item under this parent
+				childNode = new TreeNodePageWrapper(childPage, model);
+				
+				if (childPage.getParent() == null)
+					parentNode.add(childNode); // to the end
+				else {
+					int insertionIndex = findInsertionPoint(parentNode, childPage);
+					
+					if (insertionIndex == -1)
+						parentNode.add(childNode); // to the end
+					else 
+						parentNode.insert(childNode, insertionIndex);
+				}
+				
+				// new item's children if any (that way they maintain their order)
+				for (AbstractPage subPage: childPage.childPages) {
+					TreeNodePageWrapper subChild = new TreeNodePageWrapper(subPage, model);
+					childNode.add(subChild);
+				}
+				
+				int[] indices = new int[1];
+				indices[0] = parentNode.getIndex(childNode);
+				model.nodesWereInserted(parentNode, indices); // notification to repaint
+				
+			}
+			
+			parentNode = childNode; // advance to search next element in our pathToPage
+		}
+		// after search is complete, parent points to a TreeNodePageWrapper containing original p (but now p is different)
+		
+		// Reading cache/ downloading a page forces reset of page data (children refs), 
+		//  the node branch must be trimmed accordingly
+		if (message.equals("read from cache") || message.equals("read cache failed") 
+			|| message.equals("cache reading failed, submitting download job")
+			|| message.equals("download finished") || message.equals("up to date")
+			|| message.equals("download failed")
+			)
+			trimBranch(parentNode, model);
+		
+		// usually unfolding happens only after job is finished (for performance), but in
+		// case of new page downloads it is visually more pleasing to see what is going on asap 
+		if (message.equals("download finished") && parentNode.page.equals(pathToPage.getFirst())) 
+			unfoldFirst(); 
+		
+		// pass message to the user object and refresh its visual if needed
+		parentNode.update(message, value);
+	}
+
 	private void disableButtons() {
 		btnCheck.setEnabled(false);
 		btnRetag.setEnabled(false);
@@ -332,7 +437,6 @@ public class GUI extends JFrame {
 		theWorker = null;
 		
 		unfoldFirst();
-		// commented out for later. now we are in testing mode.
 		initScan();
 	}
 	
@@ -356,18 +460,6 @@ public class GUI extends JFrame {
 		initCheckSavingReq();
 	}	
 
-	/**
-	 *  Shows children of the rootPage's node elements
-	 */
-	private void unfoldFirst() {
-		TreeNodePageWrapper target = (TreeNodePageWrapper)tree.getModel().getRoot();
-		try {
-			target = (TreeNodePageWrapper) target.getFirstChild();
-			tree.expandPath(new TreePath(target.getPath())); 
-		} catch (NoSuchElementException e) {
-		}
-	}
-	
 	private void initScan() {
 		if (theWorker == null) { 
 			lblStatus.setText("Scanning");
@@ -382,10 +474,22 @@ public class GUI extends JFrame {
 		theWorker = null;
 //		enableButtons();		
 		
-		initCheckSavingReq();
 		unfoldFirst();
+		initCheckSavingReq();
 	}
 	
+	/**
+	 *  Shows children of the rootPage's node elements
+	 */
+	private void unfoldFirst() {
+		TreeNodePageWrapper target = (TreeNodePageWrapper)tree.getModel().getRoot();
+		try {
+			target = (TreeNodePageWrapper) target.getFirstChild();
+			tree.expandPath(new TreePath(target.getPath())); 
+		} catch (NoSuchElementException e) {
+		}
+	}
+
 	/**
 	 * Replaces old tree with new root.
 	 */
@@ -396,101 +500,7 @@ public class GUI extends JFrame {
 		model.setRoot(x);
 	}
 	
-	/** 
-	 * Captures SwingWorker finish jobs event
-	 * @param root - root job for the work in question (not used atm)
-	 * @param jobType - job type
-	 */
-	public void myWorkerDone (AbstractPage root, JobMaster.JobType jobType) {
-		switch  (jobType) {
-		case READCACHEPAGES: finishPrefetch(); break;
-		case SAVEDATA: finishSaveData(); break;
-		case UPDATEPAGES: finishScan(); break;
-		case CHECKSAVINGREQUIREMENT: finishCheckSavingReq(); break;
-		default:
-			break;
-		}
-	}
-
-	/**
-	 * Receiving message from MyWorker (SwingWorker)
-	 * @param p - page node to update
-	 * @param message - status info
-	 * @param value - numeral info 
-	 */
-	public void updateTree (AbstractPage p, String message, long value) {
-		// construct list of elements from root page to this page while checking pages to be actual children 
-		Deque<AbstractPage> pathToPage = new LinkedList<AbstractPage>();
-		while (p != null) {
-			pathToPage.push(p);
-			if (p.getParent() == null) {
-				if (!p.equals(rootPage))
-					// root node's page is not the same as root of AbstractPage tree. <- something is really wrong
-					return;
-			} 
-			else if (!p.getParent().childPages.contains(p))
-				// stray ghost report on page no longer in a tree
-				return;
-			p = p.getParent();
-		}
-		
-		DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-		TreeNodePageWrapper parentNode = (TreeNodePageWrapper) model.getRoot(); 
-		for (AbstractPage childPage: pathToPage) {
-			// check if this page exists in the parent
-			TreeNodePageWrapper childNode = getNodeOfPage (parentNode, childPage);
-			
-			if (childNode == null) {
-				// currentPage's node was not found in parent node 
-				
-				// add new item under this parent
-				childNode = new TreeNodePageWrapper(childPage, model);
-				
-				if (childPage.getParent() == null)
-					parentNode.add(childNode); // to the end
-				else {
-					int insertionIndex = findInsertionPoint(parentNode, childPage);
-					
-					if (insertionIndex == -1)
-						parentNode.add(childNode); // to the end
-					else 
-						parentNode.insert(childNode, insertionIndex);
-				}
-				
-				// new item's children if any (that way they maintain their order)
-				for (AbstractPage subPage: childPage.childPages) {
-					TreeNodePageWrapper subChild = new TreeNodePageWrapper(subPage, model);
-					childNode.add(subChild);
-				}
-				
-				int[] indices = new int[1];
-				indices[0] = parentNode.getIndex(childNode);
-				model.nodesWereInserted(parentNode, indices); // notification to repaint
-				
-			}
-			
-			parentNode = childNode; // advance to search next element in our pathToPage
-		}
-		// after search is complete, parent points to a TreeNodePageWrapper containing original p (but now p is different)
-		
-		// Reading cache/ downloading a page forces reset of page data (children refs), 
-		//  the node branch must be trimmed accordingly
-		if (message.equals("read from cache") || message.equals("read cache failed") 
-			|| message.equals("cache reading failed, submitting download job")
-			|| message.equals("download finished") || message.equals("up to date")
-			|| message.equals("download failed")
-			)
-			trimBranch(parentNode, model);
-		
-		// usually unfolding happens only after job is finished (for performance), but in
-		// case of new page downloads it is visually more pleasing to see what is going on asap 
-		if (message.equals("download finished") && parentNode.page.equals(pathToPage.getFirst())) 
-			unfoldFirst(); 
-		
-		// pass message to the user object and refresh its visual if needed
-		parentNode.update(message, value);
-	}
-
+	
 	/**
 	 * Time to find proper insertion position (assume nodes are ordered same way as pages so far with "skips" probably existing)
 	 * check "DoubleListMatcher.graphml" automaton diagram to understand the following
@@ -593,4 +603,6 @@ public class GUI extends JFrame {
 		}
 		return null;
 	}
+
+
 }

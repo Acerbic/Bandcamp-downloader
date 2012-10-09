@@ -1,18 +1,21 @@
 package dloader.pagejob;
 
+import java.util.HashMap;
+
 import dloader.JobMaster;
 import dloader.page.AbstractPage;
 
 public class CheckSavingJob extends PageJob {
 
-	private boolean recursive;
+	private HashMap<AbstractPage, Boolean> results;
+	
 	public CheckSavingJob(AbstractPage page, JobMaster owner) {
-		this(page, owner, true);
+		this(page, owner, null);
 	}	
 	
-	public CheckSavingJob(AbstractPage page, JobMaster owner, boolean recursive) {
+	public CheckSavingJob(AbstractPage page, JobMaster owner, HashMap<AbstractPage, Boolean> results) {
 		super(page, owner);
-		this.recursive = recursive;
+		this.results = results;
 	}
 
 	/**
@@ -22,14 +25,18 @@ public class CheckSavingJob extends PageJob {
 	 */	
 	@Override
 	public void run() {
-		//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
-		if (recursive)
-			for (AbstractPage child: page.childPages)
-				jobMaster.submit(new CheckSavingJob(child, jobMaster, recursive));
-		
-		if (page.isSavingNotRequired()) 
-			report("saving not required", 1); 
-		else
-			report("saving required", 1);
+		if (results == null) {		
+			if (page.isSavingNotRequired()) 
+				report("saving not required", 1); 
+			else
+				report("saving required", 1);
+		} else {
+			report ("",  page.isSavingNotRequired()? 1: 0); // special kind of report that will not propagate to updateTree() directly
+			
+			//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
+			if (results != null)
+				for (AbstractPage child: page.childPages)
+					jobMaster.submit(new CheckSavingJob(child, jobMaster, results));
+		}
 	}
 }

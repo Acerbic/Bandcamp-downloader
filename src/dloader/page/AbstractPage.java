@@ -357,7 +357,6 @@ public abstract class AbstractPage {
 			URLConnection connection = url.openConnection();
 			if (!WebDownloader.checkHttpResponseOK(connection))		
 				throw new ProblemsReadingDocumentException("Error response from server");
-			//FIXME: need to be replaced with explicit download and parsing call, to make use of ProgressReporter. Actually, probably not.
 			doc = builder.build(connection.getInputStream());
 //		} catch (IOException|JDOMException e) {
 		} catch (Exception e) {//XXX: some glitch in JDOM2 lets other random exceptions bubble up. So need to catch 'em all.

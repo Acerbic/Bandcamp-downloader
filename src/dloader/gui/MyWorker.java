@@ -1,5 +1,6 @@
 package dloader.gui;
 
+import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.SwingWorker;
@@ -36,6 +37,7 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	}
 	
 	private JobMaster jm;
+	private HashMap<AbstractPage, Long> savingReqJobResults;
 
 	public MyWorker(AbstractPage rootPage, JobType whatToDo) {
 		jm = new JobMaster(whatToDo, rootPage, 0) {
@@ -46,6 +48,9 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 				publish(new ProgressReportStruct(page, type, i));
 			}
 		};
+		
+		if (whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT))
+			savingReqJobResults = new HashMap<>(200);
 	}
 
 	// called in worker thread
@@ -60,15 +65,21 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	@Override
 	protected void process(List<ProgressReportStruct> chunks) {
 		for (ProgressReportStruct element : chunks) {
-			// kind of stupid.
-			Main.gui.updateTree(element.page, element.type, element.value);
+			if (jm.whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT))
+				savingReqJobResults.put(element.page, element.value);
+			else
+				// kind of stupid.
+				Main.gui.updateTree(element.page, element.type, element.value);
 		}
 	}
 	
 	// called in ED thread
 	@Override
 	protected void done() {
-		Main.gui.myWorkerDone(jm.rootPage, jm.whatToDo);
+		if (jm.whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT))
+			Main.gui.myWorkerDoneCheckSavingReq(jm.rootPage, savingReqJobResults);
+		else
+			Main.gui.myWorkerDone(jm.rootPage, jm.whatToDo);
 	}
 
 	/**
