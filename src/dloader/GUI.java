@@ -44,6 +44,7 @@ public class GUI extends JFrame {
 	private JButton btnRetag;
 	private MyWorker theWorker;
 	private JCheckBox chckbxForceTag;
+	private JButton btnStop;
 	
 	
 /*	@SuppressWarnings("serial")
@@ -151,21 +152,20 @@ public class GUI extends JFrame {
 		scrollPane.setViewportBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
 		SpringLayout sl_panel = new SpringLayout();
+		sl_panel.putConstraint(SpringLayout.NORTH, lblStatus, 12, SpringLayout.SOUTH, chckbxLog);
+		sl_panel.putConstraint(SpringLayout.NORTH, chckbxUseCache, 10, SpringLayout.SOUTH, textFieldDirectory);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnCheck, -3, SpringLayout.NORTH, textFieldURL);
+		sl_panel.putConstraint(SpringLayout.SOUTH, btnCheck, 3, SpringLayout.SOUTH, textFieldDirectory);
+		sl_panel.putConstraint(SpringLayout.WEST, lblStatus, 69, SpringLayout.EAST, btnRetag);
 		sl_panel.putConstraint(SpringLayout.WEST, btnUpdate, 10, SpringLayout.WEST, panel);
-		sl_panel.putConstraint(SpringLayout.WEST, lblStatus, 6, SpringLayout.EAST, btnRetag);
 		sl_panel.putConstraint(SpringLayout.NORTH, btnUpdate, 44, SpringLayout.SOUTH, lblNewLabel_1);
 		sl_panel.putConstraint(SpringLayout.NORTH, btnRetag, 0, SpringLayout.NORTH, btnUpdate);
 		sl_panel.putConstraint(SpringLayout.WEST, btnRetag, 6, SpringLayout.EAST, btnUpdate);
-		sl_panel.putConstraint(SpringLayout.EAST, lblStatus, -10, SpringLayout.EAST, panel);
 		sl_panel.putConstraint(SpringLayout.NORTH, scrollPane, 10, SpringLayout.SOUTH, btnUpdate);
 		sl_panel.putConstraint(SpringLayout.SOUTH, scrollPane, -10, SpringLayout.SOUTH, panel);
-		sl_panel.putConstraint(SpringLayout.NORTH, lblStatus, 8, SpringLayout.SOUTH, chckbxLog);
-		sl_panel.putConstraint(SpringLayout.NORTH, btnCheck, -3, SpringLayout.NORTH, lblNewLabel);
 		sl_panel.putConstraint(SpringLayout.EAST, textFieldDirectory, 0, SpringLayout.EAST, textFieldURL);
 		sl_panel.putConstraint(SpringLayout.WEST, textFieldURL, 35, SpringLayout.EAST, lblNewLabel);
 		sl_panel.putConstraint(SpringLayout.EAST, textFieldURL, -6, SpringLayout.WEST, btnCheck);
-		sl_panel.putConstraint(SpringLayout.NORTH, chckbxUseCache, 10, SpringLayout.SOUTH, btnCheck);
-		sl_panel.putConstraint(SpringLayout.SOUTH, btnCheck, 57, SpringLayout.NORTH, lblNewLabel);
 		sl_panel.putConstraint(SpringLayout.NORTH, chckbxLog, 0, SpringLayout.NORTH, chckbxUseCache);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxUseCache, -10, SpringLayout.EAST, panel);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxLog, 0, SpringLayout.WEST, chckbxUseCache);
@@ -199,6 +199,21 @@ public class GUI extends JFrame {
 		sl_panel.putConstraint(SpringLayout.NORTH, chckbxForceTag, 0, SpringLayout.NORTH, chckbxLog);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxForceTag, 0, SpringLayout.WEST, chckbxLog);
 		panel.add(chckbxForceTag);
+		
+		btnStop = new JButton("Stop");
+		btnStop.setEnabled(false);
+		sl_panel.putConstraint(SpringLayout.EAST, lblStatus, -6, SpringLayout.WEST, btnStop);
+		sl_panel.putConstraint(SpringLayout.WEST, btnStop, -100, SpringLayout.EAST, panel);
+		btnStop.setFont(new Font("Courier New", Font.BOLD, 14));
+		btnStop.setForeground(Color.RED);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnStop, 8, SpringLayout.SOUTH, chckbxUseCache);
+		sl_panel.putConstraint(SpringLayout.EAST, btnStop, -10, SpringLayout.EAST, panel);
+		btnStop.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				btnStop.setVisible(false);
+			}
+		});
+		panel.add(btnStop);
 	}
 
 
@@ -603,6 +618,4 @@ public class GUI extends JFrame {
 		}
 		return null;
 	}
-
-
 }
