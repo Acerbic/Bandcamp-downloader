@@ -1,6 +1,5 @@
 package dloader;
 
-import java.util.HashMap;
 import java.util.concurrent.*;
 
 
@@ -77,7 +76,6 @@ public abstract class JobMaster {
 	 */
 	public
 	void goGoGo() {
-		HashMap<AbstractPage, Boolean> checkSavingRequirementResult;
 		synchronized (this) {
 			// can be ran only once;
 			if (rootPage == null) return;
@@ -86,9 +84,7 @@ public abstract class JobMaster {
 			case READCACHEPAGES: submit(new ReadCacheJob(rootPage, this)); break;
 			case UPDATEPAGES: submit(new UpdatePageJob(rootPage, this, !Main.allowFromCache)); break;
 			case SAVEDATA: submit(new SaveDataJob(rootPage, this)); break;
-			case CHECKSAVINGREQUIREMENT:
-				checkSavingRequirementResult = new HashMap<>(200);
-				submit(new CheckSavingJob(rootPage, this, checkSavingRequirementResult)); break;
+			case CHECKSAVINGREQUIREMENT: submit(new CheckSavingJob(rootPage, this, true)); break;
 			}
 		}
 		
@@ -97,8 +93,8 @@ public abstract class JobMaster {
 			try {
 				results.poll().get();
 			} catch (InterruptedException | ExecutionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				// TODO Stop all jobs
+				break;
 			}
 		
 		executor.shutdown();

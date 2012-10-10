@@ -51,13 +51,14 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 		
 		if (whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT))
 			savingReqJobResults = new HashMap<>(200);
+			
 	}
 
 	// called in worker thread
 	@Override
 	protected Object doInBackground() throws Exception {
 		if (jm != null)
-			jm.goGoGo(); // -> several calls to jm.report() -> publish() -> process() -> gui.updateTree()
+			jm.goGoGo(); // -> several calls to PageJob.report() -> jm.report() -> SwingWorker.publish() -> this.process() -> gui.updateTree()
 		return null; // call to done() -> gui.myWorkerDone()
 	}
 
@@ -65,21 +66,29 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	@Override
 	protected void process(List<ProgressReportStruct> chunks) {
 		for (ProgressReportStruct element : chunks) {
-			if (jm.whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT))
-				savingReqJobResults.put(element.page, element.value);
-			else
-				// kind of stupid.
+			switch (jm.whatToDo) {
+			case CHECKSAVINGREQUIREMENT:
+				savingReqJobResults.put(element.page, element.value); // 1st combine all, then update all after jobs are done
+				break;
+			default:
+				// pass individual messages
 				Main.gui.updateTree(element.page, element.type, element.value);
+			
+			}
+				
 		}
 	}
 	
 	// called in ED thread
 	@Override
 	protected void done() {
-		if (jm.whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT))
+		switch (jm.whatToDo) {
+		case CHECKSAVINGREQUIREMENT:
 			Main.gui.myWorkerDoneCheckSavingReq(jm.rootPage, savingReqJobResults);
-		else
+			break;
+		default:
 			Main.gui.myWorkerDone(jm.rootPage, jm.whatToDo);
+		}
 	}
 
 	/**

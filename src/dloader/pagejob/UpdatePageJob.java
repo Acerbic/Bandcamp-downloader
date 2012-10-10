@@ -66,7 +66,7 @@ public class UpdatePageJob extends PageJob {
 			}
 			
 			//saving pre-check for faster visual;
-			CheckSavingJob checkJob = new CheckSavingJob(page, jobMaster, null);
+			CheckSavingJob checkJob = new CheckSavingJob(page, jobMaster, false);
 			checkJob.run();
 		} catch (ProblemsReadingDocumentException e) {
 			report("download failed", 1);

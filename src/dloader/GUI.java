@@ -205,7 +205,6 @@ public class GUI extends JFrame {
 		sl_panel.putConstraint(SpringLayout.EAST, lblStatus, -6, SpringLayout.WEST, btnStop);
 		sl_panel.putConstraint(SpringLayout.WEST, btnStop, -100, SpringLayout.EAST, panel);
 		btnStop.setFont(new Font("Courier New", Font.BOLD, 14));
-		btnStop.setForeground(Color.RED);
 		sl_panel.putConstraint(SpringLayout.NORTH, btnStop, 8, SpringLayout.SOUTH, chckbxUseCache);
 		sl_panel.putConstraint(SpringLayout.EAST, btnStop, -10, SpringLayout.EAST, panel);
 		btnStop.addActionListener(new ActionListener() {
