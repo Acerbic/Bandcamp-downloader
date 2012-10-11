@@ -22,7 +22,7 @@ public class WebDownloaderTest {
 	}
 
 	@Test
-	public void testFetchWebFileURLString() throws IOException {
+	public void testFetchWebFileURLString() throws IOException, InterruptedException {
 		Path p = Paths.get("test/classicplus.png");
 		Files.deleteIfExists(p);
 		WebDownloader.fetchWebFile("http://www.google.com/logos/classicplus.png", 

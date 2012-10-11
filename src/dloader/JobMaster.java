@@ -28,7 +28,7 @@ public abstract class JobMaster {
 	/**
 	 * All submitted jobs have their Future's here. For result reporting/error checking/job resubmitting... etc
 	 */
-	private ConcurrentLinkedQueue<Future<?>> results; 
+	private ConcurrentLinkedQueue<Future<?>> submittedJobs; 
 	
 	/**
 	 * READCACHEPAGES - get pages tree ONLY from cache (prefetch)
@@ -64,7 +64,7 @@ public abstract class JobMaster {
 			threadsNumber = CORETHREADS_NUMBER;
 		executor = Executors.newFixedThreadPool(threadsNumber);
 		assert (executor instanceof ThreadPoolExecutor);
-		results = new ConcurrentLinkedQueue<Future<?>>();
+		submittedJobs = new ConcurrentLinkedQueue<Future<?>>();
 		
 		this.whatToDo = whatToDo;
 		this.rootPage = rootPage; 
@@ -89,13 +89,22 @@ public abstract class JobMaster {
 		}
 		
 		// wait until all the jobs are finished before terminating this thread.
-		while (!results.isEmpty())
+		while (!submittedJobs.isEmpty()) {
+			Future<?> job = submittedJobs.poll();
 			try {
-				results.poll().get();
+				job.get(); // can't use awaitTermination, because jobs are submitting other jobs
 			} catch (InterruptedException | ExecutionException e) {
-				// TODO Stop all jobs
+				// Stop all jobs
+				executor.shutdown(); // no new jobs submitted
+				
+				job.cancel(true); // stop one we are currently waiting for
+				
+				// stop all jobs submitted (whether running or not)
+				for (Future<?> job2: submittedJobs)
+					job2.cancel(true);
 				break;
 			}
+		}
 		
 		executor.shutdown();
 	}
@@ -106,7 +115,7 @@ public abstract class JobMaster {
 	 */
 	synchronized public
 	void submit (Runnable job) {
-		results.add(executor.submit(job));
+		submittedJobs.add(executor.submit(job));
 	}
 
 

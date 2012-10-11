@@ -53,7 +53,7 @@ public class Album extends AbstractPage {
 	
 	@Override
 	public synchronized
-	boolean saveResult(ProgressReporter reporter) throws IOException {
+	boolean saveResult(ProgressReporter reporter) throws IOException, InterruptedException {
 		Path p = Paths.get(saveTo, getFSSafeName(getTitle()));
 		Files.createDirectories(p);
 			

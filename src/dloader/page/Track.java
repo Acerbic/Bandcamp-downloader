@@ -93,7 +93,7 @@ public class Track extends AbstractPage {
 	
 	@Override
 	public  
-	boolean saveResult(ProgressReporter reporter) throws IOException {
+	boolean saveResult(ProgressReporter reporter) throws IOException, InterruptedException {
 		Path p;
 		String fileURL;
 		synchronized (this) {

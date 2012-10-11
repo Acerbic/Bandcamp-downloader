@@ -11,6 +11,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 
 import dloader.pagejob.ProgressReporter;
@@ -29,8 +30,9 @@ public class WebDownloader {
 	 * @return size of the downloaded file in bytes, 
 	 * 			0 if download was skipped (file exists and not zero length)
 	 * @throws IOException on stream problems or server has responded bad
+	 * @throws InterruptedException 
 	 */
-	public static long fetchWebFile(String from, String to, ProgressReporter reporter) throws IOException {
+	public static long fetchWebFile(String from, String to, ProgressReporter reporter) throws IOException, InterruptedException {
 		URL u = new URL(from);
 		return fetchWebFile(u,to, reporter);
 	}
@@ -42,8 +44,9 @@ public class WebDownloader {
 	 * @return size of the downloaded file in bytes, 
 	 * 0 if download was skipped (file exists and not zero-length or server has responded badly)
 	 * @throws IOException on stream problems AND on server errors/timeouts
+	 * 		   InterruptedException when being interrupted
 	 */
-	public static long fetchWebFile(URL from, String to, ProgressReporter reporter) throws IOException {
+	public static long fetchWebFile(URL from, String to, ProgressReporter reporter) throws IOException, InterruptedException {
 		StatisticGatherer.totalFileDownloadAttempts.incrementAndGet();
 		
 		Path dstPath = Paths.get(to);
@@ -59,17 +62,28 @@ public class WebDownloader {
 				else Files.deleteIfExists(dstPath);
 			else throw new IOException ("Destination is not a regular file");
 
+		Path tmpPathDir = dstPath.getParent(); // should be directory
+		if (!Files.isDirectory(tmpPathDir))
+			return 0;
+		
+		Path tmpFile = Files.createTempFile(tmpPathDir, "tmp_mp3_", "");
+		
 		URLConnection connection = from.openConnection();
 		if (!checkHttpResponseOK(connection))
 			throw new IOException("failed to get OK response from server");
 		if (reporter != null) reporter.report("file size", connection.getContentLengthLong());
 		long totalRead = 0;
-		try (InputStream is = connection.getInputStream();
-				SeekableByteChannel boch = Files.newByteChannel(dstPath, 
+		
+		try (	InputStream is = connection.getInputStream();
+				SeekableByteChannel boch = Files.newByteChannel(
+						tmpFile, 
 						StandardOpenOption.WRITE,
 						StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING))
 		{
+		  if (Thread.interrupted())  // Clears interrupted status!
+		      throw new InterruptedException();
+
 			byte[] buff = new byte[1024 * 1024];
 			ByteBuffer buff2 = ByteBuffer.wrap(buff);
 			int numRead;
@@ -83,10 +97,12 @@ public class WebDownloader {
 			}
 			
 			boch.close();
-		} catch (IOException e) {
+			
+			Files.move(tmpFile, dstPath, StandardCopyOption.REPLACE_EXISTING);
+			
+		} finally {
 			// on actual write loop to the file: delete half-baked file;
-			Files.deleteIfExists(dstPath);
-			throw e;
+			Files.deleteIfExists(tmpFile);
 		}
 		
 		if (Files.exists(dstPath)) { 

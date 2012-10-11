@@ -234,7 +234,7 @@ public class AbstractPageTest {
 		assertEquals(page, page2.getParent());
 	}
 
-	@Test (expected = NullPointerException.class)
+	@Test (expected = IOException.class)
 	public void testgetFSSafeName_NullArg() throws IOException {
 		AbstractPage.getFSSafeName(null);
 	}

@@ -38,6 +38,7 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	
 	private JobMaster jm;
 	private HashMap<AbstractPage, Long> savingReqJobResults;
+	private Thread workerThread;
 
 	public MyWorker(AbstractPage rootPage, JobType whatToDo) {
 		jm = new JobMaster(whatToDo, rootPage, 0) {
@@ -57,6 +58,7 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	// called in worker thread
 	@Override
 	protected Object doInBackground() throws Exception {
+		workerThread = Thread.currentThread();
 		if (jm != null)
 			jm.goGoGo(); // -> several calls to PageJob.report() -> jm.report() -> SwingWorker.publish() -> this.process() -> gui.updateTree()
 		return null; // call to done() -> gui.myWorkerDone()
@@ -96,6 +98,6 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	 * @param pageOfNode
 	 */
 	public void stopJobsForPage(AbstractPage pageOfNode) {
-		// TODO Auto-generated method stub
+		workerThread.interrupt();
 	}
 }

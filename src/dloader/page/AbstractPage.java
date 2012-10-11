@@ -137,7 +137,7 @@ public abstract class AbstractPage {
 	 * (don't check for existing file collisions, only validness of a name) 
 	 * @param name - string to convert
 	 * @return proper file name
-	 * @throws IOException if file name is not valid  
+	 * @throws IOException if file name is not valid or null
 	 */
 	public static final
 	String getFSSafeName(String name) throws IOException   {
@@ -208,8 +208,9 @@ public abstract class AbstractPage {
 	 * @param reporter - to output progress of long operations
 	 * @return operation status report. True on completion, false if skipped (results already saved) 
 	 * @throws IOException if saving was terminated by error - retry might be possible.
+	 * @throws InterruptedException 
 	 */
-	public abstract boolean saveResult(ProgressReporter reporter) throws IOException;
+	public abstract boolean saveResult(ProgressReporter reporter) throws IOException, InterruptedException;
 
 	/**
 	 * Generate new saving path for the children of this page from its own saveTo and page data

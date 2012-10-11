@@ -43,6 +43,9 @@ public class SaveDataJob extends PageJob {
 			report("saving caused exception", 1);
 			//TODO: job rescheduling  and error handling
 //			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
 	}
