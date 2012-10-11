@@ -44,8 +44,7 @@ public class SaveDataJob extends PageJob {
 			//TODO: job rescheduling  and error handling
 //			e.printStackTrace();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//XXX: report cancellation?
 		}
 		
 	}

@@ -135,7 +135,10 @@ public class GUI extends JFrame {
 		btnUpdate = new JButton("Update files");
 		btnUpdate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				initSaveData();
+				if (rootPage.isOK())
+					initSaveData();
+				else 
+					initPrefetch();
 			}
 		});
 		
@@ -209,7 +212,9 @@ public class GUI extends JFrame {
 		sl_panel.putConstraint(SpringLayout.EAST, btnStop, -10, SpringLayout.EAST, panel);
 		btnStop.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				btnStop.setVisible(false);
+				if (theWorker != null) {
+					theWorker.stopJobsForPage(rootPage);
+				}
 			}
 		});
 		panel.add(btnStop);
@@ -242,6 +247,9 @@ public class GUI extends JFrame {
 		lblStatus.setText("Press 'Check' button");
 		
 		setRootNodeForRootPage();
+		
+		// no auto-update
+		btnUpdate.setEnabled(false);
 //		initPrefetch();
 	}
 	
@@ -342,7 +350,7 @@ public class GUI extends JFrame {
 		
 		// usually unfolding happens only after job is finished (for performance), but in
 		// case of new page downloads it is visually more pleasing to see what is going on asap 
-		if (message.equals("download finished") && parentNode.page.equals(pathToPage.getFirst())) 
+		if (parentNode.page.equals(pathToPage.getFirst())) 
 			unfoldFirst(); 
 		
 		// pass message to the user object and refresh its visual if needed
@@ -355,6 +363,8 @@ public class GUI extends JFrame {
 		btnUpdate.setEnabled(false);
 		textFieldURL.setEnabled(false);
 		textFieldDirectory.setEnabled(false);
+		
+		btnStop.setEnabled(true);
 	}
 	
 	private void enableButtons() {
@@ -363,6 +373,8 @@ public class GUI extends JFrame {
 		btnUpdate.setEnabled(true);			
 		textFieldURL.setEnabled(true);
 		textFieldDirectory.setEnabled(true);
+		
+		btnStop.setEnabled(false);
 	}
 	
 	private void reInit() {

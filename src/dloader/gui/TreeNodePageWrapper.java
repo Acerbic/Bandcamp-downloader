@@ -96,10 +96,12 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 
 		// messages reported by CheckSavingJob:
 		case "saving not required":
-			mustSavePage = false;
+			mustSavePage = false; 
+			saving = false; // if runs post-stop 
 			updateVisuals = true; updateParent = true; break;
 		case "saving required":
 			mustSavePage = true;
+			saving = false; // if runs post-stop 
 			updateVisuals = true; updateParent = true; break;
 			
 		// messages reported by SaveDataJob:
@@ -110,7 +112,7 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 			saving = false;
 			updateVisuals = true; updateParent = true; break;
 		case "file size":
-			fullSize = value; saving = true;
+			fullSize = value; savedSoFar = 0; saving = true;
 			updateVisuals = true; break;
 		case "downloaded bytes":
 			if (savedSoFar < value) savedSoFar = value;
@@ -244,8 +246,10 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 
 	public void updateSavingReqBunch(
 			HashMap<AbstractPage, Long> savingReqJobResults) {
-		
-		mustSavePage = savingReqJobResults.get(page) == 0;
+//		if (savingReqJobResults == null) return;
+		Long value = savingReqJobResults.get(page);
+		if (value != null)
+			mustSavePage = value == 0;
 		
 		kidsToSave = 0;
 		for (@SuppressWarnings("unchecked")

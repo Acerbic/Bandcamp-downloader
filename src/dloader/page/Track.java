@@ -326,6 +326,7 @@ public class Track extends AbstractPage {
 //		return true;
 		try {
 			Path p = Paths.get(getTrackFileName());
+			
 			if ( ! (Files.isRegularFile(p) && Files.size(p) > 0))
 				return false;
 			

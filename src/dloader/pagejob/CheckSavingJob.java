@@ -19,14 +19,14 @@ public class CheckSavingJob extends PageJob {
 	/**
 	 * Summary of the messages reported by CheckSavingJob:
 	 * "saving not required", 1 
-	 * "saving required", 1
+	 * "saving required", 0
 	 */	
 	@Override
 	public void run() {
 		if (page.isSavingNotRequired()) 
 			report("saving not required", 1); 
 		else
-			report("saving required", 1);
+			report("saving required", 0);
 			
 		if (recurse)
 			//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
