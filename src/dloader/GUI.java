@@ -6,10 +6,10 @@ import java.awt.Font;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.logging.Level;
 
 import javax.swing.border.BevelBorder;
 
@@ -26,6 +26,13 @@ import java.awt.event.ActionEvent;
 
 public class GUI extends JFrame {
 
+	/**
+	 * check "GUI_principal.graphml" automaton diagram to understand states transitions and effects
+	 */
+	private static boolean AUTO_PREFETCH = false;
+	private enum UIState {START, READCACHEPAGES, UPDATEPAGES, CHECKSAVINGREQUIREMENT, SAVEDATA, WAIT};
+	private UIState state;
+	
 	/**
 	 * 
 	 */
@@ -150,6 +157,21 @@ public class GUI extends JFrame {
 		
 		chckbxLog = new JCheckBox("log");
 		chckbxLog.setEnabled(false);
+
+		chckbxForceTag = new JCheckBox("force rescan");
+		chckbxForceTag.setEnabled(false);
+		
+		btnStop = new JButton("Stop");
+		btnStop.setEnabled(false);
+		btnStop.setFont(new Font("Courier New", Font.BOLD, 14));
+		btnStop.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (theWorker != null) {
+					btnStop.setEnabled(false);
+					theWorker.stopJobsForPage(rootPage);
+				}
+			}
+		});
 		
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setViewportBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
@@ -182,6 +204,12 @@ public class GUI extends JFrame {
 		sl_panel.putConstraint(SpringLayout.NORTH, lblNewLabel, 18, SpringLayout.NORTH, panel);
 		sl_panel.putConstraint(SpringLayout.WEST, lblNewLabel, 10, SpringLayout.WEST, panel);
 		sl_panel.putConstraint(SpringLayout.WEST, scrollPane, 10, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, chckbxForceTag, 0, SpringLayout.NORTH, chckbxLog);
+		sl_panel.putConstraint(SpringLayout.EAST, chckbxForceTag, 0, SpringLayout.WEST, chckbxLog);
+		sl_panel.putConstraint(SpringLayout.EAST, lblStatus, -6, SpringLayout.WEST, btnStop);
+		sl_panel.putConstraint(SpringLayout.WEST, btnStop, -100, SpringLayout.EAST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnStop, 8, SpringLayout.SOUTH, chckbxUseCache);
+		sl_panel.putConstraint(SpringLayout.EAST, btnStop, -10, SpringLayout.EAST, panel);
 		panel.setLayout(sl_panel);
 		
 		scrollPane.setViewportView(tree);
@@ -196,27 +224,7 @@ public class GUI extends JFrame {
 		panel.add(textFieldDirectory);
 		panel.add(textFieldURL);
 		panel.add(btnCheck);
-		
-		chckbxForceTag = new JCheckBox("force rescan");
-		chckbxForceTag.setEnabled(false);
-		sl_panel.putConstraint(SpringLayout.NORTH, chckbxForceTag, 0, SpringLayout.NORTH, chckbxLog);
-		sl_panel.putConstraint(SpringLayout.EAST, chckbxForceTag, 0, SpringLayout.WEST, chckbxLog);
 		panel.add(chckbxForceTag);
-		
-		btnStop = new JButton("Stop");
-		btnStop.setEnabled(false);
-		sl_panel.putConstraint(SpringLayout.EAST, lblStatus, -6, SpringLayout.WEST, btnStop);
-		sl_panel.putConstraint(SpringLayout.WEST, btnStop, -100, SpringLayout.EAST, panel);
-		btnStop.setFont(new Font("Courier New", Font.BOLD, 14));
-		sl_panel.putConstraint(SpringLayout.NORTH, btnStop, 8, SpringLayout.SOUTH, chckbxUseCache);
-		sl_panel.putConstraint(SpringLayout.EAST, btnStop, -10, SpringLayout.EAST, panel);
-		btnStop.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (theWorker != null) {
-					theWorker.stopJobsForPage(rootPage);
-				}
-			}
-		});
 		panel.add(btnStop);
 	}
 
@@ -234,6 +242,7 @@ public class GUI extends JFrame {
 	}
 	
 	public void init() {
+		state = UIState.START;
 		textFieldDirectory.setText(Main.saveTo);
 		chckbxLog.setSelected( Main.logger != null);
 		chckbxUseCache.setSelected(Main.allowFromCache);
@@ -247,34 +256,50 @@ public class GUI extends JFrame {
 		lblStatus.setText("Press 'Check' button");
 		
 		setRootNodeForRootPage();
+		enableButtons();
 		
-		// no auto-update
-		btnUpdate.setEnabled(false);
-//		initPrefetch();
+		if (AUTO_PREFETCH) {
+			initPrefetch();
+			state = UIState.READCACHEPAGES;
+		} else {
+			// no auto-update
+			btnUpdate.setEnabled(false);
+		}
 	}
 	
-	public void myWorkerDoneCheckSavingReq(AbstractPage root,
-			HashMap<AbstractPage, Long> savingReqJobResults) {
-
-		TreeNodePageWrapper proxyRoot = (TreeNodePageWrapper) tree.getModel().getRoot();
-		((TreeNodePageWrapper) proxyRoot.getFirstChild()).updateSavingReqBunch(savingReqJobResults);
-		
-		finishCheckSavingReq();
-	}
-
 	/** 
 	 * Captures SwingWorker finish jobs event
-	 * @param root - root job for the work in question (not used atm)
-	 * @param jobType - job type
 	 */
-	public void myWorkerDone (AbstractPage root, JobMaster.JobType jobType) {
-		switch  (jobType) {
-		case READCACHEPAGES: finishPrefetch(); break;
-		case SAVEDATA: finishSaveData(); break;
-		case UPDATEPAGES: finishScan(); break;
-		case CHECKSAVINGREQUIREMENT: finishCheckSavingReq(); break;
-		default:
+	public void myWorkerDone () {
+		switch (state) {
+		case READCACHEPAGES:
+			assert (theWorker.jm.whatToDo.equals(JobType.READCACHEPAGES));
+			finishPrefetch(); 
+			initScan();
 			break;
+		case UPDATEPAGES:
+			assert (theWorker.jm.whatToDo.equals(JobType.UPDATEPAGES));
+			finishScan(); 
+			initCheckSavingReq();
+			break;
+		case CHECKSAVINGREQUIREMENT:
+			assert (theWorker.jm.whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT));
+			if (theWorker.savingReqJobResults != null) {
+				TreeNodePageWrapper proxyRoot = (TreeNodePageWrapper) tree.getModel().getRoot();
+				((TreeNodePageWrapper) proxyRoot.getFirstChild()).updateSavingReqBunch(theWorker.savingReqJobResults);
+			}
+			
+			finishCheckSavingReq(); 
+			state = UIState.WAIT;
+			break;
+		case SAVEDATA:
+			assert (theWorker.jm.whatToDo.equals(JobType.SAVEDATA));
+			finishSaveData(); 
+			initCheckSavingReq();
+			break;
+		default:
+			// error state reached
+			Main.log(Level.WARNING, "myWorkerDone () -- Error state in GUI.state: " + state.toString());
 		}
 	}
 
@@ -422,7 +447,7 @@ public class GUI extends JFrame {
 			rootPage = newRootPage;
 			setRootNodeForRootPage();
 			
-			initPrefetch(); // prefetch -> fetch -> checkSaving chain job start
+			initPrefetch(); 
 		}
 	}
 	
@@ -431,10 +456,10 @@ public class GUI extends JFrame {
 	 */
 	private void initCheckSavingReq() {
 		if (theWorker == null) {
+			state = UIState.CHECKSAVINGREQUIREMENT;
 			lblStatus.setText("Checking files on disk");
 			theWorker = new MyWorker(rootPage, JobType.CHECKSAVINGREQUIREMENT);
 			theWorker.execute();
-//			disableButtons();
 		}
 	}
 	
@@ -449,6 +474,7 @@ public class GUI extends JFrame {
 	 */
 	private void initPrefetch() {
 		if (theWorker == null) {
+			state = UIState.READCACHEPAGES;
 			lblStatus.setText("Prefetching");
 			theWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
 			theWorker.execute();
@@ -458,12 +484,9 @@ public class GUI extends JFrame {
 	
 	private void finishPrefetch() {
 		lblStatus.setText("");
-	
-//		enableButtons();
 		theWorker = null;
 		
 		unfoldFirst();
-		initScan();
 	}
 	
 	/**
@@ -471,6 +494,7 @@ public class GUI extends JFrame {
 	 */
 	private void initSaveData() {
 		if (theWorker == null) {
+			state = UIState.SAVEDATA;
 			lblStatus.setText("Downloading files");
 			theWorker = new MyWorker(rootPage, JobType.SAVEDATA);
 			theWorker.execute();
@@ -480,28 +504,24 @@ public class GUI extends JFrame {
 	
 	private void finishSaveData() {
 		lblStatus.setText("");
-//		enableButtons();
 		
 		theWorker = null;
-		initCheckSavingReq();
 	}	
 
 	private void initScan() {
 		if (theWorker == null) { 
+			state = UIState.UPDATEPAGES;
 			lblStatus.setText("Scanning");
 			theWorker = new MyWorker(rootPage, JobType.UPDATEPAGES);
 			theWorker.execute();
-//			disableButtons();
 		}
 	}
 	
 	private void finishScan() {
 		lblStatus.setText("");
 		theWorker = null;
-//		enableButtons();		
 		
 		unfoldFirst();
-		initCheckSavingReq();
 	}
 	
 	/**

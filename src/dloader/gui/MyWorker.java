@@ -36,8 +36,8 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 		}
 	}
 	
-	private JobMaster jm;
-	private HashMap<AbstractPage, Long> savingReqJobResults;
+	public final JobMaster jm;
+	public HashMap<AbstractPage, Long> savingReqJobResults;
 	private Thread workerThread;
 
 	public MyWorker(AbstractPage rootPage, JobType whatToDo) {
@@ -84,13 +84,7 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	// called in ED thread
 	@Override
 	protected void done() {
-		switch (jm.whatToDo) {
-		case CHECKSAVINGREQUIREMENT:
-			Main.gui.myWorkerDoneCheckSavingReq(jm.rootPage, savingReqJobResults);
-			break;
-		default:
-			Main.gui.myWorkerDone(jm.rootPage, jm.whatToDo);
-		}
+		Main.gui.myWorkerDone();
 	}
 
 	/**
