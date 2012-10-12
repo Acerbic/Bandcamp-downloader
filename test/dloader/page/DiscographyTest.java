@@ -66,7 +66,7 @@ public class DiscographyTest {
 	}
 	
 	@Test
-	public void testUpdating() {
+	public void testUpdating() throws InterruptedException {
 		Discography page = new Discography(Paths.get("test/Homestuck.htm").toUri().toString(),null,null);
 		DummyProgressReporter pr = new DummyProgressReporter();
 		try {

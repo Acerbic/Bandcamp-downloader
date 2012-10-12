@@ -29,24 +29,20 @@ public class SaveDataJob extends PageJob {
 	 */
 	@Override
 	public void run() {
-		report ("saving started", 1);
-		
-		//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
-		for (AbstractPage child: page.childPages)
-			jobMaster.submit(new SaveDataJob(child,jobMaster));
-		
 		try {
+			report ("saving started", 1);
+		
+			//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
+			for (AbstractPage child: page.childPages)
+				jobMaster.submit(new SaveDataJob(child,jobMaster));
+			
 			if (!page.saveResult(this))
 				report("save skipped", 1);
 			else report("saved", 1);
 		} catch (IOException e) {
 			report("saving caused exception", 1);
 			//TODO: job rescheduling  and error handling
-//			e.printStackTrace();
 		} catch (InterruptedException e) {
-			//XXX: report cancellation?
 		}
-		
 	}
-
 }

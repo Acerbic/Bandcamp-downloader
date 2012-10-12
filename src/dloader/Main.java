@@ -138,7 +138,7 @@ public class Main {
 					@Override
 					public void run() {
 						gui = new GUI();
-						gui.init();
+						gui.init(baseURL, saveTo, logger != null, allowFromCache, forceTagging);
 						gui.pack();
 						gui.setSize(750, 950);
 						gui.setVisible(true);

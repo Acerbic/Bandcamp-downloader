@@ -25,15 +25,19 @@ class GetPageJob extends PageJob {
 	 */
 	@Override
 	public void run() {
-		report ("checking cache", 1);
-		if (page.loadFromCache() && page.isOK()) {
-			//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
-			for (AbstractPage child: page.childPages)
-				jobMaster.submit(new GetPageJob(child,jobMaster));
-			report("read from cache", 1);
-		} else {
-			report("cache reading failed, submitting download job", 1);
-			jobMaster.submit(new UpdatePageJob(page,jobMaster, false));
+		try {
+			report ("checking cache", 1);
+			if (page.loadFromCache() && page.isOK()) {
+				report("read from cache", 1);
+	
+				//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
+				for (AbstractPage child: page.childPages)
+					jobMaster.submit(new GetPageJob(child,jobMaster));
+			} else {
+				report("cache reading failed, submitting download job", 1);
+				jobMaster.submit(new UpdatePageJob(page,jobMaster, false));
+			}
+		} catch (InterruptedException e) {
 		}
 		
 	}

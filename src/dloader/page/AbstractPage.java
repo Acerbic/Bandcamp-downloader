@@ -346,9 +346,10 @@ public abstract class AbstractPage {
 	 * Note: children pages are dropped always. Their references are no longer part of the page tree.
 	 * Note2: it is better to invoke updateFromNet(), as it preserves children pages if they are identical to the new data
 	 * @throws ProblemsReadingDocumentException if any error
+	 * @throws InterruptedException 
 	 */
 	public final 
-	void downloadPage(ProgressReporter reporter) throws ProblemsReadingDocumentException {
+	void downloadPage(ProgressReporter reporter) throws ProblemsReadingDocumentException, InterruptedException {
 		Main.log(Level.FINE, String.format("Downloading %s from network...%n", url.toString()));
 		
 		org.jdom2.Document doc = null;
@@ -356,10 +357,16 @@ public abstract class AbstractPage {
 			XMLReaderSAX2Factory saxConverter = new XMLReaderSAX2Factory(false, "org.ccil.cowan.tagsoup.Parser");
 			SAXBuilder builder = new SAXBuilder(saxConverter);
 			URLConnection connection = url.openConnection();
+			
+			
 			if (!WebDownloader.checkHttpResponseOK(connection))		
 				throw new ProblemsReadingDocumentException("Error response from server");
+			if (Thread.interrupted())
+				throw new InterruptedException();
 			doc = builder.build(connection.getInputStream());
 //		} catch (IOException|JDOMException e) {
+		} catch (InterruptedException e) {
+			throw e;
 		} catch (Exception e) {//XXX: some glitch in JDOM2 lets other random exceptions bubble up. So need to catch 'em all.
 			throw new ProblemsReadingDocumentException(e);
 		}
@@ -405,9 +412,10 @@ public abstract class AbstractPage {
 	 * 
 	 * @throws ProblemsReadingDocumentException if any error
 	 * @return true if any data was changed, false if this page is unmodified.
+	 * @throws InterruptedException 
 	 */
 	public final 
-	boolean updateFromNet(ProgressReporter reporter) throws ProblemsReadingDocumentException {
+	boolean updateFromNet(ProgressReporter reporter) throws ProblemsReadingDocumentException, InterruptedException {
 		AbstractPage tempPage;
 		try {
 			tempPage = createSameClassPage();

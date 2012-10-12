@@ -77,6 +77,7 @@ public class GUI extends JFrame {
 
 	}	*/
 
+	
 	public Thread getEventDispatchThread() {
 		return eventDispatchThread;
 	}
@@ -85,6 +86,7 @@ public class GUI extends JFrame {
 		assert (SwingUtilities.isEventDispatchThread());
 		eventDispatchThread = Thread.currentThread();
 		
+		// install Nimbus look and feel
 		try {
 		    for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
 		        if ("Nimbus".equals(info.getName())) {
@@ -102,16 +104,15 @@ public class GUI extends JFrame {
 		JPanel panel = new JPanel();
 		getContentPane().add(panel, BorderLayout.CENTER);
 		
-		JLabel lblNewLabel = new JLabel("Source URL:");
-		
 		textFieldURL = new JTextField();
 		textFieldURL.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				reInit();
 			}
 		});
-		lblNewLabel.setLabelFor(textFieldURL);
 		textFieldURL.setColumns(10);
+		JLabel lblURLLabel = new JLabel("Source URL:");
+		lblURLLabel.setLabelFor(textFieldURL);
 		
 		textFieldDirectory = new JTextField();
 		textFieldDirectory.addActionListener(new ActionListener() {
@@ -120,9 +121,8 @@ public class GUI extends JFrame {
 			}
 		});
 		textFieldDirectory.setColumns(10);
-		
-		JLabel lblNewLabel_1 = new JLabel("Target directory:");
-		lblNewLabel_1.setLabelFor(textFieldDirectory);
+		JLabel lblDIRLabel = new JLabel("Target directory:");
+		lblDIRLabel.setLabelFor(textFieldDirectory);
 		
 		tree = new JTree();
 		tree.setRootVisible(false);
@@ -139,6 +139,7 @@ public class GUI extends JFrame {
 				reInit();
 			}
 		});
+		
 		btnUpdate = new JButton("Update files");
 		btnUpdate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -168,7 +169,7 @@ public class GUI extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (theWorker != null) {
 					btnStop.setEnabled(false);
-					theWorker.stopJobsForPage(rootPage);
+					theWorker.stopJobs();
 				}
 			}
 		});
@@ -183,26 +184,26 @@ public class GUI extends JFrame {
 		sl_panel.putConstraint(SpringLayout.SOUTH, btnCheck, 3, SpringLayout.SOUTH, textFieldDirectory);
 		sl_panel.putConstraint(SpringLayout.WEST, lblStatus, 69, SpringLayout.EAST, btnRetag);
 		sl_panel.putConstraint(SpringLayout.WEST, btnUpdate, 10, SpringLayout.WEST, panel);
-		sl_panel.putConstraint(SpringLayout.NORTH, btnUpdate, 44, SpringLayout.SOUTH, lblNewLabel_1);
+		sl_panel.putConstraint(SpringLayout.NORTH, btnUpdate, 44, SpringLayout.SOUTH, lblDIRLabel);
 		sl_panel.putConstraint(SpringLayout.NORTH, btnRetag, 0, SpringLayout.NORTH, btnUpdate);
 		sl_panel.putConstraint(SpringLayout.WEST, btnRetag, 6, SpringLayout.EAST, btnUpdate);
 		sl_panel.putConstraint(SpringLayout.NORTH, scrollPane, 10, SpringLayout.SOUTH, btnUpdate);
 		sl_panel.putConstraint(SpringLayout.SOUTH, scrollPane, -10, SpringLayout.SOUTH, panel);
 		sl_panel.putConstraint(SpringLayout.EAST, textFieldDirectory, 0, SpringLayout.EAST, textFieldURL);
-		sl_panel.putConstraint(SpringLayout.WEST, textFieldURL, 35, SpringLayout.EAST, lblNewLabel);
+		sl_panel.putConstraint(SpringLayout.WEST, textFieldURL, 35, SpringLayout.EAST, lblURLLabel);
 		sl_panel.putConstraint(SpringLayout.EAST, textFieldURL, -6, SpringLayout.WEST, btnCheck);
 		sl_panel.putConstraint(SpringLayout.NORTH, chckbxLog, 0, SpringLayout.NORTH, chckbxUseCache);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxUseCache, -10, SpringLayout.EAST, panel);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxLog, 0, SpringLayout.WEST, chckbxUseCache);
-		sl_panel.putConstraint(SpringLayout.NORTH, textFieldDirectory, -2, SpringLayout.NORTH, lblNewLabel_1);
-		sl_panel.putConstraint(SpringLayout.NORTH, lblNewLabel_1, 15, SpringLayout.SOUTH, lblNewLabel);
+		sl_panel.putConstraint(SpringLayout.NORTH, textFieldDirectory, -2, SpringLayout.NORTH, lblDIRLabel);
+		sl_panel.putConstraint(SpringLayout.NORTH, lblDIRLabel, 15, SpringLayout.SOUTH, lblURLLabel);
 		sl_panel.putConstraint(SpringLayout.EAST, btnCheck, 0, SpringLayout.EAST, scrollPane);
-		sl_panel.putConstraint(SpringLayout.NORTH, textFieldURL, -2, SpringLayout.NORTH, lblNewLabel);
+		sl_panel.putConstraint(SpringLayout.NORTH, textFieldURL, -2, SpringLayout.NORTH, lblURLLabel);
 		sl_panel.putConstraint(SpringLayout.WEST, textFieldDirectory, 115, SpringLayout.WEST, panel);
 		sl_panel.putConstraint(SpringLayout.EAST, scrollPane, -10, SpringLayout.EAST, panel);
-		sl_panel.putConstraint(SpringLayout.WEST, lblNewLabel_1, 10, SpringLayout.WEST, panel);
-		sl_panel.putConstraint(SpringLayout.NORTH, lblNewLabel, 18, SpringLayout.NORTH, panel);
-		sl_panel.putConstraint(SpringLayout.WEST, lblNewLabel, 10, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, lblDIRLabel, 10, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.NORTH, lblURLLabel, 18, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, lblURLLabel, 10, SpringLayout.WEST, panel);
 		sl_panel.putConstraint(SpringLayout.WEST, scrollPane, 10, SpringLayout.WEST, panel);
 		sl_panel.putConstraint(SpringLayout.NORTH, chckbxForceTag, 0, SpringLayout.NORTH, chckbxLog);
 		sl_panel.putConstraint(SpringLayout.EAST, chckbxForceTag, 0, SpringLayout.WEST, chckbxLog);
@@ -214,8 +215,8 @@ public class GUI extends JFrame {
 		
 		scrollPane.setViewportView(tree);
 		panel.add(scrollPane);
-		panel.add(lblNewLabel);
-		panel.add(lblNewLabel_1);
+		panel.add(lblURLLabel);
+		panel.add(lblDIRLabel);
 		panel.add(btnRetag);
 		panel.add(btnUpdate);
 		panel.add(lblStatus);
@@ -241,14 +242,17 @@ public class GUI extends JFrame {
 		super(title, gc);
 	}
 	
-	public void init() {
+	/**
+	 * Call this after constructing GUI.
+	 */
+	public void init(String url, String saveTo, boolean logging, boolean allowReadCache, boolean forceTagging) {
 		state = UIState.START;
-		textFieldDirectory.setText(Main.saveTo);
-		chckbxLog.setSelected( Main.logger != null);
-		chckbxUseCache.setSelected(Main.allowFromCache);
-		chckbxForceTag.setSelected(Main.forceTagging);
+		textFieldDirectory.setText(saveTo);
+		chckbxLog.setSelected(logging);
+		chckbxUseCache.setSelected(allowReadCache);
+		chckbxForceTag.setSelected(forceTagging);
 		try {
-			rootPage = AbstractPage.bakeAPage(null, Main.baseURL, Main.saveTo, null);
+			rootPage = AbstractPage.bakeAPage(null, url, saveTo, null);
 			textFieldURL.setText(rootPage.url.toString());
 		} catch (IllegalArgumentException e) {
 			return;
@@ -268,7 +272,7 @@ public class GUI extends JFrame {
 	}
 	
 	/** 
-	 * Captures SwingWorker finish jobs event
+	 * Captures SwingWorker finish SwingWorkers' event
 	 */
 	public void myWorkerDone () {
 		switch (state) {
@@ -284,10 +288,8 @@ public class GUI extends JFrame {
 			break;
 		case CHECKSAVINGREQUIREMENT:
 			assert (theWorker.jm.whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT));
-			if (theWorker.savingReqJobResults != null) {
-				TreeNodePageWrapper proxyRoot = (TreeNodePageWrapper) tree.getModel().getRoot();
-				((TreeNodePageWrapper) proxyRoot.getFirstChild()).updateSavingReqBunch(theWorker.savingReqJobResults);
-			}
+			if (theWorker.savingReqJobResults != null) 
+				getRootNode().updateSavingReqBunch(theWorker.savingReqJobResults);
 			
 			finishCheckSavingReq(); 
 			state = UIState.WAIT;
@@ -382,6 +384,9 @@ public class GUI extends JFrame {
 		parentNode.update(message, value);
 	}
 
+	/**
+	 * Disable controls for the duration of a job
+	 */
 	private void disableButtons() {
 		btnCheck.setEnabled(false);
 		btnRetag.setEnabled(false);
@@ -392,6 +397,9 @@ public class GUI extends JFrame {
 		btnStop.setEnabled(true);
 	}
 	
+	/**
+	 * Enable controls to get user commands in-between jobs
+	 */
 	private void enableButtons() {
 		btnCheck.setEnabled(true);		
 		btnRetag.setEnabled(false); //XXX: temporary as retag is not functioning yet
@@ -402,6 +410,9 @@ public class GUI extends JFrame {
 		btnStop.setEnabled(false);
 	}
 	
+	/**
+	 * Reset rootPage and saving directory from updated text fields
+	 */
 	private void reInit() {
 		// fix/normalize url if possible
 		String newURL = AbstractPage.fixURLString(null, textFieldURL.getText());
@@ -508,6 +519,9 @@ public class GUI extends JFrame {
 		theWorker = null;
 	}	
 
+	/**
+	 * Download pages from Internet
+	 */
 	private void initScan() {
 		if (theWorker == null) { 
 			state = UIState.UPDATEPAGES;
@@ -536,6 +550,11 @@ public class GUI extends JFrame {
 		}
 	}
 
+	private TreeNodePageWrapper getRootNode() {
+		TreeNodePageWrapper proxyRoot = (TreeNodePageWrapper) tree.getModel().getRoot();
+		return (TreeNodePageWrapper) proxyRoot.getFirstChild();
+	}
+	
 	/**
 	 * Replaces old tree with new root.
 	 */
@@ -605,7 +624,7 @@ public class GUI extends JFrame {
 	}
 	
 	/**
-	 * Remove branch->children nodes don't correspond to branch->page->children pages
+	 * Remove branch->children nodes that don't correspond to branch->page->children pages
 	 * and cancel their respective jobs running and scheduled
 	 * O (n*n)
 	 * @param branch - node branch to clean up

@@ -40,7 +40,9 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	public HashMap<AbstractPage, Long> savingReqJobResults;
 	private Thread workerThread;
 
+	// called from ED thread
 	public MyWorker(AbstractPage rootPage, JobType whatToDo) {
+		
 		jm = new JobMaster(whatToDo, rootPage, 0) {
 			
 			// bridge to SwingWorker progress reporting
@@ -52,7 +54,6 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 		
 		if (whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT))
 			savingReqJobResults = new HashMap<>(200);
-			
 	}
 
 	// called in worker thread
@@ -89,9 +90,14 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 
 	/**
 	 * Stop all jobs generated for this page and all of its children (recursively)
+	 * Called from ED thread.
 	 * @param pageOfNode
 	 */
-	public void stopJobsForPage(AbstractPage pageOfNode) {
+	public void stopJobs() {
 		workerThread.interrupt();
+	}
+
+	public void stopJobsForPage(AbstractPage page) {
+		jm.stopJobsForPage(page); 
 	}
 }

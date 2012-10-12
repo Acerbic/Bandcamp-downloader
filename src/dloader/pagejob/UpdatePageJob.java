@@ -42,36 +42,37 @@ public class UpdatePageJob extends PageJob {
 	 */
 	@Override
 	public void run() {
-		report ("download job started", 1);
-		if (!forceDownload) 
-			if (page.loadFromCache())
-				report("read from cache", 1);
-			else 
-				report("cache reading failed", 1);
 		try {
-			if (page.updateFromNet(this) || forceDownload) {
-				page.saveToCache();
-				report("download finished", 1);
+			report ("download job started", 1);
+			if (!forceDownload) 
+				if (page.loadFromCache())
+					report("read from cache", 1);
+				else 
+					report("cache reading failed", 1);
+				if (page.updateFromNet(this) || forceDownload) {
+					page.saveToCache();
+					report("download finished", 1);
+					
+					//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
+					for (AbstractPage child: page.childPages) 
+						jobMaster.submit(new UpdatePageJob(child, jobMaster, forceDownload));
+				} else {
+					report("up to date", 1);
+					// even if all children are "up to date" too, still need to run the jobs - for the grand-children and etc.
+					// since cache checks are cheap, better err on a cautious side.
+					for (AbstractPage child: page.childPages) 
+						jobMaster.submit(new GetPageJob(child, jobMaster));
+					
+				}
 				
-				//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
-				for (AbstractPage child: page.childPages) 
-					jobMaster.submit(new UpdatePageJob(child, jobMaster, forceDownload));
-			} else {
-				report("up to date", 1);
-				// even if all children are "up to date" too, still need to run the jobs - for the grand-children and etc.
-				// since cache checks are cheap, better err on a cautious side.
-				for (AbstractPage child: page.childPages) 
-					jobMaster.submit(new GetPageJob(child, jobMaster));
-				
-			}
-			
-			//saving pre-check for faster visual;
-			CheckSavingJob checkJob = new CheckSavingJob(page, jobMaster, false);
-			checkJob.run();
+				//saving pre-check for faster visual;
+				CheckSavingJob checkJob = new CheckSavingJob(page, jobMaster, false);
+				checkJob.run();
 		} catch (ProblemsReadingDocumentException e) {
 			report("download failed", 1);
 			
 			// TODO: incur more error handling, job resubmitting and such
+		} catch (InterruptedException e) {
 		}
 			
 	}

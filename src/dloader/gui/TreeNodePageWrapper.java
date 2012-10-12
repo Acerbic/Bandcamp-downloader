@@ -244,12 +244,19 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		
 	}
 
+	/**
+	 * Updates tree nodes visuals according to the check results all at once
+	 * @param savingReqJobResults
+	 */
 	public void updateSavingReqBunch(
 			HashMap<AbstractPage, Long> savingReqJobResults) {
 //		if (savingReqJobResults == null) return;
 		Long value = savingReqJobResults.get(page);
 		if (value != null)
 			mustSavePage = value == 0;
+
+		downloadPageQ = false;
+		downloading = false;
 		
 		kidsToSave = 0;
 		for (@SuppressWarnings("unchecked")
@@ -263,5 +270,4 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		
 		model.nodeChanged(this);
 	}
-
 }

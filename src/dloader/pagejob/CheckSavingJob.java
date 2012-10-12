@@ -23,6 +23,7 @@ public class CheckSavingJob extends PageJob {
 	 */	
 	@Override
 	public void run() {
+		try {
 		if (page.isSavingNotRequired()) 
 			report("saving not required", 1); 
 		else
@@ -32,5 +33,7 @@ public class CheckSavingJob extends PageJob {
 			//note: this iterator does not require locking because of CopyOnWriteArrayList implementation
 			for (AbstractPage child: page.childPages)
 				jobMaster.submit(new CheckSavingJob(child, jobMaster, true));
+		} catch (InterruptedException e) {
+		}
 	}
 }

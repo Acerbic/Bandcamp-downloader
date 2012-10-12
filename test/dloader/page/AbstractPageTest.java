@@ -247,7 +247,7 @@ public class AbstractPageTest {
 
 
 	@Test
-	public void testDownloadPage_DummyFromLocal() throws ProblemsReadingDocumentException {
+	public void testDownloadPage_DummyFromLocal() throws ProblemsReadingDocumentException, InterruptedException {
 		
 		AbstractPageDummy p = new AbstractPageDummy(
 				testDirFilesPath.resolve("Homestuck.htm").toUri().toString(),
@@ -257,7 +257,7 @@ public class AbstractPageTest {
 	}
 	
 	@Test
-	public void testDownloadPage_DiscographyFromLocal() throws ProblemsReadingDocumentException, MalformedURLException {
+	public void testDownloadPage_DiscographyFromLocal() throws ProblemsReadingDocumentException, MalformedURLException, InterruptedException {
 		
 		AbstractPage p = new DiscographyLocal(
 				testDirFilesPath.resolve("Homestuck.htm").toUri().toString(),
@@ -269,7 +269,7 @@ public class AbstractPageTest {
 	}
 	
 	@Test (expected = ProblemsReadingDocumentException.class)
-	public void testDownloadPage_FailWrongAddress() throws ProblemsReadingDocumentException {
+	public void testDownloadPage_FailWrongAddress() throws ProblemsReadingDocumentException, InterruptedException {
 		AbstractPage p = new DiscographyLocal(
 				"http://www.whereismypage.comeone.nopage.qq",
 				testDirFilesPath.resolve("temp").toString(),null);
@@ -277,7 +277,7 @@ public class AbstractPageTest {
 	}
 	
 	@Test (expected = ProblemsReadingDocumentException.class)
-	public void testDownloadPage_FailWrongFile() throws ProblemsReadingDocumentException {
+	public void testDownloadPage_FailWrongFile() throws ProblemsReadingDocumentException, InterruptedException {
 		AbstractPage p = new DiscographyLocal(
 				testDirFilesPath.resolve("Revelations III.mp3").toUri().toString(),
 				testDirFilesPath.resolve("temp").toString(),null);
@@ -384,7 +384,7 @@ public class AbstractPageTest {
 	}
 	
 	@Test
-	public void testDownloadPageFromLocal() throws ProblemsReadingDocumentException {
+	public void testDownloadPageFromLocal() throws ProblemsReadingDocumentException, InterruptedException {
 		AbstractPage p = new DiscographyLocal(
 				testDirFilesPath.resolve("Homestuck.htm").toUri().toString(),
 				null,null);
@@ -396,7 +396,7 @@ public class AbstractPageTest {
 	}
 	
 	@Test
-	public void testDownloadPageFromNet() throws ProblemsReadingDocumentException {
+	public void testDownloadPageFromNet() throws ProblemsReadingDocumentException, InterruptedException {
 		AbstractPage p2 = new Album("http://homestuck.bandcamp.com/album/one-year-older/", null, null);
 //		AbstractPage p = new DiscographyLocal("http://homestuck.bandcamp.com/",null,null);
 		DummyProgressReporter pr = new DummyProgressReporter();
@@ -407,7 +407,7 @@ public class AbstractPageTest {
 	}
 	
 	@Test (expected = ProblemsReadingDocumentException.class)
-	public void testDownloadPageFromNetFailsOnBadURL() throws ProblemsReadingDocumentException {
+	public void testDownloadPageFromNetFailsOnBadURL() throws ProblemsReadingDocumentException, InterruptedException {
 		AbstractPage p = new DiscographyLocal("http://homestuck-x.bandcamp.com/",null,null);
 		DummyProgressReporter pr = new DummyProgressReporter();
 		
@@ -415,7 +415,7 @@ public class AbstractPageTest {
 	}	
 	
 	@Test
-	public void testUpdateFromNet() throws ProblemsReadingDocumentException {
+	public void testUpdateFromNet() throws ProblemsReadingDocumentException, InterruptedException {
 		AbstractPage p = new DiscographyLocal("http://homestuck.bandcamp.com/",null,null);
 		DummyProgressReporter pr = new DummyProgressReporter();
 		p.loadFromCache();

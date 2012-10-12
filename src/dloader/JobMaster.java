@@ -15,6 +15,14 @@ import dloader.pagejob.*;
  */
 public abstract class JobMaster {
 	
+	private
+	class JobFuturePair {
+		public final PageJob job;
+		public final Future<?> future;
+		JobFuturePair(PageJob job, Future<?> future) {
+			this.job = job; this.future = future;
+		}
+	}
 	/**
 	 * number of threads running in parallel by default
 	 */
@@ -28,7 +36,7 @@ public abstract class JobMaster {
 	/**
 	 * All submitted jobs have their Future's here. For result reporting/error checking/job resubmitting... etc
 	 */
-	private ConcurrentLinkedQueue<Future<?>> submittedJobs; 
+	private ConcurrentLinkedQueue<JobFuturePair> submittedPairs; 
 	
 	/**
 	 * READCACHEPAGES - get pages tree ONLY from cache (prefetch)
@@ -64,7 +72,7 @@ public abstract class JobMaster {
 			threadsNumber = CORETHREADS_NUMBER;
 		executor = Executors.newFixedThreadPool(threadsNumber);
 		assert (executor instanceof ThreadPoolExecutor);
-		submittedJobs = new ConcurrentLinkedQueue<Future<?>>();
+		submittedPairs = new ConcurrentLinkedQueue<>();
 		
 		this.whatToDo = whatToDo;
 		this.rootPage = rootPage; 
@@ -77,31 +85,36 @@ public abstract class JobMaster {
 	public
 	void goGoGo() {
 		synchronized (this) {
-			// can be ran only once;
+			// can be ran only once (only in one thread);
 			if (rootPage == null) return;
 
-			switch (whatToDo) {
-			case READCACHEPAGES: submit(new ReadCacheJob(rootPage, this)); break;
-			case UPDATEPAGES: submit(new UpdatePageJob(rootPage, this, !Main.allowFromCache)); break;
-			case SAVEDATA: submit(new SaveDataJob(rootPage, this)); break;
-			case CHECKSAVINGREQUIREMENT: submit(new CheckSavingJob(rootPage, this, true)); break;
+			try {
+				switch (whatToDo) {
+				case READCACHEPAGES: submit(new ReadCacheJob(rootPage, this)); break;
+				case UPDATEPAGES: submit(new UpdatePageJob(rootPage, this, !Main.allowFromCache)); break;
+				case SAVEDATA: submit(new SaveDataJob(rootPage, this)); break;
+				case CHECKSAVINGREQUIREMENT: submit(new CheckSavingJob(rootPage, this, true)); break;
+				}
+			} catch (InterruptedException e) {
+				// JobMaster's thread is interrupted before any tasks are submitted. just exit
+				executor.shutdown(); // just in case
+				return;
 			}
 		}
 		
 		// wait until all the jobs are finished before terminating this thread.
-		while (!submittedJobs.isEmpty()) {
-			Future<?> job = submittedJobs.poll();
+		while (!submittedPairs.isEmpty()) {
 			try {
-				job.get(); // can't use awaitTermination, because jobs are submitting other jobs
+				Future<?> headFuture = submittedPairs.peek().future; 
+				headFuture.get(); // can't use awaitTermination, because jobs are submitting other jobs
+				submittedPairs.poll(); // no synch with peek is needed as all elements are added to the tail and only this thread is running task removal.
 			} catch (InterruptedException | ExecutionException e) {
 				// Stop all jobs
 				executor.shutdown(); // no new jobs submitted
 				
-				job.cancel(true); // stop one we are currently waiting for
-				
 				// stop all jobs submitted (whether running or not)
-				for (Future<?> job2: submittedJobs)
-					job2.cancel(true);
+				for (JobFuturePair pair: submittedPairs)
+					pair.future.cancel(true);
 				break;
 			}
 		}
@@ -112,10 +125,16 @@ public abstract class JobMaster {
 	/**
 	 * Entry point for Jobs to add more children jobs into a queue
 	 * @param job - new job to be executed some moment in the future.
+	 * @throws InterruptedException 
 	 */
 	synchronized public
-	void submit (Runnable job) {
-		submittedJobs.add(executor.submit(job));
+	void submit (PageJob job) throws InterruptedException {
+		// if thread submitting a job was interrupted while waiting on synchronization
+		//  then do not submit 
+		if (Thread.interrupted())
+			throw new InterruptedException();
+		
+		submittedPairs.add(new JobFuturePair(job, executor.submit(job)));
 	}
 
 
@@ -129,5 +148,23 @@ public abstract class JobMaster {
 	 */
 	abstract
 	public void report(AbstractPage page, String type, long i) ;
+
+	/**
+	 * Stop jobs for page
+	 * @param page
+	 */
+	synchronized public 
+	void stopJobsForPage(AbstractPage page) {
+		for (JobFuturePair pair: submittedPairs) {
+			// no new tasks will be submitted because of synchronization.
+			if (pair.job.page.equals(page)) {
+				pair.future.cancel(true);
+				// we don't remove pair from queue here to not mess up with main JobMaster thread
+				
+				// TODO: then cancel kids' jobs?
+			}
+		}
+		
+	}
 
 }
