@@ -336,44 +336,29 @@ public class GUI extends JFrame {
 			if (childNode == null) {
 				// currentPage's node was not found in parent node 
 				
-				// add new item under this parent
-				childNode = new TreeNodePageWrapper(childPage, model);
-				
-				if (childPage.getParent() == null)
-					parentNode.add(childNode); // to the end
-				else {
-					int insertionIndex = findInsertionPoint(parentNode, childPage);
-					
-					if (insertionIndex == -1)
-						parentNode.add(childNode); // to the end
-					else 
-						parentNode.insert(childNode, insertionIndex);
+				if (parentNode.getChildCount() > 0) {
+					// some children are present, but not all of them.
+					// normally one would compare parenNode's children to parentPage's children, and insert the new one to proper place, but 
+					//  for the sake of efficiency it is faster to just drop all existing children nodes and add new ones instead as a bunch
+					parentNode.removeAllChildren();
 				}
 				
-				// new item's children if any (that way they maintain their order)
-				for (AbstractPage subPage: childPage.childPages) {
-					TreeNodePageWrapper subChild = new TreeNodePageWrapper(subPage, model);
-					childNode.add(subChild);
-				}
 				
-				int[] indices = new int[1];
-				indices[0] = parentNode.getIndex(childNode);
-				model.nodesWereInserted(parentNode, indices); // notification to repaint
+				// add new items under this parent
+				childNode = addChildrenNodes(parentNode, childPage);
 				
+				assert (childNode != null); // can happen if ghost sneaked in - other thread compromised AbstractPage tree
+				
+				// new item's children if any 
+				if (childPage.childPages.size() > 0)
+					addChildrenNodes(childNode, childPage.childPages.get(0)); // bit awkward code reuse
+				
+				model.nodeStructureChanged(parentNode); // notification to repaint
 			}
 			
 			parentNode = childNode; // advance to search next element in our pathToPage
 		}
 		// after search is complete, parent points to a TreeNodePageWrapper containing original p (but now p is different)
-		
-		// Reading cache/ downloading a page forces reset of page data (children refs), 
-		//  the node branch must be trimmed accordingly
-		if (message.equals("read from cache") || message.equals("read cache failed") 
-			|| message.equals("cache reading failed, submitting download job")
-			|| message.equals("download finished") || message.equals("up to date")
-			|| message.equals("download failed")
-			)
-			trimBranch(parentNode, model);
 		
 		// usually unfolding happens only after job is finished (for performance), but in
 		// case of new page downloads it is visually more pleasing to see what is going on asap 
@@ -667,5 +652,24 @@ public class GUI extends JFrame {
 				return childNode;
 		}
 		return null;
+	}
+	
+	private TreeNodePageWrapper addChildrenNodes (TreeNodePageWrapper parentNode, AbstractPage childPage) {
+		TreeNodePageWrapper returnedChildNode = null;
+		DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+		
+		if (childPage.getParent() == null) {
+			returnedChildNode = new TreeNodePageWrapper(childPage, model);
+			parentNode.add(returnedChildNode);
+			return returnedChildNode;
+		} else {
+			for (AbstractPage childPageSibling: childPage.getParent().childPages) {
+				TreeNodePageWrapper childNode = new TreeNodePageWrapper(childPageSibling, model);
+				if (childPageSibling.equals(childPage))
+					returnedChildNode = childNode;
+				parentNode.add(childNode);
+			}
+			return returnedChildNode;
+		}
 	}
 }
