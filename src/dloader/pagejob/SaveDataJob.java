@@ -2,7 +2,6 @@ package dloader.pagejob;
 
 import java.io.IOException;
 
-import dloader.JobMaster;
 import dloader.page.AbstractPage;
 
 /**

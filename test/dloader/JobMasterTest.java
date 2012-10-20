@@ -22,7 +22,7 @@ import dloader.page.AbstractPage;
 import dloader.page.Album;
 import dloader.page.Discography;
 import dloader.page.Track;
-import dloader.JobMaster;
+import dloader.pagejob.JobMaster;
 
 public class JobMasterTest {
 	List<String> results;

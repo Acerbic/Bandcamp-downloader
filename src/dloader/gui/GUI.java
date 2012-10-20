@@ -1,22 +1,20 @@
-package dloader;
+package dloader.gui;
 
 import java.awt.*;
 import javax.swing.*;
 import java.awt.Font;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 
 import javax.swing.border.BevelBorder;
 
-import dloader.JobMaster.JobType;
-import dloader.gui.MyWorker;
-import dloader.gui.TreeNodePageWrapper;
+import dloader.Main;
 import dloader.page.AbstractPage;
+import dloader.pagejob.JobMaster.JobType;
 
 import javax.swing.tree.*;
 import javax.swing.UIManager.*;
@@ -288,8 +286,13 @@ public class GUI extends JFrame {
 			break;
 		case CHECKSAVINGREQUIREMENT:
 			assert (theWorker.jm.whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT));
-			if (theWorker.savingReqJobResults != null) 
-				getRootNode().updateSavingReqBunch(theWorker.savingReqJobResults);
+			if (theWorker.bulkResults != null)
+				// if in bulk mode...
+				try {
+					getRootNode().updateSavingReqBunch(theWorker.get());
+				} catch (InterruptedException | ExecutionException e) {
+					// won't happen as get() is being called from inside of SwingWorker.done() - after job execution is finished
+				}
 			
 			finishCheckSavingReq(); 
 			state = UIState.WAIT;
@@ -454,7 +457,7 @@ public class GUI extends JFrame {
 		if (theWorker == null) {
 			state = UIState.CHECKSAVINGREQUIREMENT;
 			lblStatus.setText("Checking files on disk");
-			theWorker = new MyWorker(rootPage, JobType.CHECKSAVINGREQUIREMENT);
+			theWorker = new MyWorker(rootPage, JobType.CHECKSAVINGREQUIREMENT, true);
 			theWorker.execute();
 		}
 	}
@@ -472,7 +475,7 @@ public class GUI extends JFrame {
 		if (theWorker == null) {
 			state = UIState.READCACHEPAGES;
 			lblStatus.setText("Prefetching");
-			theWorker = new MyWorker(rootPage, JobType.READCACHEPAGES);
+			theWorker = new MyWorker(rootPage, JobType.READCACHEPAGES, false);
 			theWorker.execute();
 			disableButtons();
 		}
@@ -492,7 +495,7 @@ public class GUI extends JFrame {
 		if (theWorker == null) {
 			state = UIState.SAVEDATA;
 			lblStatus.setText("Downloading files");
-			theWorker = new MyWorker(rootPage, JobType.SAVEDATA);
+			theWorker = new MyWorker(rootPage, JobType.SAVEDATA, false);
 			theWorker.execute();
 			disableButtons();
 		}
@@ -511,7 +514,7 @@ public class GUI extends JFrame {
 		if (theWorker == null) { 
 			state = UIState.UPDATEPAGES;
 			lblStatus.setText("Scanning");
-			theWorker = new MyWorker(rootPage, JobType.UPDATEPAGES);
+			theWorker = new MyWorker(rootPage, JobType.UPDATEPAGES, false);
 			theWorker.execute();
 		}
 	}
@@ -550,93 +553,6 @@ public class GUI extends JFrame {
 		model.setRoot(x);
 	}
 	
-	
-	/**
-	 * Time to find proper insertion position (assume nodes are ordered same way as pages so far with "skips" probably existing)
-	 * check "DoubleListMatcher.graphml" automaton diagram to understand the following
-	 *	p1   p2   p3   p4        p5  p6
-	 *	n1             n2   n3   n4
-	 * @param parentNode - node to which new node will be inserted.
-	 * @param childPage - a page to be inserted. childPage.getParent() must not be null.
-	 * @return -1 if new node should be appended to the end, or a proper insertion index
-	 */
-	private int findInsertionPoint(TreeNodePageWrapper parentNode,
-			AbstractPage childPage) {
-		Iterator<AbstractPage> pageLooker = childPage.getParent().childPages.iterator();
-		@SuppressWarnings("unchecked")
-		Enumeration<TreeNodePageWrapper> nodeLooker = parentNode.children();
-		
-		// *S*
-		// *A1*
-		while (nodeLooker.hasMoreElements()) { // *G* exit
-			TreeNodePageWrapper currentNode = nodeLooker.nextElement();
-			
-			// *A2*
-			if (!pageLooker.hasNext())
-				break; // *H* an ERROR has happened, since it is supposed to be and an impossible state.
-			AbstractPage currentPage = pageLooker.next();
-			
-			// these are B-C-D123-B and B-C-E-B loops 
-			b_loop:
-			while (! currentNode.page.equals(currentPage)) { // *A2*->*B* check AND *E*->*B* check
-				// *B*
-				if (childPage.equals(currentPage)) {
-					return parentNode.getIndex(currentNode); // *F*
-				}
-				// *C*
-				if (parentNode.page.childPages.contains(currentNode.page)) {
-					// *D2*
-					while (pageLooker.hasNext()) 
-						currentPage = pageLooker.next(); 
-						if (currentNode.page.equals(currentPage))
-							break b_loop; // -> *A*
-						// *D3*
-						if (childPage.equals(currentPage)) {
-							return parentNode.getIndex(currentNode); // *F*
-					}
-					return -1; //*H* 
-				}
-				else // *E*
-					if (nodeLooker.hasMoreElements())
-						currentNode = nodeLooker.nextElement(); //skip one 
-					// -> *B*
-					else 
-						break; // *G* exit
-			}
-		}
-		// *G*
-		return -1;
-	}
-	
-	/**
-	 * Remove branch->children nodes that don't correspond to branch->page->children pages
-	 * and cancel their respective jobs running and scheduled
-	 * O (n*n)
-	 * @param branch - node branch to clean up
-	 * @param model - reference model
-	 */
-	private void trimBranch(TreeNodePageWrapper branch, DefaultTreeModel model) {
-		AbstractPage branchPage = branch.page;
-		Collection<TreeNodePageWrapper> removeList = new LinkedList<>();
-		for (@SuppressWarnings("unchecked")
-			Enumeration<TreeNodePageWrapper> children = branch.children(); children.hasMoreElements();) {
-			TreeNodePageWrapper childNode = children.nextElement();
-			AbstractPage childPage = childNode.page; 
-			if (! branchPage.childPages.contains(childPage)) {
-				// child's page is no more contained within its parent's page children collection
-				removeList.add(childNode); // can't remove on spot, it will fuck up the iteration
-			}
-		}
-		
-		for (TreeNodePageWrapper element: removeList) {
-			// ordinary, this should never happen. if this is executing, it means that cache data was in conflict
-			// with updated net data.
-			model.removeNodeFromParent(element);
-			//since this page is no more of our concern, all jobs executing and pending are irrelevant CPU consumers
-			theWorker.stopJobsForPage(element.page); 
-		}
-	}
-
 	/**
 	 * Search children nodes of a parentNode for a TreeNodePageWrapper containing given AbstractPage. 
 	 * @param parentNode - parent of nodes to search among

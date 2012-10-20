@@ -1,21 +1,23 @@
 package dloader.gui;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.SwingWorker;
 
-import dloader.JobMaster;
 import dloader.Main;
-import dloader.JobMaster.JobType;
 import dloader.page.AbstractPage;
+import dloader.pagejob.JobMaster;
+import dloader.pagejob.JobMaster.JobType;
+import dloader.gui.MyWorker.ProgressReportStruct;
 
 /**
  * This is a SwingWorker extended to operate with JobMaster.
  * @author Acerbic
  *
  */
-public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct> {
+public class MyWorker extends SwingWorker<Map<AbstractPage, ProgressReportStruct>, MyWorker.ProgressReportStruct> {
 	
 	/**
 	 * Simple structure to toss progress report upstream.
@@ -37,48 +39,48 @@ public class MyWorker extends SwingWorker<Object, MyWorker.ProgressReportStruct>
 	}
 	
 	public final JobMaster jm;
-	public HashMap<AbstractPage, Long> savingReqJobResults;
+	public Map<AbstractPage, ProgressReportStruct> bulkResults;
 	private Thread workerThread;
 
 	// called from ED thread
 	public MyWorker(AbstractPage rootPage, JobType whatToDo) {
+		this(rootPage, whatToDo, false);
+	}
+
+	// called from ED thread
+	public MyWorker(AbstractPage rootPage, JobType whatToDo, boolean bulk) {
+		if (bulk)
+			bulkResults = new ConcurrentHashMap<AbstractPage, ProgressReportStruct>(200);
 		
 		jm = new JobMaster(whatToDo, rootPage, 0) {
-			
 			// bridge to SwingWorker progress reporting
+			// this is called in worker thread
 			@Override
 			public void report(AbstractPage page, String type, long i) {
-				publish(new ProgressReportStruct(page, type, i));
+				ProgressReportStruct res = new ProgressReportStruct(page, type, i);
+				if (bulkResults == null)
+					publish(res);
+				else
+					bulkResults.put(page, res);
 			}
 		};
 		
-		if (whatToDo.equals(JobType.CHECKSAVINGREQUIREMENT))
-			savingReqJobResults = new HashMap<>(200);
 	}
 
 	// called in worker thread
 	@Override
-	protected Object doInBackground() throws Exception {
+	protected Map<AbstractPage, ProgressReportStruct> doInBackground() throws Exception {
 		workerThread = Thread.currentThread();
 		if (jm != null)
 			jm.goGoGo(); // -> several calls to PageJob.report() -> jm.report() -> SwingWorker.publish() -> this.process() -> gui.updateTree()
-		return null; // call to done() -> gui.myWorkerDone()
+		return bulkResults; // call to done() -> gui.myWorkerDone()
 	}
 
 	// called in ED thread
 	@Override
-	protected void process(List<ProgressReportStruct> chunks) {
-		for (ProgressReportStruct element : chunks) {
-			switch (jm.whatToDo) {
-			case CHECKSAVINGREQUIREMENT:
-				savingReqJobResults.put(element.page, element.value); // 1st combine all, then update all after jobs are done
-				break;
-			default:
-				// pass individual messages
-				Main.gui.updateTree(element.page, element.type, element.value);
-			
-			}
-				
+	protected void process(List<ProgressReportStruct> pilr) {
+		for (ProgressReportStruct element : pilr) {
+			Main.gui.updateTree(element.page, element.type, element.value);
 		}
 	}
 	

@@ -1,10 +1,9 @@
-package dloader;
+package dloader.pagejob;
 
 import java.util.concurrent.*;
 
-
+import dloader.Main;
 import dloader.page.AbstractPage;
-import dloader.pagejob.*;
 
 /**
  * Class to initiate and maintain jobs' queue and intermediate result reporting
@@ -15,6 +14,11 @@ import dloader.pagejob.*;
  */
 public abstract class JobMaster {
 	
+	/**
+	 * Just a vector of objects {PageJob, Future<?>}, where Future is generated for said job.
+	 * This is to track Futures for jobs, to cancel specific jobs, that has not been started yet.
+	 * @author Acerbic
+	 */
 	private
 	class JobFuturePair {
 		public final PageJob job;
@@ -23,10 +27,11 @@ public abstract class JobMaster {
 			this.job = job; this.future = future;
 		}
 	}
+	
 	/**
 	 * number of threads running in parallel by default
 	 */
-	static final int CORETHREADS_NUMBER = 4; 
+	static final public int CORETHREADS_NUMBER = 4; 
 	
 	/**
 	 * Associated job executor
@@ -41,7 +46,9 @@ public abstract class JobMaster {
 	/**
 	 * READCACHEPAGES - get pages tree ONLY from cache (prefetch)
 	 * UPDATEPAGES - updated 1st page from the Internet and others too if needed (otherwise tries reading from cache)
-	 *   			updates cache too
+	 *   	updates cache too
+	 * CHECKSAVINGREQUIREMENT - compare AbstractPage objects with files on disk to establish whether saving is required,
+	 * 		as saving/downloading is a time consuming operation. 
 	 * SAVEDATA - download missing/corrupt files.
 	 * 
 	 * It is vital that different kinds of jobs are not ran on the same page concurrently.
@@ -50,15 +57,11 @@ public abstract class JobMaster {
 	public enum JobType { READCACHEPAGES, UPDATEPAGES, SAVEDATA, CHECKSAVINGREQUIREMENT};
 
 	/**
-	 *  i'm not sure about this. It is a temporary variable to the rootPage. 
-	 *  i just did not want to start the jobs running within a constructor 
-	 *  (also since creating jobs means sharing a reference to this JobMaster 
-	 *    it is not wise to leak "this" reference before construction is finished) 
+	 *  Those a temporary variable to store rootPage and JobType between calls to the constructor and actual jobs execution 
+	 *  (call to goGoGo()) 
 	 */
 	public final AbstractPage rootPage; 
 	public final JobType whatToDo; 
-	
-	
 	
 	/**
 	 * Initiate JobMaster with rootJob (one which can generate and submit other jobs)
@@ -107,7 +110,7 @@ public abstract class JobMaster {
 			try {
 				Future<?> headFuture = submittedPairs.peek().future; 
 				headFuture.get(); // can't use awaitTermination, because jobs are submitting other jobs
-				submittedPairs.poll(); // no synch with peek is needed as all elements are added to the tail and only this thread is running task removal.
+				submittedPairs.poll(); // no synch with peek and isEmpty is needed as all elements are added to the tail and only this thread is running task removal.
 			} catch (InterruptedException | ExecutionException e) {
 				// Stop all jobs
 				executor.shutdown(); // no new jobs submitted
@@ -140,9 +143,8 @@ public abstract class JobMaster {
 
 	/**
 	 * Entry point for Jobs to send reports on the progress/results.
-	 * 
-	 * This job master reports to GUI, but the method can be overloaded to support console or network, for example
-	 * @param page - page is being (been) worked on.
+	 * This method must be overloaded to extract results of operations, reported by individual PageJob and AbstractPage object.
+	 * @param page - page is being (has been) worked on.
 	 * @param type - custom string argument
 	 * @param i - custom integer argument
 	 */
@@ -150,21 +152,16 @@ public abstract class JobMaster {
 	public void report(AbstractPage page, String type, long i) ;
 
 	/**
-	 * Stop jobs for page
-	 * @param page
+	 * Stop jobs all jobs for page. Only this page is affected, if its children must be stopped, the caller must do the recursion.
+	 * @param page - the page which jobs must be stopped.
 	 */
-	synchronized public 
+	public 
 	void stopJobsForPage(AbstractPage page) {
-		for (JobFuturePair pair: submittedPairs) {
+		for (JobFuturePair pair: submittedPairs) 
 			// no new tasks will be submitted because of synchronization.
-			if (pair.job.page.equals(page)) {
+			if (pair.job.page.equals(page)) 
+				// we don't remove pair from queue here to not mess up with main JobMaster thread. 
 				pair.future.cancel(true);
-				// we don't remove pair from queue here to not mess up with main JobMaster thread
-				
-				// TODO: then cancel kids' jobs?
-			}
-		}
-		
 	}
 
 }

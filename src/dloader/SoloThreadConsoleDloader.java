@@ -2,6 +2,7 @@ package dloader;
 
 
 import dloader.page.AbstractPage;
+import dloader.pagejob.JobMaster;
 
 /**
  * Console application that downloads everything in a single thread.

@@ -1,19 +1,18 @@
 package dloader.gui;
 
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 
+import dloader.gui.MyWorker.ProgressReportStruct;
 import dloader.page.AbstractPage;
 import dloader.page.Album;
 import dloader.page.Track;
 
 /**
- * This class objects are to serve as "user objects" to JTree model node elements.
- * 
  * It simultaneously wraps AbstractPage object, tracks download job progress by capturing PageJob's messages
  * and provides "toString()" method to represent a page in JTree view. 
  * It does not change node tree model. All modifying of the tree is located at GUI.updateTree(...) 
@@ -246,12 +245,12 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 
 	/**
 	 * Updates tree nodes visuals according to the check results all at once
-	 * @param savingReqJobResults
+	 * @param bulkResults
 	 */
 	public void updateSavingReqBunch(
-			HashMap<AbstractPage, Long> savingReqJobResults) {
-//		if (savingReqJobResults == null) return;
-		Long value = savingReqJobResults.get(page);
+			Map<AbstractPage, ProgressReportStruct> bulkResults) {
+
+		Long value = bulkResults.get(page).value;
 		if (value != null)
 			mustSavePage = value == 0;
 
@@ -263,7 +262,7 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		Enumeration<DefaultMutableTreeNode> children = children(); children.hasMoreElements();) {
 			TreeNodePageWrapper kid = (TreeNodePageWrapper) children.nextElement();
 			
-			kid.updateSavingReqBunch(savingReqJobResults);
+			kid.updateSavingReqBunch(bulkResults);
 			if (kid.mustSavePage || kid.saving)
 				kidsToSave++;
 		}

@@ -1,6 +1,5 @@
 package dloader.pagejob;
 
-import dloader.JobMaster;
 import dloader.page.AbstractPage;
 import dloader.page.AbstractPage.ProblemsReadingDocumentException;
 

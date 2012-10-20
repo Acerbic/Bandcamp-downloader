@@ -7,6 +7,8 @@ import java.util.logging.*;
 
 import javax.swing.SwingUtilities;
 
+import dloader.gui.GUI;
+
 public class Main {
 //	public static final String nl = System.getProperty ( "line.separator" );
 	
