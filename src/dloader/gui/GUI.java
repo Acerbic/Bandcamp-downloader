@@ -6,6 +6,7 @@ import java.awt.Font;
 import java.util.Deque;
 import java.util.Enumeration;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
@@ -344,9 +345,14 @@ public class GUI extends JFrame {
 			if (childNode == null) {
 				// currentPage's node was not found in parent node 
 				
+				List<TreeNodePageWrapper> oldChildren = null;
 				if (parentNode.getChildCount() > 0) {
 					// some children are present, but not all of them.
-					// remove all old children then add all new ones
+					// remove all old children then add re-add with the new ones
+					oldChildren = new LinkedList<>();
+					for (@SuppressWarnings("unchecked")
+					Enumeration<TreeNodePageWrapper> children = parentNode.children(); children.hasMoreElements();) 
+						oldChildren.add(children.nextElement());
 					parentNode.removeAllChildren();
 					// we don't need to worry about removed pages' jobs because 
 					//  PageJob algorithms operates on updated data, it is GUI tree that lags behind 
@@ -355,13 +361,13 @@ public class GUI extends JFrame {
 				// add new items under current parent
 				// we are assuming that if one (this) child is present, then all of them are already present,
 				//   as children list is initiated / updated as a whole at the same time.
-				childNode = addChildrenNodes(parentNode, childPage);
+				childNode = addChildrenNodes(parentNode, childPage, oldChildren);
 				
 				assert (childNode != null); // can happen only if ghost sneaked in - other thread compromised AbstractPage tree
 				
 				// new item's children if any 
 				if (childPage.childPages.size() > 0)
-					addChildrenNodes(childNode, childPage.childPages.get(0)); // bit awkward code reuse
+					addChildrenNodes(childNode, childPage.childPages.get(0), null); // bit awkward code reuse
 				
 				model.nodeStructureChanged(parentNode); // notification to repaint
 			}
@@ -374,7 +380,7 @@ public class GUI extends JFrame {
 		// case of new page downloads it is visually more pleasing to see what is going on asap 
 		if (parentNode.page.equals(pathToPage.getFirst())) {
 			if (parentNode.page.childPages.size() > 0 && parentNode.getChildCount() == 0)
-				addChildrenNodes(parentNode, parentNode.page.childPages.get(0)); // bit awkward code reuse
+				addChildrenNodes(parentNode, parentNode.page.childPages.get(0), null); // bit awkward code reuse
 			unfoldFirst(); 
 		}
 		
@@ -585,24 +591,39 @@ public class GUI extends JFrame {
 	 * Adds to a given tree node children nodes, which are all wrappers of siblings of given childPage (including the very childPage)
 	 * @param parentNode - parent tree node where children will be added
 	 * @param childPage - a page whose siblings will be add.
+	 * @param oldChildren - old children to be reused if possible
 	 * @return a new node created for a given child page.
 	 */
-	private TreeNodePageWrapper addChildrenNodes (TreeNodePageWrapper parentNode, AbstractPage childPage) {
+	private TreeNodePageWrapper addChildrenNodes (TreeNodePageWrapper parentNode, AbstractPage childPage, List<TreeNodePageWrapper> oldChildren) {
 		TreeNodePageWrapper returnedChildNode = null;
-		DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
 		
 		if (childPage.getParent() == null) {
-			returnedChildNode = new TreeNodePageWrapper(childPage, model);
+			returnedChildNode = searchListForPageWrapperOrCreateNew(oldChildren, childPage);
 			parentNode.add(returnedChildNode);
 			return returnedChildNode;
 		} else {
 			for (AbstractPage childPageSibling: childPage.getParent().childPages) {
-				TreeNodePageWrapper childNode = new TreeNodePageWrapper(childPageSibling, model);
+				TreeNodePageWrapper childNode = searchListForPageWrapperOrCreateNew(oldChildren, childPageSibling);
 				if (childPageSibling.equals(childPage))
 					returnedChildNode = childNode;
 				parentNode.add(childNode);
 			}
 			return returnedChildNode;
 		}
+	}
+	
+	/**
+	 * Search the list for appropriate preexisting wrapper for given page. If not exists create a new wrapper. 
+	 * @param list - list of existing wrappers. Might be null.
+	 * @param page
+	 * @return a TreeNodePageWrapper object for a page object provided.
+	 */
+	private
+	TreeNodePageWrapper searchListForPageWrapperOrCreateNew(List<TreeNodePageWrapper> list, AbstractPage page) {
+		if (list == null) return new TreeNodePageWrapper(page, (DefaultTreeModel) tree.getModel());
+		for (TreeNodePageWrapper element: list)
+			if (element.page.url.equals(page.url))
+				return element;
+		return new TreeNodePageWrapper(page, (DefaultTreeModel) tree.getModel());
 	}
 }
