@@ -9,6 +9,10 @@ import javax.swing.SwingUtilities;
 
 import dloader.gui.GUI;
 
+/**
+ * Starting thread. May continue in a single console thread or spawn GUI.
+ * @author Acerbic
+ */
 public class Main {
 //	public static final String nl = System.getProperty ( "line.separator" );
 	

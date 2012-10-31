@@ -107,7 +107,7 @@ public class Track extends AbstractPage {
 		String statusReport = null; // defaults to "skipped"
 		
 		// tagging does not require synchronization as it is operating with Properties object which is thread-safe. 
-		//XXX: this is not strictly true, but as properties are read much later than written, we may assume those operations do not overlap. 
+		//XXX: this is not strictly true, but as properties are read much later than written in different PageJobs, we may assume those operations do not overlap. 
 		if (tagAudioFile(Main.forceTagging))
 			statusReport = "file updated";
 		if (wasDownloaded)

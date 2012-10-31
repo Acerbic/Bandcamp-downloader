@@ -29,6 +29,8 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	public final AbstractPage page; //wrapped object
 	public final DefaultTreeModel model; //backref to model
 	
+	private String titleCache;
+	
 	boolean readFromCache = false;
 	boolean downloadPageQ = false;
 	
@@ -56,9 +58,8 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 	 * Update flags and states of this node visual representation
 	 * @param message
 	 * @param value
-	 * @return true if node must be repainted
 	 */
-	public boolean update(String message, long value) {
+	public void update(String message, long value) {
 		boolean updateVisuals = false;
 		boolean updateParent = false;
 		switch (message) {
@@ -147,17 +148,20 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		}
 		if (updateVisuals)
 			model.nodeChanged(this);
-		return updateVisuals;
+
+		titleCache = page.getTitle();
 	}
 	
 	@Override
 	public String toString() {
 		if (page == null) return null;
+		if (titleCache == null)
+			titleCache = page.getTitle();
 		
 		String header = "<html>";
 		String bottom = "</html>";
 		String styleCompilation = "";
-		String title = page.getTitle(); 
+		String title = titleCache; 
 		if (title == null || title.isEmpty())
 			title = "????";
 		String saveDecorator = "";
@@ -182,10 +186,11 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		// title formatters;
 		
 		int childrenCount = (kidsInScanning > 0)? kidsInScanning: kidsToSave;
-		String strChildrenCount = (page.childPages.size() <= 0)? "":
+		int childrenSize = page.childPages.size();
+		String strChildrenCount = (childrenSize <= 0)? "":
 			"<span id='children'>[" +
-			(childrenCount <= 0 ? "": (page.childPages.size()-childrenCount) +"/") +
-			page.childPages.size()+"]</span>";
+			(childrenCount <= 0 ? "": (childrenSize-childrenCount) +"/") +
+			childrenSize+"]</span>";
 		
 		if (downloading) {
 			title = title + " (Scanning...)";

@@ -22,6 +22,11 @@ import javax.swing.UIManager.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
+/**
+ * well. GUI, duh.
+ * @author Acerbic
+ *
+ */
 public class GUI extends JFrame {
 
 	/**
@@ -341,16 +346,18 @@ public class GUI extends JFrame {
 				
 				if (parentNode.getChildCount() > 0) {
 					// some children are present, but not all of them.
-					// normally one would compare parenNode's children to parentPage's children, and insert the new one to proper place, but 
-					//  for the sake of efficiency it is faster to just drop all existing children nodes and add new ones instead as a bunch
+					// remove all old children then add all new ones
 					parentNode.removeAllChildren();
+					// we don't need to worry about removed pages' jobs because 
+					//  PageJob algorithms operates on updated data, it is GUI tree that lags behind 
 				}
 				
-				
-				// add new items under this parent
+				// add new items under current parent
+				// we are assuming that if one (this) child is present, then all of them are already present,
+				//   as children list is initiated / updated as a whole at the same time.
 				childNode = addChildrenNodes(parentNode, childPage);
 				
-				assert (childNode != null); // can happen if ghost sneaked in - other thread compromised AbstractPage tree
+				assert (childNode != null); // can happen only if ghost sneaked in - other thread compromised AbstractPage tree
 				
 				// new item's children if any 
 				if (childPage.childPages.size() > 0)
@@ -361,12 +368,15 @@ public class GUI extends JFrame {
 			
 			parentNode = childNode; // advance to search next element in our pathToPage
 		}
-		// after search is complete, parent points to a TreeNodePageWrapper containing original p (but now p is different)
+		// after search is complete, parentNode points to a TreeNodePageWrapper containing original p (but now p is different)
 		
 		// usually unfolding happens only after job is finished (for performance), but in
 		// case of new page downloads it is visually more pleasing to see what is going on asap 
-		if (parentNode.page.equals(pathToPage.getFirst())) 
+		if (parentNode.page.equals(pathToPage.getFirst())) {
+			if (parentNode.page.childPages.size() > 0 && parentNode.getChildCount() == 0)
+				addChildrenNodes(parentNode, parentNode.page.childPages.get(0)); // bit awkward code reuse
 			unfoldFirst(); 
+		}
 		
 		// pass message to the user object and refresh its visual if needed
 		parentNode.update(message, value);
@@ -535,6 +545,7 @@ public class GUI extends JFrame {
 			target = (TreeNodePageWrapper) target.getFirstChild();
 			tree.expandPath(new TreePath(target.getPath())); 
 		} catch (NoSuchElementException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -570,6 +581,12 @@ public class GUI extends JFrame {
 		return null;
 	}
 	
+	/**
+	 * Adds to a given tree node children nodes, which are all wrappers of siblings of given childPage (including the very childPage)
+	 * @param parentNode - parent tree node where children will be added
+	 * @param childPage - a page whose siblings will be add.
+	 * @return a new node created for a given child page.
+	 */
 	private TreeNodePageWrapper addChildrenNodes (TreeNodePageWrapper parentNode, AbstractPage childPage) {
 		TreeNodePageWrapper returnedChildNode = null;
 		DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
