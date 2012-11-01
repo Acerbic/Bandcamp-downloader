@@ -1,5 +1,6 @@
 package dloader.gui;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +18,7 @@ import dloader.gui.MyWorker.ProgressReportStruct;
  * @author Acerbic
  *
  */
-public class MyWorker extends SwingWorker<Map<AbstractPage, ProgressReportStruct>, MyWorker.ProgressReportStruct> {
+public class MyWorker extends SwingWorker<Map<AbstractPage, List<ProgressReportStruct>>, MyWorker.ProgressReportStruct> {
 	
 	/**
 	 * Simple structure to toss progress report upstream.
@@ -38,9 +39,17 @@ public class MyWorker extends SwingWorker<Map<AbstractPage, ProgressReportStruct
 		}
 	}
 	
+	/**
+	 * associated JobMaster
+	 */
 	public final JobMaster jm;
-	public Map<AbstractPage, ProgressReportStruct> bulkResults;
-	private Thread workerThread;
+	
+	/**
+	 * Works both as storage of results and as a flag (when != null) that results must be stored, not reported
+	 */
+	public Map<AbstractPage, List<ProgressReportStruct>> bulkResults;
+	
+	private Thread workerThread; // saved for later interruption
 
 	// called from ED thread
 	public MyWorker(AbstractPage rootPage, JobType whatToDo) {
@@ -50,7 +59,7 @@ public class MyWorker extends SwingWorker<Map<AbstractPage, ProgressReportStruct
 	// called from ED thread
 	public MyWorker(AbstractPage rootPage, JobType whatToDo, boolean bulk) {
 		if (bulk)
-			bulkResults = new ConcurrentHashMap<AbstractPage, ProgressReportStruct>(200);
+			bulkResults = new ConcurrentHashMap<>(200);
 		
 		jm = new JobMaster(whatToDo, rootPage, 0) {
 			// bridge to SwingWorker progress reporting
@@ -60,8 +69,14 @@ public class MyWorker extends SwingWorker<Map<AbstractPage, ProgressReportStruct
 				ProgressReportStruct res = new ProgressReportStruct(page, type, i);
 				if (bulkResults == null)
 					publish(res);
-				else
-					bulkResults.put(page, res);
+				else {
+					List<ProgressReportStruct> resultsForThisPage = bulkResults.get(page);
+					if (resultsForThisPage == null) {
+						resultsForThisPage = new LinkedList<ProgressReportStruct>();
+						bulkResults.put(page, resultsForThisPage);
+					}
+					resultsForThisPage.add(res);
+				}
 			}
 		};
 		
@@ -69,7 +84,7 @@ public class MyWorker extends SwingWorker<Map<AbstractPage, ProgressReportStruct
 
 	// called in worker thread
 	@Override
-	protected Map<AbstractPage, ProgressReportStruct> doInBackground() throws Exception {
+	protected Map<AbstractPage, List<ProgressReportStruct>> doInBackground() throws Exception {
 		workerThread = Thread.currentThread();
 		if (jm != null)
 			jm.goGoGo(); // -> several calls to PageJob.report() -> jm.report() -> SwingWorker.publish() -> this.process() -> gui.updateTree()

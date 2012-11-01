@@ -1,11 +1,14 @@
 package dloader.gui;
 
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 
+import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
 
 import dloader.gui.MyWorker.ProgressReportStruct;
 import dloader.page.AbstractPage;
@@ -228,8 +231,8 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 		else 
 			return header + 
 					title + " " + strChildrenCount + " " + saveDecorator +
-				"<br>" + "<span id='url'>" + page.url + "</span>" +
-				"</u>"+ bottom;
+					"<br>" + "<span id='url'>" + page.url + "</span>" +
+					bottom;
 	}
 
 	public void kidChanged(TreeNodePageWrapper kidWrapper, String message, long value) {
@@ -250,28 +253,42 @@ public class TreeNodePageWrapper extends DefaultMutableTreeNode {
 
 	/**
 	 * Updates tree nodes visuals according to the check results all at once
-	 * @param bulkResults
+	 * @param map
+	 * @param tree 
 	 */
 	public void updateSavingReqBunch(
-			Map<AbstractPage, ProgressReportStruct> bulkResults) {
+			Map<AbstractPage, List<ProgressReportStruct>> map, JTree tree) {
+		
+		boolean needsRefresh = false; // flag to repaint this node (relatively long operation)
 
-		Long value = bulkResults.get(page).value;
-		if (value != null)
+		Long value = null;
+		try {
+			value = map.get(page).get(0).value; // for every page CheckSavingJob reports exactly one time
+		} catch (NullPointerException|IndexOutOfBoundsException e) {}
+		
+		if (value != null) {
+			if (mustSavePage != (value == 0)) needsRefresh = true;
 			mustSavePage = value == 0;
+		}
 
+		needsRefresh |= downloadPageQ || downloading;
 		downloadPageQ = false;
 		downloading = false;
 		
+		int oldKidsToSave = kidsToSave;
 		kidsToSave = 0;
 		for (@SuppressWarnings("unchecked")
 		Enumeration<DefaultMutableTreeNode> children = children(); children.hasMoreElements();) {
 			TreeNodePageWrapper kid = (TreeNodePageWrapper) children.nextElement();
 			
-			kid.updateSavingReqBunch(bulkResults);
+			kid.updateSavingReqBunch(map, tree);
 			if (kid.mustSavePage || kid.saving)
 				kidsToSave++;
 		}
+		needsRefresh |= oldKidsToSave != kidsToSave;
 		
-		model.nodeChanged(this);
+		
+		if (needsRefresh && tree.isVisible(new TreePath(getPath()))) 
+			model.nodeChanged(this);
 	}
 }

@@ -57,31 +57,6 @@ public class GUI extends JFrame {
 	private JCheckBox chckbxForceTag;
 	private JButton btnStop;
 	
-	
-/*	@SuppressWarnings("serial")
-	class MyRenderer extends DefaultTreeCellRenderer {
-
-	    public Component getTreeCellRendererComponent(
-	                        JTree tree,
-	                        Object value,
-	                        boolean sel,
-	                        boolean expanded,
-	                        boolean leaf,
-	                        int row,
-	                        boolean hasFocus) {
-
-	        super.getTreeCellRendererComponent(
-	                        tree, value, sel,
-	                        expanded, leaf, row,
-	                        hasFocus);
-	        if (value instanceof DefaultMutableTreeNode)
-	        	return this;
-	        return this;
-	    }
-
-	}	*/
-
-	
 	public Thread getEventDispatchThread() {
 		return eventDispatchThread;
 	}
@@ -295,7 +270,7 @@ public class GUI extends JFrame {
 			if (theWorker.bulkResults != null)
 				// if in bulk mode...
 				try {
-					getRootNode().updateSavingReqBunch(theWorker.get());
+					getRootNode().updateSavingReqBunch(theWorker.get(), tree);
 				} catch (InterruptedException | ExecutionException e) {
 					// won't happen as get() is being called from inside of SwingWorker.done() - after job execution is finished
 				}
@@ -312,6 +287,7 @@ public class GUI extends JFrame {
 			// error state reached
 			Main.log(Level.WARNING, "myWorkerDone () -- Error state in GUI.state: " + state.toString());
 		}
+		
 	}
 
 	/**
