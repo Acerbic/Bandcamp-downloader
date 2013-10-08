@@ -77,13 +77,15 @@ public class Track extends AbstractPage {
 	private static final String[] XMLCacheDataKeys = {"mediaLink", "artist", "track", "album"};
 
 	static {
-		dataPatterns.put("mediaLink", Pattern.compile(".*trackinfo:.*\"file\":\"([^\"]*)\".*", Pattern.DOTALL));
-		dataPatterns.put("artist", Pattern.compile(".*artist\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
+//		dataPatterns.put("mediaLink", Pattern.compile(".*trackinfo:.*\"file\":\"([^\"]*)\".*", Pattern.DOTALL));
+		dataPatterns.put("mediaLink", Pattern.compile(".*trackinfo:[^\\n]*\"file\":\\{[^\\}]*\"(http[^\"]*)\".*", Pattern.DOTALL));
+//		dataPatterns.put("artist", Pattern.compile(".*artist\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
 		dataPatterns.put("album", Pattern.compile(".*album_title\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
-		dataPatterns.put("title", Pattern.compile(".*title\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
+//		dataPatterns.put("title", Pattern.compile(".*title\\s*:\\s*\"([^\"]*)\".*", Pattern.DOTALL));
+		dataPatterns.put("title", Pattern.compile(".*trackinfo:[^\\n]*\"title\":\"([^\"]*)\".*", Pattern.DOTALL));
 // XXX: track number is set by parent album or not set at all - may be this behavior should be changed  		
 //		dataPatterns.put("track", Pattern.compile(".*numtracks\\s*:\\s*([\\d]*).*", Pattern.DOTALL));
-		dataPatterns.put("comment", Pattern.compile(".*trackinfo:.*\"has_info\":\"([^\"]*)\".*", Pattern.DOTALL));				
+//		dataPatterns.put("comment", Pattern.compile(".*trackinfo:.*\"has_info\":\"([^\"]*)\".*", Pattern.DOTALL));				
 	}
 	
 	public Track(String url, String saveTo, AbstractPage parent) throws IllegalArgumentException {

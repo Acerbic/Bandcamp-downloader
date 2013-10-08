@@ -23,13 +23,19 @@ import dloader.pagejob.ProgressReporter;
  */
 public class Discography extends AbstractPage {
 	
-	private static final String INDEX_CHILD_REF = "//pre:div[@id='indexpage']//pre:h1/pre:a";
-	private static final String SIDEBAR_CHILD_LINK = "//pre:div[@id='discography']//pre:div[@class='trackTitle']/pre:a";
+	//Discography list can be read either from a side bar or from a table in the center of the page	
+	private enum DiscographyListVariant { SIDEBAR, CENTRAL_INDEX };
+	
+	//This path will be found if there is a discography in the center of a page 	
 	private static final String INDEX_DIV_XPATH = "//pre:div[@id='indexpage']";
+	//This path will be found if there is a discography  in the side bar of a page
 	private static final String SIDEBAR_DIV_XPATH = "//pre:div[@id='discography']";
+	
+	private static final String INDEX_CHILD_REF = "//pre:div[@id='indexpage']//pre:div[@class='ipCellLabel1']/pre:a";
+//	private static final String INDEX_CHILD_REF = "//pre:div[@id='indexpage']//pre:h1/pre:a";
+	private static final String SIDEBAR_CHILD_LINK = "//pre:div[@id='discography']//pre:div[@class='trackTitle']/pre:a";
 	private static final String TITLE_XPATH = "//pre:title";
 	
-	private enum DiscographyListVariant { SIDEBAR, CENTRAL_INDEX };
 	/**
 	 * detected on parseSelf() call and dictates 
 	 * what getChildNodesXPath() returns. 
